@@ -46,12 +46,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Extract sender domain from the raw From header line.
-  // mailauth exposes headers as a raw string; parse with regex.
-  const rawHeaders: string = result?.headers ?? rawEmail.split("\r\n\r\n")[0] ?? "";
+  const rawHeaders: string = rawEmail.split("\r\n\r\n")[0] ?? rawEmail.split("\n\n")[0] ?? "";
+  console.log("rawHeaders snippet:", rawHeaders.slice(0, 300));
   const fromMatch = rawHeaders.match(/^From:.*?<([^>]+)>|^From:\s*(\S+)/im);
   const fromAddress = fromMatch?.[1] ?? fromMatch?.[2] ?? "";
   const senderDomain = extractDomain(fromAddress);
+  console.log("fromAddress:", fromAddress, "senderDomain:", senderDomain);
   if (!senderDomain || fromAddress.toLowerCase() === WITNESS_EMAIL) {
+    console.log("Discarding — no sender domain or from is witness email");
     return NextResponse.json({ ok: true });
   }
 
