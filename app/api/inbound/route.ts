@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Parse and verify DKIM signature via mailauth.
-  let result: Awaited<ReturnType<typeof authenticate>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let result: any;
   try {
     result = await authenticate(rawEmail, { sender: "", ip: "127.0.0.1" });
   } catch {
@@ -31,34 +32,38 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Require at least one passing DKIM signature.
-  const dkimResults = result.dkim?.results ?? [];
-  const passing = dkimResults.find((r: { status: { result: string } }) => r.status?.result === "pass");
+  const dkimResults: unknown[] = result?.dkim?.results ?? [];
+  const passing = dkimResults.find(
+    (r) => (r as { status?: { result?: string } }).status?.result === "pass"
+  ) as { signature?: string } | undefined;
+
   if (!passing) {
     // Silently discard — don't reveal failure reason externally.
     return NextResponse.json({ ok: true });
   }
 
-  // 5. Extract sender domain from the From header.
-  const fromHeader: string = result.headers?.parsed?.from?.[0]?.value?.[0]?.address ?? "";
-  const senderDomain = extractDomain(fromHeader);
+  // 5. Extract sender domain from the raw From header line.
+  // mailauth exposes headers as a raw string; parse with regex.
+  const rawHeaders: string = result?.headers ?? rawEmail.split("\r\n\r\n")[0] ?? "";
+  const fromMatch = rawHeaders.match(/^From:.*?<([^>]+)>|^From:\s*(\S+)/im);
+  const fromAddress = fromMatch?.[1] ?? fromMatch?.[2] ?? "";
+  const senderDomain = extractDomain(fromAddress);
   if (!senderDomain || senderDomain === WITNESS_DOMAIN) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Extract receiver domains — To + CC headers, excluding witness@signet.id itself.
-  const toAddresses: string[] = (result.headers?.parsed?.to ?? [])
-    .flatMap((h: { value: { address: string }[] }) => h.value.map((v: { address: string }) => v.address));
-  const ccAddresses: string[] = (result.headers?.parsed?.cc ?? [])
-    .flatMap((h: { value: { address: string }[] }) => h.value.map((v: { address: string }) => v.address));
+  // 6. Extract receiver domains from To and CC header lines.
+  const emailRegex = /[\w.+-]+@([\w.-]+\.[a-z]{2,})/gi;
+  const toLine = rawHeaders.match(/^To:(.+?)(?=\r?\n\S|\r?\n\r?\n)/ims)?.[1] ?? "";
+  const ccLine = rawHeaders.match(/^CC:(.+?)(?=\r?\n\S|\r?\n\r?\n)/ims)?.[1] ?? "";
+  const allRecipients = (toLine + " " + ccLine).matchAll(emailRegex);
+  const receiverDomains = Array.from(allRecipients)
+    .map((m) => m[1].toLowerCase())
+    .filter((d) => d !== WITNESS_DOMAIN && d !== senderDomain);
 
-  const receiverDomains = [...toAddresses, ...ccAddresses]
-    .map(extractDomain)
-    .filter((d): d is string => !!d && d !== WITNESS_DOMAIN && d !== senderDomain);
-
-  // Use first non-witness receiver, or fall back to a generic placeholder.
   const primaryReceiver = receiverDomains[0] ?? "unknown";
 
-  // 7. Hash the DKIM signature for storage (we store proof, not the raw sig).
+  // 7. Hash the DKIM signature for storage (proof without raw sig data).
   const dkimHash = createHash("sha256")
     .update(passing.signature ?? rawEmail.slice(0, 512))
     .digest("hex");

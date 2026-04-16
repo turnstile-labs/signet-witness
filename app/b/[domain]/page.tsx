@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDomain, getEvents, getReceiverCount } from "@/lib/db";
+import { getDomain, getEvents, getReceiverCount, type WitnessEvent } from "@/lib/db";
 import type { Metadata } from "next";
 
 interface Props {
@@ -113,7 +113,7 @@ export default async function SealPage({ params }: Props) {
             <div className="space-y-2">
               {events.slice(0, 20).map((event) => (
                 <div
-                  key={event.id}
+                  key={(event as WitnessEvent).id}
                   className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0"
                 >
                   <span className="text-sm text-gray-700">{event.receiver_domain}</span>

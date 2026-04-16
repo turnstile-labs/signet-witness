@@ -1,6 +1,16 @@
 import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!);
+// Lazily initialised so `next build` doesn't require DATABASE_URL at compile time.
+let _sql: ReturnType<typeof neon> | null = null;
+function sql(...args: Parameters<ReturnType<typeof neon>>) {
+  if (!_sql) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is not set");
+    }
+    _sql = neon(process.env.DATABASE_URL);
+  }
+  return (_sql as ReturnType<typeof neon>)(...args);
+}
 
 export interface Domain {
   id: number;
@@ -10,7 +20,7 @@ export interface Domain {
   updated_at: string;
 }
 
-export interface Event {
+export interface WitnessEvent {
   id: number;
   domain_id: number;
   receiver_domain: string;
@@ -28,8 +38,8 @@ export async function upsertDomain(domain: string): Promise<Domain> {
       event_count = domains.event_count + 1,
       updated_at  = NOW()
     RETURNING *
-  `;
-  return rows[0] as Domain;
+  ` as unknown as Domain[];
+  return rows[0];
 }
 
 // Record one witnessed email event.
@@ -48,19 +58,19 @@ export async function insertEvent(
 export async function getDomain(domain: string): Promise<Domain | null> {
   const rows = await sql`
     SELECT * FROM domains WHERE domain = ${domain}
-  `;
-  return (rows[0] as Domain) ?? null;
+  ` as unknown as Domain[];
+  return rows[0] ?? null;
 }
 
 // Fetch recent events for a domain (latest 50).
-export async function getEvents(domainId: number): Promise<Event[]> {
+export async function getEvents(domainId: number): Promise<WitnessEvent[]> {
   const rows = await sql`
     SELECT * FROM events
     WHERE domain_id = ${domainId}
     ORDER BY witnessed_at DESC
     LIMIT 50
-  `;
-  return rows as Event[];
+  ` as unknown as WitnessEvent[];
+  return rows;
 }
 
 // Count how many witnessed emails list this domain as a receiver
@@ -68,6 +78,6 @@ export async function getEvents(domainId: number): Promise<Event[]> {
 export async function getReceiverCount(domain: string): Promise<number> {
   const rows = await sql`
     SELECT COUNT(*) AS count FROM events WHERE receiver_domain = ${domain}
-  `;
-  return Number(rows[0].count);
+  ` as unknown as { count: string }[];
+  return Number(rows[0]?.count ?? 0);
 }
