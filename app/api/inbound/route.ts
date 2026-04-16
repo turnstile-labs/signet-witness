@@ -72,9 +72,12 @@ export async function POST(req: NextRequest) {
     .digest("hex");
 
   // 8. Write to DB.
+  console.log("DB write attempt — sender:", senderDomain, "receiver:", primaryReceiver);
+  console.log("DATABASE_URL set:", !!process.env.DATABASE_URL, "STORAGE_URL set:", !!process.env.STORAGE_URL);
   try {
     const domain = await upsertDomain(senderDomain);
     await insertEvent(domain.id, primaryReceiver, dkimHash);
+    console.log("DB write success — domain id:", domain.id);
   } catch (err) {
     console.error("DB write error", err);
     return NextResponse.json({ error: "DB error" }, { status: 500 });
