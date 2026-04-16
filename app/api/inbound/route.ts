@@ -34,12 +34,14 @@ export async function POST(req: NextRequest) {
 
   // 4. Require at least one passing DKIM signature.
   const dkimResults: unknown[] = result?.dkim?.results ?? [];
+  console.log("DKIM results:", JSON.stringify(dkimResults));
+  console.log("From header:", result?.headers?.match?.(/^From:.+/im)?.[0]);
   const passing = dkimResults.find(
     (r) => (r as { status?: { result?: string } }).status?.result === "pass"
   ) as { signature?: string } | undefined;
 
   if (!passing) {
-    // Silently discard — don't reveal failure reason externally.
+    console.log("DKIM failed — discarding");
     return NextResponse.json({ ok: true });
   }
 
