@@ -1,0 +1,117 @@
+# Signet Witness — Project Context
+
+This document captures the full decision history, architecture rationale, and product vision for the `signet-witness` project. Read this before starting any new conversation in this workspace.
+
+---
+
+## What this project is
+
+**Signet** is a business trust infrastructure product. The core mechanic: CC `witness@signet.id` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
+
+The output: a public seal page at `signet.id/b/yourdomain` that proves a domain has been doing real business with real counterparties over time. This is the one signal AI cannot fake: history.
+
+---
+
+## Product documents (in /docs)
+
+| File | What it covers |
+|---|---|
+| `SIGNET_MVP.md` | What this repo builds — Web2 only, freemium, no roadmap |
+| `SIGNET_WEB2.md` | MVP + full roadmap (receipts, badge tiers, directory, API, portable credentials) |
+| `SIGNET_WITNESS.md` | Long-term vision including wallet-anchored path and unified attestation cache |
+
+**The relationship between the three:** MVP ships first and proves demand. Web2 roadmap activates as milestones are hit. The Web3/wallet path (SIGNET_WITNESS.md) is a separate future product that will eventually connect to this one via a unified attestation cache.
+
+---
+
+## Architecture decisions and why
+
+### New repo, not built on signet-pass
+
+The existing `signet-pass` repo (`/Users/buitre/code/2026/signet-pass`) is a ZK email gating product — it uses Circom circuits, Solidity smart contracts, wagmi, and ConnectKit. Every dependency and abstraction layer assumes wallet-connected users. Building Signet Witness on top of it would mean fighting the existing assumptions at every turn. The two products are siblings, not parent/child.
+
+`signet-pass` stays alive as-is — it becomes the Web3 gating product that connects to this one in the long-term roadmap.
+
+### Cloudflare Email Routing → Worker → /api/inbound
+
+Cloudflare Email Routing receives all mail at `*@signet.id`, routes to a Worker (`workers/email-router/`), which POSTs the raw RFC 2822 email to `/api/inbound`. The Worker is ~30 lines and has one job: forward the email.
+
+Chosen over Postmark because: free, no third-party mail dependency, `signet.id` is likely already on Cloudflare.
+
+### mailauth for DKIM verification
+
+`mailauth` handles both MIME parsing and DKIM signature verification in one library call. It fetches the sender domain's DNS public key automatically and verifies the cryptographic signature. If verification fails, the event is silently discarded.
+
+### Vercel Postgres (Neon under the hood)
+
+Serverless Postgres that scales to zero. Created in one click from the Vercel dashboard with env vars auto-injected. No separate account needed.
+
+Chosen over: Supabase (always-on, pauses after 7 days inactivity on free tier, bundle too large), Turso/D1 (SQLite, would need migration later), plain Prisma/Drizzle (unnecessary abstraction for two tables and five queries).
+
+### No ORM — raw SQL via @neondatabase/serverless
+
+Two tables, four query types. An ORM adds bundle size, code generation steps, and migration tooling for no benefit at this scale. Direct tagged template SQL is cleaner and more readable.
+
+### No Stripe at MVP
+
+Freemium with no payment infrastructure. Pro features (badge embed, custom seal page) are visually present but locked with "coming soon." The `domains` table has a `tier` column (default: `free`) ready for when Stripe is added — it's a one-column flip, not a migration.
+
+### No WHOIS scoring at MVP
+
+WHOIS is a signal that makes history *stronger* but isn't required for history to *exist*. Dropped for MVP because: rate limits, unreliable data across TLDs, adds async job complexity. Add in Phase 2 when there's real data to validate the scoring model against.
+
+### No search at MVP
+
+Discovery happens through the CC field (receivers see `witness@signet.id`) and direct URL sharing (`signet.id/b/acme.com`). The URL is the search. Add search when users ask for it.
+
+### No badge image at MVP
+
+The `/badge/[domain].svg` route (live badge for email signatures) is deferred. Requires server-side image generation (satori or similar), font loading, and dynamic rendering — meaningful complexity for a feature no user has asked for yet. The seal page link serves the same purpose initially.
+
+---
+
+## Current build state
+
+**Build:** passing (`npm run build` exits 0)
+
+**Routes:**
+- `GET /` — homepage explaining the CC mechanic
+- `GET /b/[domain]` — seal page (claimed: shows history; unclaimed: shows receiver count)
+- `POST /api/inbound` — receives raw email, verifies DKIM, writes to DB
+
+**DB schema** (run `schema.sql` once in Vercel Postgres dashboard):
+```sql
+domains (id, domain, first_seen, event_count, updated_at)
+events  (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
+```
+
+**Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
+
+---
+
+## Deploy checklist
+
+1. Push repo to GitHub
+2. Import in Vercel dashboard
+3. Add Postgres store: Vercel → Storage → Create → Postgres (env vars auto-set)
+4. Set `INBOUND_SECRET` env var in Vercel project settings (generate: `openssl rand -hex 32`)
+5. Run `schema.sql` in Vercel Postgres query runner
+6. `cd workers/email-router && npm install && wrangler deploy`
+7. Set Worker secrets: `wrangler secret put INBOUND_URL` + `wrangler secret put INBOUND_SECRET`
+8. In Cloudflare dashboard for `signet.id`: Email Routing → catch-all → Send to Worker → `signet-email-router`
+
+---
+
+## What comes next (Phase 1 — after 200 domains)
+
+From `SIGNET_WEB2.md` Phase 1:
+- Timestamped receipt pages (`signet.id/r/[hash]`) — $1/receipt or $29/month unlimited
+- Pro tier split (Stripe) — $9/month for badge embed + custom seal page
+- Badge image endpoint (`/badge/[domain].svg`)
+- WHOIS receiver domain age scoring
+
+---
+
+## Related project
+
+`/Users/buitre/code/2026/signet-pass` — the original ZK email gating product (Signet Pass). Separate product, separate repo. Will eventually connect to this one via the unified attestation cache described in `docs/SIGNET_WITNESS.md`.
