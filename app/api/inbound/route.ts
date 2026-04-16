@@ -34,26 +34,20 @@ export async function POST(req: NextRequest) {
 
   // 4. Require at least one passing DKIM signature.
   const dkimResults: unknown[] = result?.dkim?.results ?? [];
-  console.log("DKIM results:", JSON.stringify(dkimResults));
-  console.log("From header:", result?.headers?.match?.(/^From:.+/im)?.[0]);
   const passing = dkimResults.find(
     (r) => (r as { status?: { result?: string } }).status?.result === "pass"
   ) as { signature?: string } | undefined;
 
   if (!passing) {
-    console.log("DKIM failed — discarding");
     return NextResponse.json({ ok: true });
   }
 
   // 5. Extract sender domain from the raw From header line.
   const rawHeaders: string = rawEmail.split("\r\n\r\n")[0] ?? rawEmail.split("\n\n")[0] ?? "";
-  console.log("rawHeaders snippet:", rawHeaders.slice(0, 300));
   const fromMatch = rawHeaders.match(/^From:.*?<([^>]+)>|^From:\s*(\S+)/im);
   const fromAddress = fromMatch?.[1] ?? fromMatch?.[2] ?? "";
   const senderDomain = extractDomain(fromAddress);
-  console.log("fromAddress:", fromAddress, "senderDomain:", senderDomain);
   if (!senderDomain || fromAddress.toLowerCase() === WITNESS_EMAIL) {
-    console.log("Discarding — no sender domain or from is witness email");
     return NextResponse.json({ ok: true });
   }
 
@@ -74,12 +68,9 @@ export async function POST(req: NextRequest) {
     .digest("hex");
 
   // 8. Write to DB.
-  console.log("DB write attempt — sender:", senderDomain, "receiver:", primaryReceiver);
-  console.log("DATABASE_URL set:", !!process.env.DATABASE_URL, "STORAGE_URL set:", !!process.env.STORAGE_URL);
   try {
     const domain = await upsertDomain(senderDomain);
     await insertEvent(domain.id, primaryReceiver, dkimHash);
-    console.log("DB write success — domain id:", domain.id);
   } catch (err) {
     console.error("DB write error", err);
     return NextResponse.json({ error: "DB error" }, { status: 500 });
