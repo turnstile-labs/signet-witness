@@ -4,10 +4,11 @@ import { neon } from "@neondatabase/serverless";
 let _sql: ReturnType<typeof neon> | null = null;
 function sql(...args: Parameters<ReturnType<typeof neon>>) {
   if (!_sql) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL is not set");
+    const url = process.env.DATABASE_URL ?? process.env.STORAGE_URL;
+    if (!url) {
+      throw new Error("DATABASE_URL or STORAGE_URL is not set");
     }
-    _sql = neon(process.env.DATABASE_URL);
+    _sql = neon(url);
   }
   return (_sql as ReturnType<typeof neon>)(...args);
 }
