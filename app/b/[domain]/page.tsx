@@ -134,7 +134,7 @@ export default async function SealPage({ params }: Props) {
         <div className="mt-12 pt-8 border-t border-gray-100 text-center">
           <p className="text-xs text-gray-400">
             This record is built by CCing{" "}
-            <code className="bg-gray-100 px-1 rounded">witness@signet.id</code> on
+            <code className="bg-gray-100 px-1 rounded">signet@witnessed.cc</code> on
             business emails.{" "}
             <a href="/" className="text-gray-600 hover:text-gray-900 transition-colors underline underline-offset-2">
               Learn how it works →
@@ -190,7 +190,7 @@ function UnclaimedPage({
           <p className="text-sm text-amber-700 mt-3 leading-relaxed">
             Own this domain? Start CCing{" "}
             <code className="bg-amber-100 px-1 rounded text-xs font-mono">
-              witness@signet.id
+              signet@witnessed.cc
             </code>{" "}
             on your business emails to claim it.{" "}
             <a href="/" className="underline underline-offset-2 hover:opacity-70 transition-opacity">

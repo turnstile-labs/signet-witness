@@ -5,7 +5,7 @@ export default function HomePage() {
       <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between max-w-4xl mx-auto w-full">
         <span className="font-semibold tracking-tight text-gray-900">Signet</span>
         <a
-          href="/b/signet.id"
+          href="/b/witnessed.cc"
           className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
           See an example →
@@ -25,7 +25,7 @@ export default function HomePage() {
         <p className="text-lg text-gray-600 leading-relaxed mb-10 max-w-xl">
           CC{" "}
           <code className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-base font-mono">
-            witness@signet.id
+            signet@witnessed.cc
           </code>{" "}
           on your business emails. Signet verifies the DKIM signature, records
           who you emailed and when, and discards everything else. Your domain
@@ -51,7 +51,7 @@ export default function HomePage() {
               </span>
               Add{" "}
               <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono text-xs">
-                witness@signet.id
+                signet@witnessed.cc
               </code>{" "}
               to the CC field.
             </li>
@@ -84,7 +84,7 @@ export default function HomePage() {
               <p className="text-sm text-gray-600 leading-relaxed">
                 A public page appears at{" "}
                 <code className="bg-gray-100 px-1 rounded text-xs">
-                  signet.id/b/yourdomain
+                  witnessed.cc/b/yourdomain
                 </code>{" "}
                 showing your first witnessed date and activity count. Share it
                 anywhere.
@@ -132,8 +132,8 @@ export default function HomePage() {
       <footer className="border-t border-gray-100 px-6 py-6 text-center">
         <p className="text-xs text-gray-400">
           © {new Date().getFullYear()} Signet ·{" "}
-          <a href="mailto:hello@signet.id" className="hover:text-gray-600 transition-colors">
-            hello@signet.id
+          <a href="mailto:hello@witnessed.cc" className="hover:text-gray-600 transition-colors">
+            hello@witnessed.cc
           </a>
         </p>
       </footer>

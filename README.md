@@ -2,7 +2,7 @@
 
 **AI can fake everything except yesterday.**
 
-CC `witness@signet.id` on your business emails. Signet verifies the DKIM signature, records who you emailed and when, and discards everything else.
+CC `signet@witnessed.cc` on your business emails. Signet verifies the DKIM signature, records who you emailed and when, and discards everything else.
 
 ---
 
@@ -100,7 +100,7 @@ cd workers/email-router
 npm install
 
 # Set secrets
-wrangler secret put INBOUND_URL     # https://signet.id/api/inbound
+wrangler secret put INBOUND_URL     # https://witnessed.cc/api/inbound
 wrangler secret put INBOUND_SECRET  # must match Vercel env var
 
 # Deploy
@@ -109,9 +109,9 @@ wrangler deploy
 
 ### Cloudflare Email Routing
 
-In your Cloudflare dashboard for `signet.id`:
+In your Cloudflare dashboard for `witnessed.cc`:
 1. Enable **Email Routing**
-2. Add a catch-all rule: `*@signet.id` → **Send to Worker** → `signet-email-router`
+2. Add a catch-all rule: `*@witnessed.cc` → **Send to Worker** → `signet-email-router`
 
 ---
 

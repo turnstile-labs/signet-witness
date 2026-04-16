@@ -1,5 +1,5 @@
 interface Env {
-  INBOUND_URL: string;    // e.g. https://signet.id/api/inbound
+  INBOUND_URL: string;    // e.g. https://witnessed.cc/api/inbound
   INBOUND_SECRET: string; // must match INBOUND_SECRET in the Next.js app
 }
 

@@ -4,11 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Signet — AI can fake everything except yesterday",
   description:
-    "CC witness@signet.id on your business emails. Build a verified communication history — passively, permanently, and impossible to manufacture.",
+    "CC signet@witnessed.cc on your business emails. Build a verified communication history — passively, permanently, and impossible to manufacture.",
   openGraph: {
     title: "Signet",
     description: "AI can fake everything except yesterday.",
-    url: "https://signet.id",
+    url: "https://witnessed.cc",
     siteName: "Signet",
   },
 };

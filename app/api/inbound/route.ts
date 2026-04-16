@@ -4,7 +4,7 @@ import { createHash } from "crypto";
 import { upsertDomain, insertEvent } from "@/lib/db";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
-const WITNESS_DOMAIN = "signet.id";
+const WITNESS_DOMAIN = "witnessed.cc";
 
 export async function POST(req: NextRequest) {
   // 1. Authenticate the request — only accept from our Cloudflare Worker.

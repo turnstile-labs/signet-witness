@@ -6,9 +6,9 @@ This document captures the full decision history, architecture rationale, and pr
 
 ## What this project is
 
-**Signet** is a business trust infrastructure product. The core mechanic: CC `witness@signet.id` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
+**Signet** is a business trust infrastructure product. The core mechanic: CC `signet@witnessed.cc` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
 
-The output: a public seal page at `signet.id/b/yourdomain` that proves a domain has been doing real business with real counterparties over time. This is the one signal AI cannot fake: history.
+The output: a public seal page at `witnessed.cc/b/yourdomain` that proves a domain has been doing real business with real counterparties over time. This is the one signal AI cannot fake: history.
 
 ---
 
@@ -34,9 +34,9 @@ The existing `signet-pass` repo (`/Users/buitre/code/2026/signet-pass`) is a ZK 
 
 ### Cloudflare Email Routing → Worker → /api/inbound
 
-Cloudflare Email Routing receives all mail at `*@signet.id`, routes to a Worker (`workers/email-router/`), which POSTs the raw RFC 2822 email to `/api/inbound`. The Worker is ~30 lines and has one job: forward the email.
+Cloudflare Email Routing receives all mail at `*@witnessed.cc`, routes to a Worker (`workers/email-router/`), which POSTs the raw RFC 2822 email to `/api/inbound`. The Worker is ~30 lines and has one job: forward the email.
 
-Chosen over Postmark because: free, no third-party mail dependency, `signet.id` is likely already on Cloudflare.
+Chosen over Postmark because: free, no third-party mail dependency, `witnessed.cc` is on Cloudflare.
 
 ### mailauth for DKIM verification
 
@@ -62,7 +62,7 @@ WHOIS is a signal that makes history *stronger* but isn't required for history t
 
 ### No search at MVP
 
-Discovery happens through the CC field (receivers see `witness@signet.id`) and direct URL sharing (`signet.id/b/acme.com`). The URL is the search. Add search when users ask for it.
+Discovery happens through the CC field (receivers see `signet@witnessed.cc`) and direct URL sharing (`witnessed.cc/b/acme.com`). The URL is the search. Add search when users ask for it.
 
 ### No badge image at MVP
 
@@ -98,14 +98,14 @@ events  (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
 5. Run `schema.sql` in Vercel Postgres query runner
 6. `cd workers/email-router && npm install && wrangler deploy`
 7. Set Worker secrets: `wrangler secret put INBOUND_URL` + `wrangler secret put INBOUND_SECRET`
-8. In Cloudflare dashboard for `signet.id`: Email Routing → catch-all → Send to Worker → `signet-email-router`
+8. In Cloudflare dashboard for `witnessed.cc`: Email Routing → catch-all → Send to Worker → `signet-email-router`
 
 ---
 
 ## What comes next (Phase 1 — after 200 domains)
 
 From `SIGNET_WEB2.md` Phase 1:
-- Timestamped receipt pages (`signet.id/r/[hash]`) — $1/receipt or $29/month unlimited
+- Timestamped receipt pages (`witnessed.cc/r/[hash]`) — $1/receipt or $29/month unlimited
 - Pro tier split (Stripe) — $9/month for badge embed + custom seal page
 - Badge image endpoint (`/badge/[domain].svg`)
 - WHOIS receiver domain age scoring

@@ -17,6 +17,7 @@ export interface Domain {
   domain: string;
   first_seen: string;
   event_count: number;
+  tier: string;
   updated_at: string;
 }
 
