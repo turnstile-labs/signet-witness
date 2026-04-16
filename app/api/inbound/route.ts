@@ -5,6 +5,7 @@ import { upsertDomain, insertEvent } from "@/lib/db";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
 const WITNESS_DOMAIN = "witnessed.cc";
+const WITNESS_EMAIL = "signet@witnessed.cc";
 
 export async function POST(req: NextRequest) {
   // 1. Authenticate the request — only accept from our Cloudflare Worker.
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   const fromMatch = rawHeaders.match(/^From:.*?<([^>]+)>|^From:\s*(\S+)/im);
   const fromAddress = fromMatch?.[1] ?? fromMatch?.[2] ?? "";
   const senderDomain = extractDomain(fromAddress);
-  if (!senderDomain || senderDomain === WITNESS_DOMAIN) {
+  if (!senderDomain || fromAddress.toLowerCase() === WITNESS_EMAIL) {
     return NextResponse.json({ ok: true });
   }
 
