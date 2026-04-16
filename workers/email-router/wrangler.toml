@@ -1,0 +1,7 @@
+name            = "signet-email-router"
+main            = "index.ts"
+compatibility_date = "2024-01-01"
+
+# Email handler — receives all mail to *@signet.id
+[email]
+type = "email"
