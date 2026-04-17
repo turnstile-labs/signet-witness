@@ -1,34 +1,63 @@
 @import "tailwindcss";
 
-@theme {
-  --color-bg: #0c0c0f;
-  --color-surface: #131316;
-  --color-surface-2: #1a1a20;
-  --color-border: #25252f;
-  --color-border-h: #3a3a50;
-  --color-txt: #e8e8f2;
-  --color-muted: #9090b0;
-  --color-muted-2: #60607a;
-  --color-accent: #7c6af7;
-  --color-accent-2: #a89cf8;
-  --color-verified: #4ade80;
-  --font-mono: 'JetBrains Mono', 'Fira Code', Cascadia Code, Consolas, monospace;
+/* Tailwind v4 inline theme — CSS custom properties resolve at runtime so
+   swapping :root vars when html.light is set updates all utilities instantly. */
+@theme inline {
+  --color-bg:        var(--bg);
+  --color-surface:   var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border:    var(--border);
+  --color-border-h:  var(--border-h);
+  --color-txt:       var(--txt);
+  --color-muted:     var(--muted);
+  --color-muted-2:   var(--muted-2);
+  --color-accent:    var(--accent);
+  --color-accent-2:  var(--accent-2);
+  --color-verified:  var(--verified);
+
   --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Cascadia Code, Consolas, monospace;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
+/* ── Dark (default) ────────────────────────────────────────── */
+:root {
+  --bg:        #0c0c0f;
+  --surface:   #131316;
+  --surface-2: #1a1a20;
+  --border:    #25252f;
+  --border-h:  #3a3a50;
+  --txt:       #e8e8f2;
+  --muted:     #9090b0;
+  --muted-2:   #60607a;
+  --accent:    #7c6af7;
+  --accent-2:  #a89cf8;
+  --verified:  #4ade80;
 }
 
-html {
-  background-color: #0c0c0f;
+/* ── Light ─────────────────────────────────────────────────── */
+html.light {
+  --bg:        #f8f8fc;
+  --surface:   #ffffff;
+  --surface-2: #f0f0f8;
+  --border:    #e0e0ec;
+  --border-h:  #c8c8e0;
+  --txt:       #18181e;
+  --muted:     #5c5c7a;
+  --muted-2:   #9090b0;
+  --accent:    #6252e8;
+  --accent-2:  #4a38d6;
+  --verified:  #16a34a;
 }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { background-color: var(--bg); }
 
 body {
-  background-color: #0c0c0f;
-  color: #e8e8f2;
+  background-color: var(--bg);
+  color: var(--txt);
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
