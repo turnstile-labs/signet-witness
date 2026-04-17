@@ -238,34 +238,32 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Privacy ──────────────────────────────────────────── */}
-        <section className="border-t border-border bg-surface py-14">
-          <div className="max-w-3xl mx-auto px-6">
-            <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 items-start">
-              <div className="flex-1">
-                <h2 className="text-base font-semibold text-txt mb-3">Your content stays private</h2>
-                <p className="text-sm text-muted leading-relaxed">
-                  We record only the metadata — sender domain, timestamp, and DKIM
-                  verification result. The body of your email is never read, stored,
-                  or processed.
-                </p>
+        {/* ── Trust signals ────────────────────────────────────── */}
+        <section className="max-w-3xl mx-auto px-6 py-20">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              {
+                icon: "🔒",
+                title: "Private by design",
+                body: "We record only the metadata — sender domain, timestamp, and DKIM result. Your email body is never read, stored, or processed.",
+              },
+              {
+                icon: "🔏",
+                title: "Cryptographic, not claimed",
+                body: "DKIM signatures are issued by your mail provider at send time. They cannot be forged after the fact — which is what makes this proof meaningful.",
+              },
+              {
+                icon: "✦",
+                title: "Free to start",
+                body: "No credit card. Every business starts on the free tier. Send your first email and your seal page is live within minutes.",
+              },
+            ].map((item) => (
+              <div key={item.title} className="rounded-xl border border-border bg-surface px-5 py-4">
+                <span className="text-lg mb-3 block">{item.icon}</span>
+                <p className="text-sm font-semibold text-txt mb-1.5">{item.title}</p>
+                <p className="text-sm text-muted leading-relaxed">{item.body}</p>
               </div>
-              <div className="flex-1">
-                <h2 className="text-base font-semibold text-txt mb-3">Cryptographic, not claimed</h2>
-                <p className="text-sm text-muted leading-relaxed">
-                  DKIM signatures are issued by your mail provider and can only be
-                  generated at send time. They cannot be forged after the fact — which
-                  is exactly what makes this proof meaningful.
-                </p>
-              </div>
-              <div className="flex-1">
-                <h2 className="text-base font-semibold text-txt mb-3">Free to start</h2>
-                <p className="text-sm text-muted leading-relaxed">
-                  Every business starts on the free tier. No credit card.
-                  Send your first email and your seal page is live within minutes.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
