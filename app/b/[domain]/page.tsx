@@ -256,19 +256,6 @@ export default async function SealPage({ params }: Props) {
           </div>
         )}
 
-        {/* Footer CTA */}
-        <div className="border-t border-border pt-8 text-center">
-          <p className="text-xs text-muted-2 mb-1">
-            Records are built by CCing{" "}
-            <code className="font-mono text-accent text-[0.75rem] bg-surface border border-border px-1.5 py-0.5 rounded">
-              sealed@witnessed.cc
-            </code>{" "}
-            on business emails.
-          </p>
-          <Link href="/" className="text-xs text-muted hover:text-txt transition-colors">
-            Build your own record →
-          </Link>
-        </div>
 
       </main>
 
