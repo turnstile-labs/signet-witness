@@ -83,3 +83,48 @@ export async function getReceiverCount(domain: string): Promise<number> {
   ` as unknown as { count: string }[];
   return Number(rows[0]?.count ?? 0);
 }
+
+// Network-wide stats for the landing page live counter.
+// Returns null if the DB is unreachable (e.g. local dev without DATABASE_URL)
+// so the UI can gracefully hide the counter instead of crashing.
+export interface NetworkStats {
+  domains: number;
+  events: number;
+}
+
+export async function getNetworkStats(): Promise<NetworkStats | null> {
+  try {
+    const rows = await sql`
+      SELECT
+        (SELECT COUNT(*) FROM domains) AS domains,
+        (SELECT COUNT(*) FROM events)  AS events
+    ` as unknown as { domains: string; events: string }[];
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      domains: Number(row.domains),
+      events: Number(row.events),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Daily event counts over the last N days — used for the sparkline
+// on the seal page. Returns buckets in chronological order.
+export async function getDailyActivity(
+  domainId: number,
+  days: number = 30
+): Promise<{ date: string; count: number }[]> {
+  const rows = await sql`
+    SELECT
+      to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS date,
+      COUNT(*)::int AS count
+    FROM events
+    WHERE domain_id = ${domainId}
+      AND witnessed_at >= NOW() - (${days} || ' days')::interval
+    GROUP BY 1
+    ORDER BY 1 ASC
+  ` as unknown as { date: string; count: number }[];
+  return rows;
+}

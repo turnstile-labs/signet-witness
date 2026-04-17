@@ -1,63 +1,68 @@
 import Link from "next/link";
-import DomainSearch from "./components/DomainSearch";
-import ThemeToggle from "./components/ThemeToggle";
 import Footer from "./components/Footer";
 import CopyableEmail from "./components/CopyableEmail";
+import NavBar from "./components/NavBar";
+import HeroBackdrop from "./components/HeroBackdrop";
+import { getNetworkStats } from "@/lib/db";
 
-export default function Home() {
+export const revalidate = 300;
+
+function formatNumber(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
+export default async function Home() {
+  const stats = await getNetworkStats();
+  const hasLiveCounter = stats && stats.domains > 0;
+
   return (
     <div className="flex flex-col min-h-screen bg-bg text-txt">
 
-      {/* ── Nav ──────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-md">
-        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-sm tracking-tight">
-            <span className="text-accent text-base">✦</span>
-            <span className="text-txt">Witnessed</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/b/witnessed.cc"
-              className="text-xs text-muted hover:text-txt transition-colors"
-            >
-              See an example
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <NavBar variant="landing" />
 
       <main className="flex-1">
 
         {/* ── Hero ─────────────────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs text-muted mb-8 font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block" />
-            Proof of business
-          </div>
+        <section className="relative overflow-hidden">
+          <HeroBackdrop />
+          <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
 
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
-            AI can fake everything.
-            <br />
-            <span className="text-accent">Except yesterday.</span>
-          </h1>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface/80 backdrop-blur text-xs text-muted mb-8 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block" />
+              Proof of business
+            </div>
 
-          <p className="text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
-            A verifiable record of every business email you send —
-            built automatically, impossible to backdate.
-          </p>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
+              AI can fake everything.
+              <br />
+              <span className="text-accent">Except yesterday.</span>
+            </h1>
 
-          <CopyableEmail variant="hero" />
-
-          <div className="mt-10 pt-8 border-t border-border flex flex-col items-center gap-3">
-            <p className="text-xs text-muted-2 uppercase tracking-widest font-mono">
-              Or look up any business
+            <p className="text-lg text-muted max-w-xl mx-auto leading-relaxed mb-8">
+              A verifiable record of every business email you send —
+              built automatically, impossible to backdate.
             </p>
-            <DomainSearch />
+
+            {hasLiveCounter && (
+              <p className="text-xs text-muted-2 font-mono mb-8">
+                <span className="text-txt font-semibold">{formatNumber(stats!.domains)}</span>{" "}
+                {stats!.domains === 1 ? "business" : "businesses"} ·{" "}
+                <span className="text-txt font-semibold">{formatNumber(stats!.events)}</span>{" "}
+                verified {stats!.events === 1 ? "email" : "emails"} on record
+              </p>
+            )}
+
+            <CopyableEmail variant="hero" />
+
+            <p className="mt-6 text-xs text-muted-2">
+              <Link href="/b/witnessed.cc" className="hover:text-muted transition-colors">
+                See a live seal page →
+              </Link>
+            </p>
           </div>
         </section>
 
-        {/* ── Live seal page mock (moved up — show the outcome) ─── */}
+        {/* ── Live seal page mock (show the outcome) ───────────── */}
         <section className="border-y border-border bg-surface py-16">
           <div className="max-w-3xl mx-auto px-6">
             <div className="text-center mb-10">
@@ -164,7 +169,7 @@ export default function Home() {
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-verified text-sm font-bold">✓</span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-verified">
-                  AI can't fake
+                  AI can&apos;t fake
                 </span>
               </div>
               <ul className="flex flex-col gap-2.5 text-sm text-muted">
@@ -292,7 +297,7 @@ export default function Home() {
               Start your record.
             </h2>
             <p className="text-muted text-sm max-w-md mx-auto leading-relaxed mb-8">
-              Your seal page is free forever. CC one email and you're on the record.
+              Your seal page is free forever. CC one email and you&apos;re on the record.
             </p>
 
             <CopyableEmail variant="hero" caption="CC on your next business email" />

@@ -44,9 +44,16 @@ signet-witness/
 │   ├── layout.tsx                # Root layout + theme flash prevention
 │   ├── globals.css               # Tailwind v4 + light/dark CSS variables
 │   ├── components/
-│   │   ├── DomainSearch.tsx      # Domain lookup form
+│   │   ├── NavBar.tsx            # Shared header with inline domain search
+│   │   ├── Footer.tsx            # Shared footer with CC copy + links
+│   │   ├── CopyableEmail.tsx     # Click-to-copy CTA for sealed@witnessed.cc
+│   │   ├── CopyText.tsx          # Generic copy-to-clipboard (URLs, snippets)
+│   │   ├── HeroBackdrop.tsx      # Subtle ascending-timeline SVG behind hero
+│   │   ├── Sparkline.tsx         # 30-day activity bar chart for seal pages
 │   │   └── ThemeToggle.tsx       # Light/dark mode toggle
 │   ├── b/[domain]/page.tsx       # Seal page — the product
+│   ├── privacy/page.tsx          # Privacy policy
+│   ├── terms/page.tsx            # Terms of service
 │   └── api/inbound/route.ts      # Email receiver + DKIM verify + DB write
 ├── lib/
 │   └── db.ts                     # Neon SQL client + typed queries
