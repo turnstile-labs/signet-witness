@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDomain, getEvents, getReceiverCount, type WitnessEvent } from "@/lib/db";
 import type { Metadata } from "next";
 import ThemeToggle from "@/app/components/ThemeToggle";
+import Footer from "@/app/components/Footer";
 
 interface Props {
   params: Promise<{ domain: string }>;
@@ -60,19 +61,6 @@ function NavBar() {
   );
 }
 
-function PageFooter() {
-  return (
-    <footer className="border-t border-border py-8">
-      <div className="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <span className="text-accent">✦</span>
-          <span>Witnessed</span>
-        </div>
-        <p className="text-xs text-muted-2">witnessed.cc · the business record AI can&apos;t fake</p>
-      </div>
-    </footer>
-  );
-}
 
 function VerifiedStatus({ days, eventCount }: { days: number; eventCount: number }) {
   const daysNeeded = 90;
@@ -259,7 +247,7 @@ export default async function SealPage({ params }: Props) {
 
       </main>
 
-      <PageFooter />
+      <Footer />
     </div>
   );
 }
@@ -328,7 +316,7 @@ function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCoun
 
       </main>
 
-      <PageFooter />
+      <Footer />
     </div>
   );
 }

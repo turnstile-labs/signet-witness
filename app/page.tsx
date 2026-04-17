@@ -1,6 +1,7 @@
 import Link from "next/link";
 import DomainSearch from "./components/DomainSearch";
 import ThemeToggle from "./components/ThemeToggle";
+import Footer from "./components/Footer";
 
 export default function Home() {
   return (
@@ -288,18 +289,7 @@ export default function Home() {
 
       </main>
 
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="border-t border-border py-8">
-        <div className="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <span className="text-accent">✦</span>
-            <span>Witnessed</span>
-          </div>
-          <p className="text-xs text-muted-2">
-            witnessed.cc · the business record AI can&apos;t fake
-          </p>
-        </div>
-      </footer>
+      <Footer />
 
     </div>
   );
