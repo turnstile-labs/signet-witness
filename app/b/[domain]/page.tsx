@@ -240,7 +240,8 @@ export default async function SealPage({ params }: Props) {
   const isVerified = days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS;
 
   const sealUrl = `https://witnessed.cc/b/${decoded}`;
-  const badgeSnippet = `<a href="${sealUrl}"><img src="https://witnessed.cc/badge/${decoded}.svg" alt="Verified on Witnessed" height="28" /></a>`;
+  const badgeUrl = `https://witnessed.cc/badge/${decoded}.svg`;
+  const badgeSnippet = `<a href="${sealUrl}"><img src="${badgeUrl}" alt="Witnessed · ${decoded}" width="360" height="40" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
 
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
 
@@ -359,15 +360,42 @@ export default async function SealPage({ params }: Props) {
         <div className="bg-surface border border-border rounded-xl p-5 mb-6">
           <EyebrowLabel>Own this domain?</EyebrowLabel>
           <p className="text-sm text-muted leading-relaxed mt-2 mb-5">
-            Share your seal page or embed a verified badge on your site. Every
-            link back strengthens the proof for your visitors.
+            Add this badge to your email signature, website, or invoice footer.
+            It&apos;s one self-contained image — everything fits on the same
+            canvas. Each impression links back to this live seal page.
           </p>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
+            <div>
+              <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-2">
+                Badge preview
+              </p>
+              <div className="bg-bg border border-border rounded-lg p-4 flex flex-col gap-3 items-start">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/badge/${decoded}.svg`}
+                  alt={`Witnessed badge for ${decoded}`}
+                  width={360}
+                  height={40}
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/badge/${decoded}.svg?theme=light`}
+                  alt={`Witnessed badge for ${decoded} (light)`}
+                  width={360}
+                  height={40}
+                />
+                <p className="text-[0.65rem] text-muted-2 font-mono">
+                  Two themes · append{" "}
+                  <code className="text-muted">?theme=light</code>
+                </p>
+              </div>
+            </div>
+
             <CopyText value={sealUrl} label="Share this seal page" />
             <CopyText
               value={badgeSnippet}
-              label="Embed a verified badge"
+              label="Paste into an email signature or a site"
               multiline
             />
           </div>
