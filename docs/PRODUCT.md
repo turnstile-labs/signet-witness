@@ -169,12 +169,38 @@ The API requires cache depth to be useful. Early partnership conversations
 start on day one; the API goes live when the data justifies it — likely 6–12
 months after launch.
 
+### Revenue — On-demand credentials (one-time fee)
+
+The second revenue stream is the moment of formal proof. The seal page is a
+live public record — always free to view. But when someone needs to present
+their history in a high-stakes context — a court filing, a regulatory audit, a
+loan application, an enterprise procurement process — they need a
+tamper-evident, exportable artifact that stands on its own.
+
+On demand, a business can generate:
+
+- **A signed PDF certificate** — the full verified record, cryptographically
+  signed, suitable for legal filings and compliance documentation
+- **A Verifiable Credential (VC)** — a machine-readable, W3C-standard
+  credential that can be independently verified without querying Witnessed
+- **An on-chain NFT** — the record anchored on-chain as a permanent,
+  independently verifiable attestation
+
+These are not subscriptions. They are generated once, at the moment they're
+needed, and priced accordingly — likely $50–200 depending on the artifact.
+The use case dictates the willingness to pay: someone filing a legal dispute
+or responding to an enterprise RFP will pay to have a court-admissible,
+signed record in their hands.
+
+The record itself is always free. The formal credential is the product you
+pay for when it matters.
+
 ### Why free for senders
 
 Every business that CCs `sealed@witnessed.cc` is adding a verified data point
 to the cache. The intake is the product. Charging for it would slow the
-accumulation that makes the API valuable. Free intake, paid queries — the
-model only works if the cache grows fast.
+accumulation that makes the API valuable. Free intake, paid queries and
+credentials — the model only works if the cache grows fast.
 
 ---
 

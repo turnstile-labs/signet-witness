@@ -108,14 +108,35 @@ At 10 million queries/month from five integration partners, the API alone
 generates $500K–2.5M/month depending on tier mix. That's the infrastructure
 business.
 
-### Portable credential
+### On-demand credentials
 
-When a domain needs a credential that's independently verifiable without
-querying Signet's servers — for legal disputes, regulatory compliance,
-enterprise procurement — the full verifiable record is issued as a standalone,
-cryptographically signed credential.
+The seal page is a live public record — free, always. But there are moments
+when a business needs a formal, exportable artifact that stands on its own:
+a court filing, a regulatory audit, a loan application, an enterprise
+procurement RFP.
 
-**Monetization:** $199 one-time or included in an enterprise tier.
+At those moments, the user generates a credential on demand:
+
+- **Signed PDF certificate** — the full verified record, cryptographically
+  signed, suitable for legal submission and compliance documentation
+- **Verifiable Credential (VC)** — W3C-standard, machine-readable, independently
+  verifiable without querying Witnessed's servers
+- **On-chain attestation (NFT)** — the record anchored on a public chain as a
+  permanent, tamper-evident proof
+
+One-time fee per artifact ($50–200 depending on type). No subscription.
+The willingness to pay is self-selecting: someone filing a legal dispute or
+responding to enterprise procurement will pay. Someone just building their
+passive record never needs to.
+
+The claim flow:
+1. Visit the seal page → "Export record"
+2. Verify domain ownership via DNS TXT record
+3. Choose artifact type
+4. Pay → credential generated, signed, delivered
+
+The record is always free. The formal proof of it is what costs money —
+at the exact moment it matters most.
 
 ---
 
