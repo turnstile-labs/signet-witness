@@ -238,49 +238,68 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Trust signals ────────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-6 py-20">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                icon: "🔒",
-                title: "Private by design",
-                body: "We record only the metadata — sender domain, timestamp, and DKIM result. Your email body is never read, stored, or processed.",
-              },
-              {
-                icon: "🔏",
-                title: "Cryptographic, not claimed",
-                body: "DKIM signatures are issued by your mail provider at send time. They cannot be forged after the fact — which is what makes this proof meaningful.",
-              },
-              {
-                icon: "✦",
-                title: "Free to start",
-                body: "No credit card. Every business starts on the free tier. Send your first email and your seal page is live within minutes.",
-              },
-            ].map((item) => (
-              <div key={item.title} className="rounded-xl border border-border bg-surface px-5 py-4">
-                <span className="text-lg mb-3 block">{item.icon}</span>
-                <p className="text-sm font-semibold text-txt mb-1.5">{item.title}</p>
-                <p className="text-sm text-muted leading-relaxed">{item.body}</p>
+        {/* ── Private by design ────────────────────────────────── */}
+        <section className="border-y border-border bg-surface py-16">
+          <div className="max-w-3xl mx-auto px-6">
+            <div className="flex flex-col sm:flex-row gap-10 sm:gap-16 items-start">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-txt mb-4">Private by design</h2>
+                <p className="text-muted text-sm leading-relaxed mb-6">
+                  Your emails contain sensitive information. We never see it.
+                  The CC reaches us, we verify the sender, record the timestamp,
+                  and discard everything else. No one at Witnessed can read your emails —
+                  not today, not ever.
+                </p>
+                <p className="text-muted text-sm leading-relaxed">
+                  The CC is a voluntary act on each individual email. You choose
+                  which conversations become part of your record. Nothing is
+                  collected without your explicit action.
+                </p>
               </div>
-            ))}
+              <div className="shrink-0 sm:w-64 w-full rounded-xl border border-border bg-bg overflow-hidden text-xs font-mono">
+                <div className="border-b border-border px-4 py-2.5 text-muted-2 uppercase tracking-widest text-[0.6rem]">
+                  What we store
+                </div>
+                {[
+                  { label: "Sender domain", stored: true },
+                  { label: "Recipient domain", stored: true },
+                  { label: "Timestamp", stored: true },
+                  { label: "DKIM signature hash", stored: true },
+                  { label: "Email subject", stored: false },
+                  { label: "Email body", stored: false },
+                  { label: "Attachments", stored: false },
+                  { label: "Personal names", stored: false },
+                ].map((row, i, arr) => (
+                  <div
+                    key={row.label}
+                    className={`flex items-center justify-between px-4 py-2.5 ${i < arr.length - 1 ? "border-b border-border" : ""}`}
+                  >
+                    <span className="text-muted">{row.label}</span>
+                    {row.stored ? (
+                      <span className="text-verified">✓</span>
+                    ) : (
+                      <span className="text-muted-2">✗ never</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ── Bottom CTA ───────────────────────────────────────── */}
+        {/* ── Free to start ────────────────────────────────────── */}
         <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-2xl font-bold text-txt mb-3">
-            Start your record today
-          </h2>
-          <p className="text-muted text-sm mb-8 max-w-xs mx-auto">
-            No signup. Add one CC and your history starts building itself.
+          <h2 className="text-2xl font-bold text-txt mb-3">Free to start</h2>
+          <p className="text-muted text-sm mb-10 max-w-sm mx-auto leading-relaxed">
+            No credit card. No account. Every business starts on the free tier.
+            CC one email and your seal page is live within minutes.
           </p>
           <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3 px-5 py-3 rounded-xl border border-accent/30 bg-accent/5">
-              <span className="text-xs text-muted font-mono">CC this address on your next email:</span>
+            <div className="flex flex-wrap items-center justify-center gap-3 px-5 py-3 rounded-xl border border-accent/30 bg-accent/5">
+              <span className="text-xs text-muted font-mono">CC on your next business email:</span>
               <code className="text-sm font-mono font-semibold text-accent">sealed@witnessed.cc</code>
             </div>
-            <p className="text-xs text-muted-2">Or look up a business that&apos;s already building their record:</p>
+            <p className="text-xs text-muted-2">Or look up a business that&apos;s already on record:</p>
             <DomainSearch />
           </div>
         </section>
