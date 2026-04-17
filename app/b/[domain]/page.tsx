@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getDomain, getEvents, getReceiverCount, type WitnessEvent } from "@/lib/db";
 import type { Metadata } from "next";
 import ThemeToggle from "@/app/components/ThemeToggle";
@@ -253,7 +252,7 @@ export default async function SealPage({ params }: Props) {
 }
 
 function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCount: number }) {
-  if (receiverCount === 0) notFound();
+  const hasReceiverActivity = receiverCount > 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
@@ -273,46 +272,75 @@ function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCoun
           </div>
         </div>
 
-        {/* Recipient notice */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-            <p className="text-sm font-semibold text-txt">No outbound record yet</p>
-          </div>
-          <p className="text-sm text-muted leading-relaxed mb-4">
-            <span className="font-mono text-txt">{domain}</span> has been the recipient
-            in{" "}
-            <span className="font-semibold text-txt">{receiverCount}</span>{" "}
-            witnessed {receiverCount === 1 ? "communication" : "communications"} — meaning
-            other businesses have CC&apos;d Witnessed when emailing this domain. But{" "}
-            <span className="font-mono text-txt">{domain}</span> hasn&apos;t started
-            building its own outbound record yet.
-          </p>
-          <div className="bg-bg border border-border rounded-xl p-4">
-            <p className="text-sm font-semibold text-txt mb-1">Own this domain?</p>
-            <p className="text-xs text-muted leading-relaxed">
-              Start CCing{" "}
-              <code className="font-mono text-accent text-[0.72rem]">sealed@witnessed.cc</code>{" "}
-              on your outgoing business emails to begin building your verified record.{" "}
-              <Link href="/" className="text-accent hover:text-accent-2 transition-colors">
-                Learn how →
-              </Link>
-            </p>
-          </div>
-        </div>
+        {hasReceiverActivity ? (
+          <>
+            {/* Seen as recipient but no outbound record */}
+            <div className="bg-surface border border-border rounded-xl p-5 mb-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <p className="text-sm font-semibold text-txt">No outbound record yet</p>
+              </div>
+              <p className="text-sm text-muted leading-relaxed mb-4">
+                <span className="font-mono text-txt">{domain}</span> has been the recipient
+                in{" "}
+                <span className="font-semibold text-txt">{receiverCount}</span>{" "}
+                witnessed {receiverCount === 1 ? "communication" : "communications"} — meaning
+                other businesses have CC&apos;d Witnessed when emailing this domain. But{" "}
+                <span className="font-mono text-txt">{domain}</span> hasn&apos;t started
+                building its own outbound record yet.
+              </p>
+              <div className="bg-bg border border-border rounded-xl p-4">
+                <p className="text-sm font-semibold text-txt mb-1">Own this domain?</p>
+                <p className="text-xs text-muted leading-relaxed">
+                  Start CCing{" "}
+                  <code className="font-mono text-accent text-[0.72rem]">sealed@witnessed.cc</code>{" "}
+                  on your outgoing business emails to begin building your verified record.{" "}
+                  <Link href="/" className="text-accent hover:text-accent-2 transition-colors">
+                    Learn how →
+                  </Link>
+                </p>
+              </div>
+            </div>
 
-        {/* Explain what recipient activity means */}
-        <div className="bg-surface border border-border rounded-xl p-5">
-          <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-3">
-            What &quot;recipient activity&quot; means
-          </p>
-          <p className="text-sm text-muted leading-relaxed">
-            When any business sends an email and CCs <code className="font-mono text-txt text-xs">sealed@witnessed.cc</code>,
-            we record the recipient&apos;s domain too. This shows that real companies
-            are doing business with <span className="font-mono text-txt">{domain}</span> —
-            which is still meaningful signal, even without an active record from the domain itself.
-          </p>
-        </div>
+            <div className="bg-surface border border-border rounded-xl p-5">
+              <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-3">
+                What &quot;recipient activity&quot; means
+              </p>
+              <p className="text-sm text-muted leading-relaxed">
+                When any business sends an email and CCs{" "}
+                <code className="font-mono text-txt text-xs">sealed@witnessed.cc</code>,
+                we record the recipient&apos;s domain too. This shows that real companies
+                are doing business with <span className="font-mono text-txt">{domain}</span> —
+                which is still meaningful signal, even without an active record from the domain itself.
+              </p>
+            </div>
+          </>
+        ) : (
+          /* Completely unknown domain */
+          <div className="bg-surface border border-border rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-muted-2 shrink-0" />
+              <p className="text-sm font-semibold text-txt">No record found</p>
+            </div>
+            <p className="text-sm text-muted leading-relaxed mb-5">
+              <span className="font-mono text-txt">{domain}</span> hasn&apos;t been
+              witnessed yet — no outbound emails from this domain have been CC&apos;d,
+              and it hasn&apos;t appeared as a recipient either.
+            </p>
+            <div className="bg-bg border border-border rounded-xl p-4">
+              <p className="text-sm font-semibold text-txt mb-1">Own this domain?</p>
+              <p className="text-xs text-muted leading-relaxed">
+                CC{" "}
+                <code className="font-mono text-accent text-[0.72rem]">sealed@witnessed.cc</code>{" "}
+                on your next business email. Your seal page will be live within minutes —
+                no account or signup needed.{" "}
+                <Link href="/" className="text-accent hover:text-accent-2 transition-colors">
+                  How it works →
+                </Link>
+              </p>
+            </div>
+          </div>
+        )}
 
       </main>
 
