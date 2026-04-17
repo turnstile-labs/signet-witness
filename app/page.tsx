@@ -2,6 +2,7 @@ import Link from "next/link";
 import DomainSearch from "./components/DomainSearch";
 import ThemeToggle from "./components/ThemeToggle";
 import Footer from "./components/Footer";
+import CopyableEmail from "./components/CopyableEmail";
 
 export default function Home() {
   return (
@@ -29,136 +30,50 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── Hero ─────────────────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-6 pt-24 pb-20 text-center">
+        <section className="max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs text-muted mb-8 font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block" />
             Proof of business
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-txt leading-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
             AI can fake everything.
             <br />
             <span className="text-accent">Except yesterday.</span>
           </h1>
 
           <p className="text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
-            CC <span className="font-mono text-txt text-sm bg-surface border border-border px-2 py-0.5 rounded-md">sealed@witnessed.cc</span> on
-            your business emails. We build a verified proof of business
-            history — automatically, passively, permanently.
+            A verifiable record of every business email you send —
+            built automatically, impossible to backdate.
           </p>
 
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-xs text-muted-2">Look up any business</p>
+          <CopyableEmail variant="hero" />
+
+          <div className="mt-10 pt-8 border-t border-border flex flex-col items-center gap-3">
+            <p className="text-xs text-muted-2 uppercase tracking-widest font-mono">
+              Or look up any business
+            </p>
             <DomainSearch />
           </div>
         </section>
 
-        {/* ── The problem ──────────────────────────────────────── */}
-        <section className="border-y border-border bg-surface py-16">
-          <div className="max-w-3xl mx-auto px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden">
-              {[
-                {
-                  icon: "✗",
-                  color: "text-red-400",
-                  label: "AI can fake",
-                  items: ["Testimonials", "Case studies", "Portfolio sites", "Years in business"],
-                },
-                {
-                  icon: "✗",
-                  color: "text-red-400",
-                  label: "AI can fake",
-                  items: ["Press releases", "About pages", "LinkedIn history", "Service agreements"],
-                },
-                {
-                  icon: "✓",
-                  color: "text-verified",
-                  label: "AI can't fake",
-                  items: ["Email timestamps", "Verified email history", "Real conversations", "Accumulated track record"],
-                  highlight: true,
-                },
-              ].map((col) => (
-                <div
-                  key={col.label + col.items[0]}
-                  className={`px-6 py-6 bg-surface flex flex-col gap-3 ${col.highlight ? "bg-surface-2" : ""}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-sm font-bold ${col.color}`}>{col.icon}</span>
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${col.color}`}>{col.label}</span>
-                  </div>
-                  {col.items.map((item) => (
-                    <div key={item} className="flex items-center gap-2 text-sm text-muted">
-                      <span className={`w-1 h-1 rounded-full inline-block ${col.highlight ? "bg-verified" : "bg-muted-2"}`} />
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── How it works ─────────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-txt mb-3">How it works</h2>
-            <p className="text-muted text-sm max-w-sm mx-auto">
-              Three steps. The last one happens on its own, forever.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-0">
-            {[
-              {
-                n: "1",
-                title: "Add one CC",
-                body: "When sending a business email — proposals, invoices, contracts, follow-ups — CC sealed@witnessed.cc. That's the entire setup.",
-                detail: "No app to install. No account to create.",
-              },
-              {
-                n: "2",
-                title: "We verify and record",
-                body: "Every email sent through a legitimate mail server carries a tamper-proof signature. We verify it, record the timestamp and domains, and discard the rest.",
-                detail: "Your email content is never stored.",
-              },
-              {
-                n: "3",
-                title: "Your proof of business grows",
-                body: "Every verified email adds to your public record at witnessed.cc/b/yourdomain — showing volume, consistency, and longevity that can't be manufactured.",
-                detail: "The longer you send, the stronger the proof.",
-              },
-            ].map((step, i, arr) => (
-              <div key={step.n} className="flex gap-6">
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-xs font-bold text-accent shrink-0">
-                    {step.n}
-                  </div>
-                  {i < arr.length - 1 && (
-                    <div className="w-px flex-1 bg-border my-2" />
-                  )}
-                </div>
-                <div className="pb-10 pt-1 flex-1">
-                  <h3 className="font-semibold text-txt text-base mb-1.5">{step.title}</h3>
-                  <p className="text-muted text-sm leading-relaxed mb-1">{step.body}</p>
-                  <p className="text-muted-2 text-xs font-mono">{step.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── What you get ─────────────────────────────────────── */}
+        {/* ── Live seal page mock (moved up — show the outcome) ─── */}
         <section className="border-y border-border bg-surface py-16">
           <div className="max-w-3xl mx-auto px-6">
             <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-txt mb-3">What you get</h2>
-              <p className="text-muted text-sm max-w-sm mx-auto">
-                A public page anyone can visit to verify your business is real and has been operating.
+              <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-3">
+                Every domain gets one
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
+                A public page anyone can check.
+              </h2>
+              <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
+                Real sender. Real timestamps. Real volume. Nothing staged,
+                nothing self-reported.
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-bg overflow-hidden">
-              {/* Mock seal page header */}
+            <div className="rounded-xl border border-border bg-bg overflow-hidden shadow-sm">
               <div className="border-b border-border px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-xs font-mono text-muted">
@@ -192,115 +107,205 @@ export default function Home() {
               <div className="border-t border-border px-6 py-4">
                 <p className="text-xs text-muted text-center">
                   <span className="text-accent font-semibold">This record cannot be backdated.</span>{" "}
-                  Each entry is independently verified at the moment of sending — not self-reported.
+                  Each entry is verified at the moment of sending — not self-reported.
                 </p>
               </div>
+            </div>
+
+            <p className="text-center text-xs text-muted-2 mt-6">
+              Want to see a real one?{" "}
+              <Link href="/b/witnessed.cc" className="text-accent hover:underline">
+                View witnessed.cc →
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        {/* ── Why this matters (2 columns) ─────────────────────── */}
+        <section className="max-w-3xl mx-auto px-6 py-20">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
+              Trust, without the theater.
+            </h2>
+            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
+              Anyone can generate a polished website, a LinkedIn history, or a
+              wall of testimonials. No one can retroactively send email.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden">
+            <div className="px-6 py-7 bg-surface">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-red-400 text-sm font-bold">✗</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-red-400">
+                  AI can fake
+                </span>
+              </div>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm text-muted">
+                {[
+                  "Testimonials",
+                  "Case studies",
+                  "Portfolio sites",
+                  "Press releases",
+                  "LinkedIn history",
+                  "About pages",
+                  "Service agreements",
+                  "“Years in business”",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-muted-2 inline-block" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="px-6 py-7 bg-surface-2">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-verified text-sm font-bold">✓</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-verified">
+                  AI can't fake
+                </span>
+              </div>
+              <ul className="flex flex-col gap-2.5 text-sm text-muted">
+                {[
+                  "Verified email timestamps",
+                  "A real history of real conversations",
+                  "Volume no one can manufacture",
+                  "A track record that only grows with time",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-verified inline-block" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
 
-        {/* ── Who this is for ──────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-6 py-20">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold text-txt mb-3">Built for businesses that do real work</h2>
-            <p className="text-muted text-sm max-w-sm mx-auto">
-              Anyone who needs to prove they were there before anyone was looking.
-            </p>
-          </div>
+        {/* ── How it works (horizontal on desktop) ──────────────── */}
+        <section className="border-y border-border bg-surface py-16">
+          <div className="max-w-3xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
+                Three steps. The last one is forever.
+              </h2>
+              <p className="text-muted text-sm max-w-sm mx-auto">
+                No app. No account. Just one CC.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              {
-                who: "Freelancers & agencies",
-                why: "Prove you've been in business longer than your website says. Show clients your track record is real.",
-              },
-              {
-                who: "Early-stage startups",
-                why: "Build credibility before you have press coverage, testimonials, or case studies to show.",
-              },
-              {
-                who: "Service providers",
-                why: "Stand out in a market flooded with AI-generated portfolios and fake social proof.",
-              },
-              {
-                who: "Enterprise vendors",
-                why: "Give procurement teams and compliance auditors an independent, verifiable communication history.",
-              },
-            ].map((item) => (
-              <div
-                key={item.who}
-                className="rounded-xl border border-border bg-surface px-5 py-4"
-              >
-                <p className="text-sm font-semibold text-txt mb-1.5">{item.who}</p>
-                <p className="text-sm text-muted leading-relaxed">{item.why}</p>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                {
+                  n: "01",
+                  title: "Add one CC",
+                  body: "CC sealed@witnessed.cc on your business emails — proposals, invoices, follow-ups.",
+                },
+                {
+                  n: "02",
+                  title: "We verify",
+                  body: "The DKIM signature from your mail server is tamper-proof. We check it, log metadata, discard the rest.",
+                },
+                {
+                  n: "03",
+                  title: "Your proof grows",
+                  body: "Your public record at witnessed.cc/b/yourdomain accumulates automatically. Longer history, stronger proof.",
+                },
+              ].map((step) => (
+                <div
+                  key={step.n}
+                  className="rounded-xl border border-border bg-bg px-5 py-5 flex flex-col gap-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-accent tracking-widest">
+                      {step.n}
+                    </span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                  <h3 className="font-semibold text-txt text-base">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted text-sm leading-relaxed">
+                    {step.body}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ── Private by design ────────────────────────────────── */}
-        <section className="border-y border-border bg-surface py-16">
-          <div className="max-w-3xl mx-auto px-6">
-            <div className="flex flex-col sm:flex-row gap-10 sm:gap-16 items-start">
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-txt mb-4">Private by design</h2>
-                <p className="text-muted text-sm leading-relaxed mb-6">
-                  Your emails contain sensitive information. We never see it.
-                  The CC reaches us, we verify the sender, record the timestamp,
-                  and discard everything else. No one at Witnessed can read your emails —
-                  not today, not ever.
-                </p>
-                <p className="text-muted text-sm leading-relaxed">
-                  The CC is a voluntary act on each individual email. You choose
-                  which conversations become part of your record. Nothing is
-                  collected without your explicit action.
-                </p>
+        <section className="max-w-3xl mx-auto px-6 py-20">
+          <div className="flex flex-col sm:flex-row gap-10 sm:gap-14 items-start">
+            <div className="flex-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-4">
+                Private by design.
+              </h2>
+              <p className="text-muted text-sm leading-relaxed mb-4">
+                Your emails contain sensitive information. We never see it.
+                The CC reaches us, we verify the sender, record the
+                timestamp, and discard everything else.
+              </p>
+              <p className="text-muted text-sm leading-relaxed">
+                You choose which conversations count. Nothing is collected
+                without an explicit CC from you.
+              </p>
+            </div>
+            <div className="shrink-0 sm:w-64 w-full rounded-xl border border-border bg-surface overflow-hidden text-xs font-mono">
+              <div className="border-b border-border px-4 py-2.5 text-muted-2 uppercase tracking-widest text-[0.6rem]">
+                What we store
               </div>
-              <div className="shrink-0 sm:w-64 w-full rounded-xl border border-border bg-bg overflow-hidden text-xs font-mono">
-                <div className="border-b border-border px-4 py-2.5 text-muted-2 uppercase tracking-widest text-[0.6rem]">
-                  What we store
+              {[
+                { label: "Sender domain", stored: true },
+                { label: "Recipient domain", stored: true },
+                { label: "Timestamp", stored: true },
+                { label: "DKIM signature hash", stored: true },
+                { label: "Email subject", stored: false },
+                { label: "Email body", stored: false },
+                { label: "Attachments", stored: false },
+                { label: "Personal names", stored: false },
+              ].map((row, i, arr) => (
+                <div
+                  key={row.label}
+                  className={`flex items-center justify-between px-4 py-2.5 ${
+                    i < arr.length - 1 ? "border-b border-border" : ""
+                  }`}
+                >
+                  <span className="text-muted">{row.label}</span>
+                  {row.stored ? (
+                    <span className="text-verified">✓</span>
+                  ) : (
+                    <span className="text-muted-2">✗ never</span>
+                  )}
                 </div>
-                {[
-                  { label: "Sender domain", stored: true },
-                  { label: "Recipient domain", stored: true },
-                  { label: "Timestamp", stored: true },
-                  { label: "DKIM signature hash", stored: true },
-                  { label: "Email subject", stored: false },
-                  { label: "Email body", stored: false },
-                  { label: "Attachments", stored: false },
-                  { label: "Personal names", stored: false },
-                ].map((row, i, arr) => (
-                  <div
-                    key={row.label}
-                    className={`flex items-center justify-between px-4 py-2.5 ${i < arr.length - 1 ? "border-b border-border" : ""}`}
-                  >
-                    <span className="text-muted">{row.label}</span>
-                    {row.stored ? (
-                      <span className="text-verified">✓</span>
-                    ) : (
-                      <span className="text-muted-2">✗ never</span>
-                    )}
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ── Always free ──────────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-2xl font-bold text-txt mb-3">Your seal is always free</h2>
-          <p className="text-muted text-sm mb-10 max-w-sm mx-auto leading-relaxed">
-            No credit card. No account. No paid tier. Your seal page costs
-            nothing — today, or ever. CC one email and you&apos;re on the record.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex flex-wrap items-center justify-center gap-3 px-5 py-3 rounded-xl border border-accent/30 bg-accent/5">
-              <span className="text-xs text-muted font-mono">CC on your next business email:</span>
-              <code className="text-sm font-mono font-semibold text-accent">sealed@witnessed.cc</code>
-            </div>
-            <p className="text-xs text-muted-2">Or look up a business that&apos;s already on record:</p>
-            <DomainSearch />
+        {/* ── Final CTA (merged "always free" + business model) ── */}
+        <section className="border-t border-border bg-surface">
+          <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
+              Start your record.
+            </h2>
+            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed mb-8">
+              Your seal page is free forever. CC one email and you're on the record.
+            </p>
+
+            <CopyableEmail variant="hero" caption="CC on your next business email" />
+
+            <p className="text-xs text-muted-2 mt-8 max-w-sm mx-auto leading-relaxed">
+              Free for senders. Funded by enterprises who use our verification
+              API — and by on-demand credentials for high-stakes moments.
+            </p>
+
+            <p className="mt-6 text-xs text-muted-2">
+              Built for freelancers, agencies, startups — anyone who needs to
+              prove they&apos;ve been here.
+            </p>
           </div>
         </section>
 
