@@ -287,12 +287,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Free to start ────────────────────────────────────── */}
+        {/* ── Always free ──────────────────────────────────────── */}
         <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-2xl font-bold text-txt mb-3">Free to start</h2>
+          <h2 className="text-2xl font-bold text-txt mb-3">Your seal is always free</h2>
           <p className="text-muted text-sm mb-10 max-w-sm mx-auto leading-relaxed">
-            No credit card. No account. Every business starts on the free tier.
-            CC one email and your seal page is live within minutes.
+            No credit card. No account. No paid tier. Your seal page costs
+            nothing — today, or ever. CC one email and you&apos;re on the record.
           </p>
           <div className="flex flex-col items-center gap-4">
             <div className="flex flex-wrap items-center justify-center gap-3 px-5 py-3 rounded-xl border border-accent/30 bg-accent/5">

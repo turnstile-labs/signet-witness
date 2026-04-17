@@ -145,13 +145,13 @@ That's the pull.
 
 ## Business Model
 
-The strategic business is the verification API. The seal page is how we build
-toward it.
+The seal page is always free — no tiers, no credit card, no paid upgrade for
+end users. The business is the attestation cache it builds.
 
-### The target — Verification API ($0.05–0.10 per query)
+### Revenue — Verification API ($0.05–0.25 per query)
 
 Platforms that need to verify counterparties at scale — marketplaces, lenders,
-procurement tools — pay per query.
+procurement tools, compliance teams — pay to query the cache. End users never pay.
 
 ```
 GET /verify/acme.com
@@ -160,7 +160,7 @@ GET /verify/acme.com
 
 A new vendor applies to a B2B marketplace. Today the team manually reviews
 documents, calls references, and guesses — a process that takes days and still
-fails regularly. With Signet, one API call. If the domain has a year of
+fails regularly. With Witnessed, one API call. If the domain has a year of
 verified activity with 50+ distinct counterparties, auto-approve. If no
 history, manual queue. The API doesn't replace judgment. It removes the 80%
 that shouldn't need it.
@@ -169,13 +169,12 @@ The API requires cache depth to be useful. Early partnership conversations
 start on day one; the API goes live when the data justifies it — likely 6–12
 months after launch.
 
-### The engine — Seal page and badge ($9/month per domain)
+### Why free for senders
 
-The seal page is what fills the cache. Every domain that claims one is a
-domain actively CCing — generating the data the API will eventually sell.
-
-Free tier: basic seal page with full history visible. No customization, no
-badge embed. Zero friction to accumulate.
+Every business that CCs `sealed@witnessed.cc` is adding a verified data point
+to the cache. The intake is the product. Charging for it would slow the
+accumulation that makes the API valuable. Free intake, paid queries — the
+model only works if the cache grows fast.
 
 ---
 

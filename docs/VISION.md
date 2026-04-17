@@ -17,16 +17,9 @@ recipient at this time, with a valid DKIM signature.
 The receipt is what you attach to an invoice, append to a contract, or save
 for a dispute. Every email you CC becomes a verifiable proof of sending.
 
-**Monetization:** $1 per individual receipt or $29/month for unlimited
-receipts.
-
-### Customization tiers
-
-| | Free | Pro ($9/month) |
-|---|---|---|
-| Seal page | Basic — history visible | Custom — logo, description, links |
-| Badge embed | No | Yes — live image for signatures |
-| Receipt pages | No | Included (unlimited) |
+The seal page remains free. Receipts as a standalone exportable artifact
+(PDF, signed credential) are a candidate for a one-time fee — but the
+underlying record is always publicly visible at no cost.
 
 ---
 
@@ -48,12 +41,12 @@ to keep CCing long after the initial 90-day gate.
 
 ### Verified business directory
 
-A public, searchable directory of all Signet-verified domains at
+A public, searchable directory of all Witnessed-verified domains at
 `witnessed.cc/directory` — sortable by seniority, activity, and counterparty
 count.
 
-Free to appear in. Paid for featured placement and enhanced profile
-($29/month).
+Free to appear in. Featured placement is a candidate for paid positioning once
+the directory has enough depth to be worth featuring in.
 
 ---
 
