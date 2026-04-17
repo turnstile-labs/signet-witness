@@ -5,7 +5,7 @@ import { upsertDomain, insertEvent } from "@/lib/db";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
 const WITNESS_DOMAIN = "witnessed.cc";
-const WITNESS_EMAIL = "signet@witnessed.cc";
+const WITNESS_EMAIL = "sealed@witnessed.cc";
 
 export async function POST(req: NextRequest) {
   // 1. Authenticate the request — only accept from our Cloudflare Worker.

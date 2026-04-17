@@ -1,141 +1,177 @@
+import DomainSearch from "./components/DomainSearch";
+
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="flex flex-col min-h-screen bg-bg">
+
       {/* Nav */}
-      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between max-w-4xl mx-auto w-full">
-        <span className="font-semibold tracking-tight text-gray-900">Signet</span>
-        <a
-          href="/b/witnessed.cc"
-          className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          See an example →
-        </a>
+      <nav className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-sm">
+        <div className="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
+          <span className="font-semibold tracking-tight text-txt">
+            Signet <span className="text-accent">Witness</span>
+          </span>
+          <a
+            href="/b/witnessed.cc"
+            className="text-xs font-mono text-muted hover:text-txt transition-colors border border-border hover:border-border-h rounded-lg px-3 py-1.5"
+          >
+            See an example →
+          </a>
+        </div>
       </nav>
 
       {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center max-w-2xl mx-auto w-full">
-        <p className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-6">
+      <section className="flex-1 flex flex-col items-center justify-center px-5 py-16 sm:py-24 text-center max-w-2xl mx-auto w-full">
+
+        <p className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-2 mb-6">
           Proof of presence
         </p>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 leading-tight mb-6">
+
+        <h1 className="text-[2.2rem] sm:text-[3rem] font-bold tracking-tight leading-[1.06] mb-6">
           AI can fake everything
           <br />
-          except yesterday.
+          <span className="text-accent">except yesterday.</span>
         </h1>
-        <p className="text-lg text-gray-600 leading-relaxed mb-10 max-w-xl">
+
+        <p className="text-base text-muted leading-relaxed mb-10 max-w-lg">
           CC{" "}
-          <code className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-base font-mono">
-            signet@witnessed.cc
+          <code className="font-mono text-sm bg-surface border border-border px-1.5 py-0.5 rounded-md text-accent-2">
+            sealed@witnessed.cc
           </code>{" "}
           on your business emails. Signet verifies the DKIM signature, records
           who you emailed and when, and discards everything else. Your domain
-          builds a verified communication history — passively, permanently, and
-          impossible to manufacture.
+          builds a verified history — passively, permanently, impossible to fake.
         </p>
 
-        {/* CC instruction */}
-        <div className="w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-6 text-left mb-10">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+        {/* How to start */}
+        <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 text-left mb-10">
+          <p className="font-mono text-[0.62rem] uppercase tracking-widest text-muted-2 mb-4">
             How to start
           </p>
-          <ol className="space-y-3 text-sm text-gray-700">
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-semibold">
+          <ol className="space-y-4 text-sm text-muted">
+            <li className="flex gap-3 items-start">
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs flex items-center justify-center font-semibold font-mono mt-0.5">
                 1
               </span>
               Open any business email you&apos;re about to send.
             </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-semibold">
+            <li className="flex gap-3 items-start">
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs flex items-center justify-center font-semibold font-mono mt-0.5">
                 2
               </span>
-              Add{" "}
-              <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded font-mono text-xs">
-                signet@witnessed.cc
-              </code>{" "}
-              to the CC field.
+              <span>
+                Add{" "}
+                <code className="font-mono text-xs bg-bg border border-border px-1.5 py-0.5 rounded text-accent-2">
+                  sealed@witnessed.cc
+                </code>{" "}
+                to the CC field.
+              </span>
             </li>
-            <li className="flex gap-3">
-              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center font-semibold">
+            <li className="flex gap-3 items-start">
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs flex items-center justify-center font-semibold font-mono mt-0.5">
                 3
               </span>
-              Send it. Your seal page appears within minutes.
+              Send it. Your seal page appears within minutes at{" "}
+              <code className="font-mono text-xs text-muted-2">
+                witnessed.cc/b/yourdomain
+              </code>
             </li>
           </ol>
         </div>
 
-        <p className="text-sm text-gray-400">
-          No account. No signup. No setup. The CC is the product.
+        <p className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-2 mb-3">
+          No account · No signup · No setup
         </p>
       </section>
 
-      {/* What you get */}
-      <section className="border-t border-gray-100 px-6 py-20">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-12 text-center">
-            What happens after you CC
+      {/* Domain search */}
+      <section className="border-t border-border bg-surface px-5 py-14">
+        <div className="max-w-2xl mx-auto text-center">
+          <p className="font-mono text-[0.62rem] uppercase tracking-widest text-muted-2 mb-3">
+            Domain lookup
+          </p>
+          <h2 className="text-xl font-semibold text-txt mb-2">
+            Is a domain already building history?
           </h2>
-          <div className="grid sm:grid-cols-3 gap-8">
-            <div>
-              <div className="text-2xl mb-3">⚡</div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                Instant seal page
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                A public page appears at{" "}
-                <code className="bg-gray-100 px-1 rounded text-xs">
+          <p className="text-sm text-muted mb-6">
+            Search any domain to see its seal page — or find out how many times it
+            appears as a counterparty before it&apos;s claimed its own record.
+          </p>
+          <div className="flex justify-center">
+            <DomainSearch />
+          </div>
+        </div>
+      </section>
+
+      {/* What you get */}
+      <section className="border-t border-border px-5 py-14">
+        <div className="max-w-3xl mx-auto">
+          <p className="font-mono text-[0.62rem] uppercase tracking-widest text-muted-2 mb-10 text-center">
+            What you get
+          </p>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <p className="text-lg mb-3">⚡</p>
+              <p className="font-semibold text-txt mb-2 text-sm">Instant seal page</p>
+              <p className="text-xs text-muted leading-relaxed">
+                A public page at{" "}
+                <code className="font-mono text-muted-2 text-[0.68rem]">
                   witnessed.cc/b/yourdomain
                 </code>{" "}
-                showing your first witnessed date and activity count. Share it
-                anywhere.
+                goes live after your first CC. Share it in proposals, invoices,
+                email signatures.
               </p>
             </div>
-            <div>
-              <div className="text-2xl mb-3">🔒</div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                DKIM verified
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Every record is backed by a cryptographic DKIM signature from
-                your email domain. Not self-reported. Independently verifiable.
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <p className="text-lg mb-3">🔐</p>
+              <p className="font-semibold text-txt mb-2 text-sm">DKIM verified</p>
+              <p className="text-xs text-muted leading-relaxed">
+                Every record is backed by a cryptographic DKIM signature from your
+                email domain. Not self-reported. Not gameable. Independently
+                verifiable.
               </p>
             </div>
-            <div>
-              <div className="text-2xl mb-3">✦</div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                Verified badge at 90 days
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                After 90 days of consistent activity your domain earns a
-                Verified badge. A scammer can copy the image. They can&apos;t
-                copy the history.
+            <div className="bg-surface border border-border rounded-2xl p-5">
+              <p className="text-lg mb-3">✦</p>
+              <p className="font-semibold text-txt mb-2 text-sm">Verified at 90 days</p>
+              <p className="text-xs text-muted leading-relaxed">
+                Consistent activity for 90 days earns a Verified badge. A scammer
+                can copy the image. They can&apos;t copy the history.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Privacy strip */}
-      <section className="border-t border-gray-100 bg-gray-50 px-6 py-12">
+      {/* Privacy */}
+      <section className="border-t border-border px-5 py-10 bg-surface">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-sm text-gray-500 leading-relaxed">
-            <strong className="text-gray-700">Privacy by design.</strong> Signet
-            stores sender domain, receiver domain, timestamp, and a DKIM
-            signature hash. Email body, subject line, and all personal content
-            are discarded immediately — never stored, never read. The CC is an
-            explicit, voluntary act on each individual email.
+          <p className="font-mono text-[0.62rem] uppercase tracking-widest text-muted-2 mb-3">
+            Privacy by design
+          </p>
+          <p className="text-sm text-muted leading-relaxed">
+            <span className="text-txt font-medium">Stored:</span> sender domain,
+            receiver domain, timestamp, DKIM signature hash.{" "}
+            <span className="text-txt font-medium">Discarded immediately:</span>{" "}
+            email body, subject line, attachments, all personal content. No human
+            at Signet can read your emails. The CC is a voluntary act on each
+            individual email.
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 px-6 py-6 text-center">
-        <p className="text-xs text-gray-400">
-          © {new Date().getFullYear()} Signet ·{" "}
-          <a href="mailto:hello@witnessed.cc" className="hover:text-gray-600 transition-colors">
+      <footer className="border-t border-border px-5 py-5">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <p className="font-mono text-[0.68rem] text-muted-2">
+            © {new Date().getFullYear()} Signet Witness
+          </p>
+          <a
+            href="mailto:hello@witnessed.cc"
+            className="font-mono text-[0.68rem] text-muted-2 hover:text-muted transition-colors"
+          >
             hello@witnessed.cc
           </a>
-        </p>
+        </div>
       </footer>
     </main>
   );

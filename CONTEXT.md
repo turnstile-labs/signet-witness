@@ -6,7 +6,7 @@ This document captures the full decision history, architecture rationale, and pr
 
 ## What this project is
 
-**Signet** is a business trust infrastructure product. The core mechanic: CC `signet@witnessed.cc` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
+**Signet** is a business trust infrastructure product. The core mechanic: CC `sealed@witnessed.cc` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
 
 The output: a public seal page at `witnessed.cc/b/yourdomain` that proves a domain has been doing real business with real counterparties over time. This is the one signal AI cannot fake: history.
 
@@ -62,7 +62,7 @@ WHOIS is a signal that makes history *stronger* but isn't required for history t
 
 ### No search at MVP
 
-Discovery happens through the CC field (receivers see `signet@witnessed.cc`) and direct URL sharing (`witnessed.cc/b/acme.com`). The URL is the search. Add search when users ask for it.
+Discovery happens through the CC field (receivers see `sealed@witnessed.cc`) and direct URL sharing (`witnessed.cc/b/acme.com`). The URL is the search. Add search when users ask for it.
 
 ### No badge image at MVP
 
