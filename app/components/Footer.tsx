@@ -15,7 +15,6 @@ export default function Footer() {
         <nav className="flex items-center gap-4 text-xs text-muted-2">
           <Link href="/privacy" className="hover:text-muted transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-muted transition-colors">Terms</Link>
-          <a href="mailto:hello@witnessed.cc" className="hover:text-muted transition-colors">Contact</a>
         </nav>
 
       </div>

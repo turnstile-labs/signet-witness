@@ -43,7 +43,7 @@ export default function Home() {
 
           <p className="text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
             CC <span className="font-mono text-txt text-sm bg-surface border border-border px-2 py-0.5 rounded-md">sealed@witnessed.cc</span> on
-            your business emails. We build a cryptographically verified
+            your business emails. We build a verified proof of business
             history — automatically, passively, permanently.
           </p>
 
@@ -74,7 +74,7 @@ export default function Home() {
                   icon: "✓",
                   color: "text-verified",
                   label: "AI can't fake",
-                  items: ["Email timestamps", "DKIM signatures", "Real conversations", "Accumulated history"],
+                  items: ["Email timestamps", "Verified email history", "Real conversations", "Accumulated track record"],
                   highlight: true,
                 },
               ].map((col) => (
@@ -117,15 +117,15 @@ export default function Home() {
               },
               {
                 n: "2",
-                title: "We verify and store",
-                body: "Each email arrives with a DKIM signature — a cryptographic proof that your mail server generated it. We verify and permanently record it.",
+                title: "We verify and record",
+                body: "Every email sent through a legitimate mail server carries a tamper-proof signature. We verify it, record the timestamp and domains, and discard the rest.",
                 detail: "Your email content is never stored.",
               },
               {
                 n: "3",
-                title: "Your seal page grows",
-                body: "Every verified email adds to your public record at witnessed.cc/b/yourdomain.com — showing volume, consistency, and longevity.",
-                detail: "The longer you send, the more trust you build.",
+                title: "Your proof of business grows",
+                body: "Every verified email adds to your public record at witnessed.cc/b/yourdomain — showing volume, consistency, and longevity that can't be manufactured.",
+                detail: "The longer you send, the stronger the proof.",
               },
             ].map((step, i, arr) => (
               <div key={step.n} className="flex gap-6">
@@ -153,7 +153,7 @@ export default function Home() {
             <div className="text-center mb-10">
               <h2 className="text-2xl font-bold text-txt mb-3">What you get</h2>
               <p className="text-muted text-sm max-w-sm mx-auto">
-                A public seal page anyone can visit to verify your business history.
+                A public page anyone can visit to verify your business is real and has been operating.
               </p>
             </div>
 
@@ -177,7 +177,7 @@ export default function Home() {
 
               <div className="p-6 grid grid-cols-3 gap-4">
                 {[
-                  { value: "847", label: "Sealed emails", sub: "cryptographically verified" },
+                  { value: "847", label: "Verified emails", sub: "independently confirmed" },
                   { value: "14 mo", label: "Active history", sub: "first to last email" },
                   { value: "98%", label: "Consistency", sub: "no suspicious gaps" },
                 ].map((stat) => (
@@ -192,7 +192,7 @@ export default function Home() {
               <div className="border-t border-border px-6 py-4">
                 <p className="text-xs text-muted text-center">
                   <span className="text-accent font-semibold">This record cannot be backdated.</span>{" "}
-                  Each entry was verified in real-time using DKIM cryptographic signatures.
+                  Each entry is independently verified at the moment of sending — not self-reported.
                 </p>
               </div>
             </div>

@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { domain } = await params;
   return {
     title: `${domain} — Witnessed`,
-    description: `Verified business history for ${domain}.`,
+    description: `Proof of business for ${domain} — verified, public, and impossible to fake.`,
   };
 }
 
@@ -57,7 +57,7 @@ function NavBar() {
         </Link>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted hidden sm:block font-mono">
-            Business history record
+            Proof of business
           </span>
           <ThemeToggle />
         </div>
@@ -100,14 +100,14 @@ function VerifiedStatus({ days, eventCount }: { days: number; eventCount: number
           In progress
         </span>
       </div>
-      <p className="text-xs text-muted leading-relaxed mb-4">
-        Verified status requires 90+ days of activity and at least 10 witnessed emails.
-        The longer the history, the more credible the record.
+        <p className="text-xs text-muted leading-relaxed mb-4">
+        Verified status requires 90+ days on record and at least 10 verified emails.
+        The longer and more consistent the history, the stronger the proof.
       </p>
       <div className="space-y-3">
         <div>
           <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5">
-            <span>Days active</span>
+            <span>Days on record</span>
             <span>{formatDays(days)} / 90</span>
           </div>
           <div className="h-1.5 bg-bg rounded-full overflow-hidden">
@@ -116,7 +116,7 @@ function VerifiedStatus({ days, eventCount }: { days: number; eventCount: number
         </div>
         <div>
           <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5">
-            <span>Witnessed emails</span>
+            <span>Verified emails</span>
             <span>{eventCount} / 10</span>
           </div>
           <div className="h-1.5 bg-bg rounded-full overflow-hidden">
@@ -167,12 +167,12 @@ export default async function SealPage({ params }: Props) {
               {domainInitials(decoded)}
             </div>
             <div>
-              <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-1">Seal page</p>
+              <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-1">Proof of business</p>
               <h1 className="text-xl sm:text-2xl font-bold text-txt tracking-tight font-mono leading-none">
                 {decoded}
               </h1>
               <p className="text-xs text-muted mt-1">
-                First witnessed {formatDate(record.first_seen)}
+                On record since {formatDate(record.first_seen)}
               </p>
             </div>
           </div>
@@ -185,9 +185,9 @@ export default async function SealPage({ params }: Props) {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <StatCard value={formatDays(days)} label="Days active" sub="since first email" />
-          <StatCard value={record.event_count.toString()} label="Sealed emails" sub="DKIM-verified" />
-          <StatCard value={uniqueReceivers.toString()} label="Counterparties" sub="distinct domains" />
+          <StatCard value={formatDays(days)} label="Days on record" sub="since first email" />
+          <StatCard value={record.event_count.toString()} label="Verified emails" sub="independently confirmed" />
+          <StatCard value={uniqueReceivers.toString()} label="Counterparties" sub="distinct businesses" />
         </div>
 
         {/* Verified progress */}
@@ -196,21 +196,21 @@ export default async function SealPage({ params }: Props) {
         {/* Plain-language explainer */}
         <div className="bg-surface border border-border rounded-xl p-5 mb-6">
           <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-3">
-            What this record means
+            What this proves
           </p>
           <div className="space-y-2.5">
             {[
               {
                 icon: "🔏",
-                text: `Every entry was signed by ${decoded}'s own mail server using DKIM — a cryptographic standard built into email. It cannot be forged.`,
+                text: `Every entry was independently verified at the moment of sending — not self-reported. It cannot be forged or added after the fact.`,
               },
               {
                 icon: "📅",
-                text: "These timestamps were recorded in real time. No entry can be backdated — the history only grows forward.",
+                text: "Timestamps are recorded in real time. No entry can be backdated — this history only grows forward.",
               },
               {
                 icon: "🤝",
-                text: `${decoded} was actively emailing real businesses on these dates. This is operational proof, not a self-reported claim.`,
+                text: `${decoded} was actively doing business on these dates. This is proof of operation, not a claim about it.`,
               },
             ].map((item) => (
               <div key={item.icon} className="flex items-start gap-3">
@@ -225,7 +225,7 @@ export default async function SealPage({ params }: Props) {
         {events.length > 0 && (
           <div className="mb-8">
             <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-3">
-              Witnessed activity
+              Verified business activity
             </p>
             <div className="bg-surface border border-border rounded-xl overflow-hidden">
               {events.slice(0, 20).map((event, i) => (
@@ -244,7 +244,7 @@ export default async function SealPage({ params }: Props) {
               ))}
             </div>
             <p className="text-xs text-muted-2 mt-2 px-1">
-              Each row is one DKIM-verified email sent from {decoded} to that recipient.
+              Each row is one independently verified email sent from {decoded} to that business.
             </p>
           </div>
         )}
@@ -273,7 +273,7 @@ function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCoun
               {domainInitials(domain)}
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-1">Seal page</p>
+              <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-1">Proof of business</p>
               <h1 className="text-xl sm:text-2xl font-bold text-txt tracking-tight font-mono leading-tight break-all">
                 {domain}
               </h1>
@@ -283,7 +283,7 @@ function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCoun
 
         {/* Placeholder stat cards */}
         <div className="grid grid-cols-3 gap-3 mb-6 opacity-30 select-none">
-          {["Days active", "Sealed emails", "Counterparties"].map((label) => (
+          {["Days on record", "Verified emails", "Counterparties"].map((label) => (
             <div key={label} className="bg-surface border border-border rounded-xl p-4">
               <p className="text-2xl font-bold text-txt font-mono mb-0.5">—</p>
               <p className="text-xs text-txt font-medium mb-0.5">{label}</p>
