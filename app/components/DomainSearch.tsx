@@ -33,7 +33,8 @@ export default function DomainSearch() {
       />
       <button
         type="submit"
-        className="bg-accent text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
+        disabled={!value.trim()}
+        className="bg-accent text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-opacity whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:opacity-90"
         style={{ color: "#fff" }}
       >
         Look up
