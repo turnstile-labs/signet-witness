@@ -21,6 +21,12 @@ function daysActive(firstSeen: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
+function formatDays(days: number): string {
+  if (days === 0) return "< 1 day";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "long",
@@ -102,7 +108,7 @@ function VerifiedStatus({ days, eventCount }: { days: number; eventCount: number
         <div>
           <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5">
             <span>Days active</span>
-            <span>{days} / 90</span>
+            <span>{formatDays(days)} / 90</span>
           </div>
           <div className="h-1.5 bg-bg rounded-full overflow-hidden">
             <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${daysProgress}%` }} />
@@ -179,7 +185,7 @@ export default async function SealPage({ params }: Props) {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <StatCard value={days.toString()} label="Days active" sub="since first email" />
+          <StatCard value={formatDays(days)} label="Days active" sub="since first email" />
           <StatCard value={record.event_count.toString()} label="Sealed emails" sub="DKIM-verified" />
           <StatCard value={uniqueReceivers.toString()} label="Counterparties" sub="distinct domains" />
         </div>
