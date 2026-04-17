@@ -11,7 +11,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { domain } = await params;
   return {
-    title: `${domain} — Signet Witness`,
+    title: `${domain} — Witnessed`,
     description: `Verified business history for ${domain}.`,
   };
 }
@@ -46,8 +46,8 @@ function NavBar() {
     <header className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-md">
       <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-sm tracking-tight">
-          <span className="text-accent text-base">◈</span>
-          <span className="text-txt">Signet Witness</span>
+          <span className="text-accent text-base">✦</span>
+          <span className="text-txt">Witnessed</span>
         </Link>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted hidden sm:block font-mono">
@@ -65,10 +65,10 @@ function PageFooter() {
     <footer className="border-t border-border py-8">
       <div className="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-muted">
-          <span className="text-accent">◈</span>
-          <span>Signet Witness</span>
+          <span className="text-accent">✦</span>
+          <span>Witnessed</span>
         </div>
-        <p className="text-xs text-muted-2">witnessed.cc — the business record AI can&apos;t fake</p>
+        <p className="text-xs text-muted-2">witnessed.cc · the business record AI can&apos;t fake</p>
       </div>
     </footer>
   );
@@ -309,7 +309,7 @@ function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCoun
             in{" "}
             <span className="font-semibold text-txt">{receiverCount}</span>{" "}
             witnessed {receiverCount === 1 ? "communication" : "communications"} — meaning
-            other businesses have CC&apos;d Signet when emailing this domain. But{" "}
+            other businesses have CC&apos;d Witnessed when emailing this domain. But{" "}
             <span className="font-mono text-txt">{domain}</span> hasn&apos;t started
             building its own outbound record yet.
           </p>

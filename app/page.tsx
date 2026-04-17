@@ -10,8 +10,8 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-semibold text-sm tracking-tight">
-            <span className="text-accent text-base">◈</span>
-            <span className="text-txt">Signet Witness</span>
+            <span className="text-accent text-base">✦</span>
+            <span className="text-txt">Witnessed</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -292,11 +292,11 @@ export default function Home() {
       <footer className="border-t border-border py-8">
         <div className="max-w-3xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-muted">
-            <span className="text-accent">◈</span>
-            <span>Signet Witness</span>
+            <span className="text-accent">✦</span>
+            <span>Witnessed</span>
           </div>
           <p className="text-xs text-muted-2">
-            witnessed.cc — the business record AI can&apos;t fake
+            witnessed.cc · the business record AI can&apos;t fake
           </p>
         </div>
       </footer>

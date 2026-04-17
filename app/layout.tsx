@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Signet Witness — The business record AI can't fake",
+  title: "Witnessed — The business record AI can't fake",
   description:
     "CC sealed@witnessed.cc on your business emails. Build a verified communication history — passively, permanently, and impossible to manufacture.",
   openGraph: {
-    title: "Signet Witness",
+    title: "Witnessed",
     description: "The business record AI can't fake.",
     url: "https://witnessed.cc",
-    siteName: "Signet Witness",
+    siteName: "Witnessed",
   },
 };
 
