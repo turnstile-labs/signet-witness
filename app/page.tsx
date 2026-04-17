@@ -32,7 +32,7 @@ export default function Home() {
         <section className="max-w-3xl mx-auto px-6 pt-24 pb-20 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs text-muted mb-8 font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block" />
-            The record AI can&apos;t write
+            Proof of business
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-txt leading-tight mb-6">
