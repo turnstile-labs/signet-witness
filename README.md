@@ -1,21 +1,24 @@
-# Signet
+# Signet Witness
 
-**AI can fake everything except yesterday.**
+**The business record AI can't fake.**
 
-CC `signet@witnessed.cc` on your business emails. Signet verifies the DKIM signature, records who you emailed and when, and discards everything else.
+CC `sealed@witnessed.cc` on your business emails. Signet verifies the DKIM
+signature, records who you emailed and when, and discards everything else.
+
+Live at **[witnessed.cc](https://witnessed.cc)**
 
 ---
 
 ## What this is
 
-A minimal Next.js app that:
+A Next.js app that:
 
 1. Receives emails via a Cloudflare Worker → `/api/inbound`
 2. Verifies the DKIM signature with `mailauth`
 3. Records the sender domain, receiver domain, and timestamp in Postgres
 4. Serves a public seal page at `/b/[domain]`
 
-**No auth. No payments. No setup required from users. The CC is the product.**
+No auth. No payments. No setup required from users. The CC is the product.
 
 ---
 
@@ -23,12 +26,12 @@ A minimal Next.js app that:
 
 | Layer | Choice |
 |---|---|
-| App | Next.js 14 (App Router) |
+| App | Next.js (App Router) |
 | Hosting | Vercel |
 | Database | Vercel Postgres (Neon) |
 | Email pipe | Cloudflare Worker |
 | DKIM verification | `mailauth` |
-| CSS | Tailwind |
+| CSS | Tailwind CSS v4 |
 
 ---
 
@@ -37,13 +40,16 @@ A minimal Next.js app that:
 ```
 signet-witness/
 ├── app/
-│   ├── page.tsx                  # Homepage
-│   ├── layout.tsx
-│   ├── globals.css
+│   ├── page.tsx                  # Landing page
+│   ├── layout.tsx                # Root layout + theme flash prevention
+│   ├── globals.css               # Tailwind v4 + light/dark CSS variables
+│   ├── components/
+│   │   ├── DomainSearch.tsx      # Domain lookup form
+│   │   └── ThemeToggle.tsx       # Light/dark mode toggle
 │   ├── b/[domain]/page.tsx       # Seal page — the product
 │   └── api/inbound/route.ts      # Email receiver + DKIM verify + DB write
 ├── lib/
-│   └── db.ts                     # Neon SQL client + queries
+│   └── db.ts                     # Neon SQL client + typed queries
 ├── workers/
 │   └── email-router/
 │       ├── index.ts              # Cloudflare Worker (~30 lines)
@@ -53,9 +59,8 @@ signet-witness/
 ├── schema.sql                    # Run once to create tables
 ├── .env.example
 └── docs/
-    ├── SIGNET_MVP.md             # What we're building
-    ├── SIGNET_WEB2.md            # MVP + full roadmap
-    └── SIGNET_WITNESS.md         # Long-term vision (Web2 + Web3)
+    ├── PRODUCT.md                # What it is, why it matters, business model
+    └── VISION.md                 # Roadmap + long-term Web3 path
 ```
 
 ---
@@ -64,18 +69,17 @@ signet-witness/
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/you/signet-witness
+git clone https://github.com/turnstile-labs/signet-witness
 cd signet-witness
 npm install
 
 # 2. Copy env
 cp .env.example .env.local
-# Fill in DATABASE_URL and INBOUND_SECRET
+# Fill in DATABASE_URL (or STORAGE_URL) and INBOUND_SECRET
 
 # 3. Create tables
-# Paste schema.sql into your Vercel Postgres dashboard query runner
-# or connect with psql:
-# psql $DATABASE_URL -f schema.sql
+psql $DATABASE_URL -f schema.sql
+# or paste schema.sql into the Vercel Postgres dashboard query runner
 
 # 4. Run locally
 npm run dev
@@ -89,8 +93,8 @@ npm run dev
 
 ```bash
 # Push to GitHub, import in Vercel dashboard
-# Add Postgres store: Vercel dashboard → Storage → Create → Postgres
-# Set INBOUND_SECRET env var in Vercel project settings
+# Add Postgres store: Vercel dashboard → Storage → Connect → Postgres
+# Add env var INBOUND_SECRET in project settings
 ```
 
 ### Cloudflare Worker
@@ -110,6 +114,7 @@ wrangler deploy
 ### Cloudflare Email Routing
 
 In your Cloudflare dashboard for `witnessed.cc`:
+
 1. Enable **Email Routing**
 2. Add a catch-all rule: `*@witnessed.cc` → **Send to Worker** → `signet-email-router`
 
@@ -118,17 +123,16 @@ In your Cloudflare dashboard for `witnessed.cc`:
 ## Database schema
 
 ```sql
--- domains: one row per sender domain
-CREATE TABLE domains (
+CREATE TABLE IF NOT EXISTS domains (
   id          SERIAL PRIMARY KEY,
   domain      TEXT NOT NULL UNIQUE,
   first_seen  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   event_count INTEGER NOT NULL DEFAULT 0,
+  tier        TEXT NOT NULL DEFAULT 'free',
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- events: one row per witnessed email
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
   id               SERIAL PRIMARY KEY,
   domain_id        INTEGER NOT NULL REFERENCES domains(id) ON DELETE CASCADE,
   receiver_domain  TEXT NOT NULL,
@@ -141,23 +145,44 @@ CREATE TABLE events (
 
 ## How DKIM verification works
 
-Every email carries a `DKIM-Signature` header — a cryptographic signature from the sender's mail server using a private key. The corresponding public key is published in the sender's DNS. `mailauth` fetches that DNS record and verifies the signature automatically.
+Every email carries a `DKIM-Signature` header — a cryptographic signature
+from the sender's mail server. The corresponding public key is published in
+the sender's DNS. `mailauth` fetches that DNS record and verifies the
+signature automatically.
 
-If verification fails, the event is silently discarded. Only DKIM-passing emails build history.
+If verification fails, the event is silently discarded. Only DKIM-passing
+emails build history. History built this way cannot be backdated or forged.
 
 ---
 
-## Roadmap
+## Environment variables
 
-See `docs/SIGNET_WEB2.md` for the full product roadmap (badge tiers, verification API, receipts, directory).
-
-See `docs/SIGNET_WITNESS.md` for the long-term vision including the wallet-anchored path and unified attestation cache.
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` or `STORAGE_URL` | Neon Postgres connection string |
+| `INBOUND_SECRET` | Shared secret between Cloudflare Worker and `/api/inbound` |
+| `NEXT_PUBLIC_APP_URL` | `https://witnessed.cc` (used for metadata) |
 
 ---
 
 ## Privacy
 
-- **Stored:** sender domain, receiver domain, timestamp, DKIM signature hash
-- **Discarded immediately:** email body, subject line, attachments, all personal content
-- **Never stored, never read** by any human at Signet
-- The CC is an explicit, voluntary act on each individual email
+| What | Status |
+|---|---|
+| Sender domain | Stored |
+| Receiver domain | Stored |
+| Timestamp | Stored |
+| DKIM signature hash | Stored |
+| Email body | Discarded immediately — never touches disk |
+| Subject line | Discarded immediately |
+| Attachments | Discarded immediately |
+| Personal content | Never stored, never read |
+
+The CC is an explicit, voluntary act on each individual email.
+
+---
+
+## Docs
+
+- `docs/PRODUCT.md` — Product vision, how it works, business model, GTM, competitive position
+- `docs/VISION.md` — Phased roadmap and long-term Web3 path
