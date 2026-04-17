@@ -340,7 +340,7 @@ function UnclaimedPage({ domain, receiverCount }: { domain: string; receiverCoun
               <p className="text-sm font-semibold text-txt">No record yet</p>
             </div>
             <p className="text-sm text-muted leading-relaxed mb-5">
-              <span className="font-mono text-txt">{domain}</span> hasn&apos;t
+              <span className="font-mono text-txt">{domain}</span>{" "}hasn&apos;t
               been witnessed yet. Once you CC{" "}
               <code className="font-mono text-accent text-[0.72rem]">sealed@witnessed.cc</code>{" "}
               on a business email, this page will show your verified history —
