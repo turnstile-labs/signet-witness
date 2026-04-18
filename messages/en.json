@@ -123,13 +123,15 @@
     "unclaimed": {
       "noOutbound": "No outbound record yet",
       "noOutboundBody": "<d>{name}</d> has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}} — other businesses are already emailing this domain and CCing Witnessed. But <d>{name}</d> hasn't started building its own outbound record yet.",
-      "ownQ": "Own this domain?",
-      "ownBody": "CC <e>{addr}</e> on your outgoing emails to start building your record.",
-      "howItWorks": "How it works →",
-      "recipientMeans": "What recipient activity means",
-      "recipientBody": "When any business sends an email and CCs <e>{addr}</e>, we record the recipient's domain too. This shows real companies are already doing business with <d>{name}</d>.",
       "noRecord": "No record yet",
-      "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. Once you CC <e>{addr}</e> on a business email, this page will show a verified history — automatically, with no account needed."
+      "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. Once you CC <e>{addr}</e> on a business email, this page will show a verified history — automatically, with no account needed.",
+      "willShowTitle": "What this page will show",
+      "willShow1": "Every email CC'd to Witnessed as a verified, timestamped entry — not self-reported.",
+      "willShow2": "A cryptographic timeline that can't be backdated, with subjects and bodies never stored.",
+      "willShow3": "A public seal anyone can check — plus a live badge for your email signature, website, and invoices.",
+      "startTitle": "Start this record",
+      "startBody": "CC this address on your next business email. That's it — no account, no setup, no ongoing work.",
+      "howItWorks": "How it works →"
     }
   },
   "badge": {

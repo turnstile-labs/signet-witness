@@ -12,6 +12,7 @@ import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
 import Sparkline from "@/app/components/Sparkline";
 import BadgeEmbed from "@/app/components/BadgeEmbed";
+import CopyableEmail from "@/app/components/CopyableEmail";
 
 interface Props {
   params: Promise<{ locale: string; domain: string }>;
@@ -438,6 +439,15 @@ async function UnclaimedPage({
     { value: "—", label: t("statCounterparties"), sub: "—" },
   ];
 
+  // Three forward-looking proof points — parallels the record page's
+  // "What this proves" list but in future tense, describing what the
+  // seal page will show once the domain is claimed.
+  const willShow = [
+    tu("willShow1"),
+    tu("willShow2"),
+    tu("willShow3"),
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-bg">
       <NavBar />
@@ -448,7 +458,7 @@ async function UnclaimedPage({
           <EyebrowLabel>{t("eyebrow")}</EyebrowLabel>
         </div>
 
-        <div className="mb-6 opacity-60 select-none">
+        <div className="opacity-60 select-none">
           <SealCard
             domain={domain}
             stats={stats}
@@ -459,93 +469,73 @@ async function UnclaimedPage({
           />
         </div>
 
-        {hasReceiverActivity ? (
-          <>
-            <div className="bg-surface border border-border rounded-xl p-5 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                <p className="text-sm font-semibold text-txt">
-                  {tu("noOutbound")}
-                </p>
-              </div>
-              <p className="text-sm text-muted leading-relaxed mb-4">
-                {tu.rich("noOutboundBody", {
+        {/* Status card — parallels BuildingProgress on the record page. */}
+        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-2 gap-3">
+            <p className="text-sm font-semibold text-txt">
+              {hasReceiverActivity ? tu("noOutbound") : tu("noRecord")}
+            </p>
+            <span className="text-[0.65rem] text-muted-2 bg-bg border border-border px-2 py-0.5 rounded-full font-mono uppercase tracking-widest shrink-0">
+              {t("pending")}
+            </span>
+          </div>
+          <p className="text-sm text-muted leading-relaxed">
+            {hasReceiverActivity
+              ? tu.rich("noOutboundBody", {
                   name: domain,
                   count: receiverCount,
                   d: (chunks) => (
                     <span className="font-mono text-txt break-all">{chunks}</span>
                   ),
-                })}
-              </p>
-              <div className="bg-bg border border-border rounded-xl p-4">
-                <p className="text-sm font-semibold text-txt mb-1">
-                  {tu("ownQ")}
-                </p>
-                <p className="text-xs text-muted leading-relaxed">
-                  {tu.rich("ownBody", {
-                    addr: "sealed@witnessed.cc",
-                    e: (chunks) => (
-                      <code className="font-mono text-accent text-[0.72rem]">
-                        {chunks}
-                      </code>
-                    ),
-                  })}{" "}
-                  <Link
-                    href="/"
-                    className="text-accent hover:text-accent-2 transition-colors"
-                  >
-                    {tu("howItWorks")}
-                  </Link>
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-surface border border-border rounded-xl p-5">
-              <EyebrowLabel>{tu("recipientMeans")}</EyebrowLabel>
-              <p className="text-sm text-muted leading-relaxed mt-3">
-                {tu.rich("recipientBody", {
-                  addr: "sealed@witnessed.cc",
+                })
+              : tu.rich("noRecordBody", {
                   name: domain,
-                  e: (chunks) => (
-                    <code className="font-mono text-txt text-xs">
-                      {chunks}
-                    </code>
-                  ),
+                  addr: "sealed@witnessed.cc",
                   d: (chunks) => (
                     <span className="font-mono text-txt break-all">{chunks}</span>
                   ),
+                  e: (chunks) => (
+                    <code className="font-mono text-accent text-[0.72rem]">
+                      {chunks}
+                    </code>
+                  ),
                 })}
-              </p>
-            </div>
-          </>
-        ) : (
-          <div className="bg-surface border border-border rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-muted-2 shrink-0" />
-              <p className="text-sm font-semibold text-txt">{tu("noRecord")}</p>
-            </div>
-            <p className="text-sm text-muted leading-relaxed mb-5">
-              {tu.rich("noRecordBody", {
-                name: domain,
-                addr: "sealed@witnessed.cc",
-                d: (chunks) => (
-                  <span className="font-mono text-txt break-all">{chunks}</span>
-                ),
-                e: (chunks) => (
-                  <code className="font-mono text-accent text-[0.72rem]">
-                    {chunks}
-                  </code>
-                ),
-              })}
-            </p>
+          </p>
+        </div>
+
+        {/* What this page will show — parallels "What this proves". */}
+        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
+          <EyebrowLabel>{tu("willShowTitle")}</EyebrowLabel>
+          <div className="space-y-2.5 mt-3">
+            {willShow.map((text, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="text-muted-2 text-sm font-bold leading-tight mt-0.5 shrink-0">
+                  ○
+                </span>
+                <p className="text-sm text-muted leading-relaxed">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Start this record — parallels the owner tools (BadgeEmbed). */}
+        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
+          <EyebrowLabel>{tu("startTitle")}</EyebrowLabel>
+          <p className="text-sm text-muted leading-relaxed mt-2 mb-5">
+            {tu("startBody")}
+          </p>
+          <div className="flex justify-center mb-4">
+            <CopyableEmail variant="compact" />
+          </div>
+          <p className="text-center">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-2 transition-colors"
+              className="text-xs font-semibold text-accent hover:text-accent-2 transition-colors"
             >
               {tu("howItWorks")}
             </Link>
-          </div>
-        )}
+          </p>
+        </div>
 
       </main>
 

@@ -123,13 +123,15 @@
     "unclaimed": {
       "noOutbound": "Todavía sin registro de envíos",
       "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}} — otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia. Pero <d>{name}</d> aún no ha empezado a construir su propio registro.",
-      "ownQ": "¿Eres el dueño del dominio?",
-      "ownBody": "Pon <e>{addr}</e> en copia en tus emails salientes para empezar a construir tu registro.",
-      "howItWorks": "Cómo funciona →",
-      "recipientMeans": "Qué significa la actividad como destinatario",
-      "recipientBody": "Cuando cualquier negocio envía un email y pone <e>{addr}</e> en copia, también registramos el dominio del destinatario. Esto muestra que otras empresas ya están haciendo negocios con <d>{name}</d>.",
       "noRecord": "Aún sin registro",
-      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. En cuanto pongas <e>{addr}</e> en copia en un email de trabajo, esta página mostrará un historial verificado — automáticamente, sin necesidad de cuenta."
+      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. En cuanto pongas <e>{addr}</e> en copia en un email de trabajo, esta página mostrará un historial verificado — automáticamente, sin necesidad de cuenta.",
+      "willShowTitle": "Qué mostrará esta página",
+      "willShow1": "Cada email con Witnessed en copia aparecerá como un registro verificado con marca de tiempo — no declarado por el emisor.",
+      "willShow2": "Una línea de tiempo criptográfica que no se puede falsificar, sin guardar asuntos ni contenidos.",
+      "willShow3": "Un sello público que cualquiera puede consultar — más un badge en vivo para firmas de email, webs y facturas.",
+      "startTitle": "Empieza este registro",
+      "startBody": "Pon esta dirección en copia en tu próximo email de trabajo. Eso es todo — sin cuenta, sin configuración, sin trabajo continuo.",
+      "howItWorks": "Cómo funciona →"
     }
   },
   "badge": {
