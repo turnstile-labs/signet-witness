@@ -39,8 +39,8 @@
       "statsCounterpartiesSub": "distinct businesses",
       "disclaimerStrong": "This record cannot be backdated.",
       "disclaimerRest": "Each entry is verified at the moment of sending — not self-reported.",
-      "realOne": "Want to see a real one?",
-      "realOneLink": "View witnessed.cc →"
+      "realOne": "Here's one:",
+      "realOneLink": "witnessed.cc →"
     },
     "why": {
       "title": "Trust, without the theater.",
@@ -134,15 +134,8 @@
     "htmlLabel": "HTML snippet — for websites and invoice footers",
     "copy": "Copy",
     "copied": "Copied ✓",
-    "gmailQ": "How to add this to my Gmail signature?",
-    "gmailSteps": {
-      "s1": "In Gmail: click the gear → <b>See all settings</b>.",
-      "s2": "Under <b>General → Signature</b>, pick your signature.",
-      "s3": "Click the <b>Insert image</b> icon in the toolbar.",
-      "s4": "Choose <b>Web Address (URL)</b> and paste the image URL above.",
-      "s5": "Select the inserted badge, click the <b>Link</b> icon, paste <code>{url}</code>.",
-      "s6": "Scroll down and save."
-    }
+    "dark": "Dark",
+    "light": "Light"
   },
   "languageSwitcher": {
     "label": "Language",

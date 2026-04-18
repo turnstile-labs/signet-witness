@@ -39,8 +39,8 @@
       "statsCounterpartiesSub": "negocios distintos",
       "disclaimerStrong": "Este registro no se puede falsificar con fecha anterior.",
       "disclaimerRest": "Cada entrada se verifica en el momento del envío — no es autodeclarada.",
-      "realOne": "¿Quieres ver una real?",
-      "realOneLink": "Ver witnessed.cc →"
+      "realOne": "Aquí tienes una:",
+      "realOneLink": "witnessed.cc →"
     },
     "why": {
       "title": "Confianza, sin teatro.",
@@ -133,16 +133,9 @@
     "imageUrlLabel": "URL de la imagen — para firmas de email (Gmail, Apple Mail, Outlook)",
     "htmlLabel": "Fragmento HTML — para sitios web y pies de factura",
     "copy": "Copiar",
-    "copied": "¡Copiado ✓",
-    "gmailQ": "¿Cómo añadir esto a mi firma de Gmail?",
-    "gmailSteps": {
-      "s1": "En Gmail: haz clic en el engranaje → <b>Ver todos los ajustes</b>.",
-      "s2": "En <b>General → Firma</b>, elige tu firma.",
-      "s3": "Haz clic en el icono <b>Insertar imagen</b> de la barra.",
-      "s4": "Elige <b>Dirección web (URL)</b> y pega la URL de la imagen de arriba.",
-      "s5": "Selecciona el sello insertado, haz clic en el icono <b>Enlace</b> y pega <code>{url}</code>.",
-      "s6": "Baja y guarda."
-    }
+    "copied": "Copiado ✓",
+    "dark": "Oscuro",
+    "light": "Claro"
   },
   "languageSwitcher": {
     "label": "Idioma",
