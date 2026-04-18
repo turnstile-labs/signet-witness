@@ -280,7 +280,7 @@ export default async function SealPage({ params }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
-      <NavBar variant="seal" />
+      <NavBar />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
 
@@ -431,7 +431,7 @@ async function UnclaimedPage({
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
-      <NavBar variant="seal" />
+      <NavBar />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
 

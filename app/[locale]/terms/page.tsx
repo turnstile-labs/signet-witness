@@ -19,7 +19,7 @@ export default async function TermsPage({
   return (
     <div className="flex flex-col min-h-screen bg-bg">
 
-      <NavBar variant="landing" />
+      <NavBar />
 
       <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
 

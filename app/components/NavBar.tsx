@@ -3,14 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import ThemeToggle from "./ThemeToggle";
-import LanguageSwitcher from "./LanguageSwitcher";
 
-export default function NavBar({
-  variant = "landing",
-}: {
-  variant?: "landing" | "seal";
-}) {
+export default function NavBar() {
   const t = useTranslations("nav");
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -29,7 +23,7 @@ export default function NavBar({
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg/85 backdrop-blur-md">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-2 sm:gap-4">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
 
         <Link
           href="/"
@@ -39,15 +33,10 @@ export default function NavBar({
           Witnessed
         </Link>
 
-        <span className="hidden md:inline text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
-          {variant === "seal" ? t("eyebrow") : t("eyebrow")}
-        </span>
-
         <form
           onSubmit={handleSubmit}
-          className="ml-auto flex items-center gap-1.5 bg-surface border border-border rounded-lg pl-2.5 pr-1 py-1 focus-within:border-border-h transition-colors min-w-0"
+          className="ml-auto flex items-center bg-surface border border-border rounded-lg px-2.5 h-8 focus-within:border-border-h transition-colors min-w-0"
         >
-          <span className="text-muted-2 text-xs hidden sm:inline">⌕</span>
           <input
             type="text"
             value={value}
@@ -57,17 +46,17 @@ export default function NavBar({
             autoCapitalize="none"
             autoCorrect="off"
             aria-label={t("searchAria")}
-            className="bg-transparent outline-none text-xs sm:text-sm font-mono text-txt placeholder:text-muted-2 w-24 sm:w-40 min-w-0"
+            className="bg-transparent outline-none text-xs sm:text-sm font-mono text-txt placeholder:text-muted-2 w-32 sm:w-48 min-w-0"
           />
           <button
             type="submit"
             disabled={!value.trim()}
             aria-label={t("lookupAria")}
-            className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md text-accent disabled:text-muted-2 disabled:cursor-not-allowed enabled:hover:bg-accent/10 transition-colors"
+            className="shrink-0 flex items-center justify-center ml-1 -mr-0.5 w-6 h-6 rounded-md text-accent disabled:text-muted-2 disabled:cursor-not-allowed enabled:hover:bg-accent/10 transition-colors"
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
               <path
-                d="M1 5h7.5M5.5 2l3 3-3 3"
+                d="M1 6h9M6.5 2.5l3.5 3.5-3.5 3.5"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -77,8 +66,6 @@ export default function NavBar({
           </button>
         </form>
 
-        <LanguageSwitcher />
-        <ThemeToggle />
       </div>
     </header>
   );
