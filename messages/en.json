@@ -39,7 +39,11 @@
       "statsCounterpartiesSub": "distinct businesses",
       "disclaimerStrong": "This record cannot be backdated.",
       "disclaimerRest": "Each entry is verified at the moment of sending — not self-reported.",
-      "realOne": "Every witnessed domain gets its own live seal page, updated the moment new email is verified. Here's a real one:",
+      "lookupLabel": "Check any domain",
+      "lookupPlaceholder": "acme.com",
+      "lookupSubmit": "Look up",
+      "lookupAria": "Enter a domain to look up",
+      "realOne": "or see one live:",
       "realOneLink": "witnessed.cc →"
     },
     "why": {

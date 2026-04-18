@@ -4,6 +4,7 @@ import Footer from "@/app/components/Footer";
 import CopyableEmail from "@/app/components/CopyableEmail";
 import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
+import DomainSearch from "@/app/components/DomainSearch";
 import { getNetworkStats } from "@/lib/db";
 
 export const revalidate = 300;
@@ -123,12 +124,25 @@ export default async function Home({
               </div>
             </div>
 
-            <p className="text-center text-sm text-muted mt-8 max-w-lg mx-auto leading-relaxed">
-              {t("mock.realOne")}{" "}
-              <Link href="/b/witnessed.cc" className="text-accent hover:underline font-mono whitespace-nowrap">
-                witnessed.cc →
-              </Link>
-            </p>
+            <div className="mt-10 sm:mt-12">
+              <p className="text-center text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-3">
+                {t("mock.lookupLabel")}
+              </p>
+              <DomainSearch
+                placeholder={t("mock.lookupPlaceholder")}
+                submitLabel={t("mock.lookupSubmit")}
+                ariaLabel={t("mock.lookupAria")}
+              />
+              <p className="text-center text-xs text-muted-2 mt-4">
+                {t("mock.realOne")}{" "}
+                <Link
+                  href="/b/witnessed.cc"
+                  className="text-accent hover:underline font-mono whitespace-nowrap"
+                >
+                  witnessed.cc →
+                </Link>
+              </p>
+            </div>
           </div>
         </section>
 

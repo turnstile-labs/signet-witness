@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 
+// Domain lookup form.
+// Used in the mock section so anyone can check a real seal page for
+// any domain without having to be the owner or know the URL scheme.
+
 interface Props {
   placeholder: string;
+  submitLabel: string;
   ariaLabel?: string;
 }
 
-export default function DomainSearch({ placeholder, ariaLabel }: Props) {
+export default function DomainSearch({
+  placeholder,
+  submitLabel,
+  ariaLabel,
+}: Props) {
   const [value, setValue] = useState("");
   const router = useRouter();
 
@@ -27,34 +36,45 @@ export default function DomainSearch({ placeholder, ariaLabel }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="inline-flex items-center gap-2 bg-surface border border-border rounded-lg px-3 h-10 focus-within:border-border-h transition-colors w-full max-w-xs"
+      className="flex items-stretch gap-2 w-full max-w-md mx-auto"
     >
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        spellCheck={false}
-        autoCapitalize="none"
-        autoCorrect="off"
-        aria-label={ariaLabel ?? placeholder}
-        className="bg-transparent outline-none text-sm font-mono text-txt placeholder:text-muted-2 flex-1 min-w-0"
-      />
+      <label
+        className="flex-1 flex items-center bg-bg border border-border rounded-lg px-3.5 h-11 focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/15 transition-all min-w-0"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-muted-2 shrink-0 mr-2.5"
+          aria-hidden
+        >
+          <circle cx="11" cy="11" r="7" />
+          <line x1="16.5" y1="16.5" x2="21" y2="21" />
+        </svg>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="off"
+          inputMode="url"
+          aria-label={ariaLabel ?? placeholder}
+          className="bg-transparent outline-none text-sm font-mono text-txt placeholder:text-muted-2 flex-1 min-w-0"
+        />
+      </label>
       <button
         type="submit"
         disabled={!value.trim()}
-        aria-label="Look up"
-        className="shrink-0 text-accent disabled:text-muted-2 disabled:cursor-not-allowed enabled:hover:text-txt transition-colors"
+        className="shrink-0 px-4 sm:px-5 h-11 rounded-lg bg-accent text-white text-sm font-semibold tracking-wide transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden>
-          <path
-            d="M1 6h9M6.5 2.5l3.5 3.5-3.5 3.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        {submitLabel}
       </button>
     </form>
   );
