@@ -19,11 +19,13 @@
     "headline2": "Except yesterday.",
     "subhead": "A verifiable record of every business email you send — built automatically, impossible to backdate.",
     "counter": {
-      "one": "{domains} business · {events} verified email on record",
-      "many": "{domains} businesses · {events} verified emails on record"
+      "singularDomains": "business",
+      "pluralDomains": "businesses",
+      "singularEvents": "verified email on record",
+      "pluralEvents": "verified emails on record"
     },
-    "heroCta": "CC on your next business email",
-    "heroLiveLink": "See a live seal page →",
+    "heroOr": "or",
+    "lookupPlaceholder": "Look up any domain",
     "mock": {
       "eyebrow": "Every domain gets one",
       "title": "A public page anyone can check.",
@@ -52,7 +54,7 @@
         "LinkedIn history",
         "About pages",
         "Service agreements",
-        "“Years in business”"
+        "\u201cYears in business\u201d"
       ],
       "realTitle": "AI can't fake",
       "realItems": [
@@ -61,16 +63,6 @@
         "Volume no one can manufacture",
         "A track record that only grows with time"
       ]
-    },
-    "how": {
-      "title": "Three steps. The last one is forever.",
-      "sub": "No app. No account. Just one CC.",
-      "s1Title": "Add one CC",
-      "s1Body": "CC sealed@witnessed.cc on your business emails — proposals, invoices, follow-ups.",
-      "s2Title": "We verify",
-      "s2Body": "The DKIM signature from your mail server is tamper-proof. We check it, log metadata, discard the rest.",
-      "s3Title": "Your proof grows",
-      "s3Body": "Your public record at witnessed.cc/b/yourdomain accumulates automatically. Longer history, stronger proof."
     },
     "privacy": {
       "title": "Private by design.",
@@ -88,9 +80,8 @@
       "never": "✗ never"
     },
     "cta": {
-      "title": "Start your record.",
-      "sub": "Your seal page is free forever. CC one email and you're on the record.",
-      "built": "Built for freelancers, agencies, startups — anyone who needs to prove they've been here."
+      "built": "Built for freelancers, agencies, startups — anyone who needs to prove they've been here.",
+      "sub": "Free forever. No account needed."
     }
   },
   "seal": {

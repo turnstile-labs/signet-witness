@@ -4,6 +4,7 @@ import Footer from "@/app/components/Footer";
 import CopyableEmail from "@/app/components/CopyableEmail";
 import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
+import DomainSearch from "@/app/components/DomainSearch";
 import { getNetworkStats } from "@/lib/db";
 
 export const revalidate = 300;
@@ -45,26 +46,34 @@ export default async function Home({
             </p>
 
             {hasLiveCounter && (
-              <p className="text-xs text-muted-2 font-mono mb-8">
-                {t.rich(
-                  stats!.domains === 1 && stats!.events === 1
-                    ? "counter.one"
-                    : "counter.many",
-                  {
-                    domains: nf.format(stats!.domains),
-                    events: nf.format(stats!.events),
-                  }
-                )}
-              </p>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border bg-surface text-xs font-mono mb-8">
+                <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block shrink-0" />
+                <span className="text-muted">
+                  <span className="text-txt font-semibold tabular-nums">
+                    {nf.format(stats!.domains)}
+                  </span>
+                  {" "}{stats!.domains === 1 ? t("counter.singularDomains") : t("counter.pluralDomains")}
+                  {" · "}
+                  <span className="text-txt font-semibold tabular-nums">
+                    {nf.format(stats!.events)}
+                  </span>
+                  {" "}{stats!.events === 1 ? t("counter.singularEvents") : t("counter.pluralEvents")}
+                </span>
+              </div>
             )}
 
-            <CopyableEmail variant="hero" />
+            <div className="flex flex-col items-center gap-4">
+              <CopyableEmail variant="hero" />
+              <div className="flex items-center gap-3 w-full max-w-xs">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-[0.65rem] text-muted-2 font-mono uppercase tracking-widest shrink-0">
+                  {t("heroOr")}
+                </span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <DomainSearch placeholder={t("lookupPlaceholder")} />
+            </div>
 
-            <p className="mt-6 text-xs text-muted-2">
-              <Link href="/b/witnessed.cc" className="hover:text-muted transition-colors">
-                {t("heroLiveLink")}
-              </Link>
-            </p>
           </div>
         </section>
 
@@ -179,106 +188,63 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── How it works ──────────────────────────────────────── */}
+        {/* ── Private by design ────────────────────────────────── */}
         <section className="border-y border-border bg-surface py-14 sm:py-16">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-10 sm:mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
-                {t("how.title")}
-              </h2>
-              <p className="text-muted text-sm max-w-sm mx-auto">
-                {t("how.sub")}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { n: "01", title: t("how.s1Title"), body: t("how.s1Body") },
-                { n: "02", title: t("how.s2Title"), body: t("how.s2Body") },
-                { n: "03", title: t("how.s3Title"), body: t("how.s3Body") },
-              ].map((step) => (
-                <div
-                  key={step.n}
-                  className="rounded-xl border border-border bg-bg px-5 py-5 flex flex-col gap-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-accent tracking-widest">
-                      {step.n}
-                    </span>
-                    <span className="h-px flex-1 bg-border" />
-                  </div>
-                  <h3 className="font-semibold text-txt text-base">
-                    {step.title}
-                  </h3>
-                  <p className="text-muted text-sm leading-relaxed">
-                    {step.body}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Private by design ────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-          <div className="flex flex-col sm:flex-row gap-8 sm:gap-14 items-start">
-            <div className="flex-1">
-              <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-4">
-                {t("privacy.title")}
-              </h2>
-              <p className="text-muted text-sm leading-relaxed mb-4">
-                {t("privacy.body1")}
-              </p>
-              <p className="text-muted text-sm leading-relaxed">
-                {t("privacy.body2")}
-              </p>
-            </div>
-            <div className="shrink-0 sm:w-64 w-full rounded-xl border border-border bg-surface overflow-hidden text-xs font-mono">
-              <div className="border-b border-border px-4 py-2.5 text-muted-2 uppercase tracking-widest text-[0.6rem]">
-                {t("privacy.tableTitle")}
+            <div className="flex flex-col sm:flex-row gap-8 sm:gap-14 items-start">
+              <div className="flex-1">
+                <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-4">
+                  {t("privacy.title")}
+                </h2>
+                <p className="text-muted text-sm leading-relaxed mb-4">
+                  {t("privacy.body1")}
+                </p>
+                <p className="text-muted text-sm leading-relaxed">
+                  {t("privacy.body2")}
+                </p>
               </div>
-              {[
-                { label: t("privacy.senderDomain"),   stored: true },
-                { label: t("privacy.recipientDomain"), stored: true },
-                { label: t("privacy.timestamp"),      stored: true },
-                { label: t("privacy.dkimHash"),       stored: true },
-                { label: t("privacy.subject"),        stored: false },
-                { label: t("privacy.bodyRow"),        stored: false },
-                { label: t("privacy.attachments"),    stored: false },
-                { label: t("privacy.names"),          stored: false },
-              ].map((row, i, arr) => (
-                <div
-                  key={row.label}
-                  className={`flex items-center justify-between px-4 py-2.5 gap-3 ${
-                    i < arr.length - 1 ? "border-b border-border" : ""
-                  }`}
-                >
-                  <span className="text-muted truncate">{row.label}</span>
-                  {row.stored ? (
-                    <span className="text-verified shrink-0">✓</span>
-                  ) : (
-                    <span className="text-muted-2 shrink-0">{t("privacy.never")}</span>
-                  )}
+              <div className="shrink-0 sm:w-64 w-full rounded-xl border border-border bg-bg overflow-hidden text-xs font-mono">
+                <div className="border-b border-border px-4 py-2.5 text-muted-2 uppercase tracking-widest text-[0.6rem]">
+                  {t("privacy.tableTitle")}
                 </div>
-              ))}
+                {[
+                  { label: t("privacy.senderDomain"),    stored: true },
+                  { label: t("privacy.recipientDomain"), stored: true },
+                  { label: t("privacy.timestamp"),       stored: true },
+                  { label: t("privacy.dkimHash"),        stored: true },
+                  { label: t("privacy.subject"),         stored: false },
+                  { label: t("privacy.bodyRow"),         stored: false },
+                  { label: t("privacy.attachments"),     stored: false },
+                  { label: t("privacy.names"),           stored: false },
+                ].map((row, i, arr) => (
+                  <div
+                    key={row.label}
+                    className={`flex items-center justify-between px-4 py-2.5 gap-3 ${
+                      i < arr.length - 1 ? "border-b border-border" : ""
+                    }`}
+                  >
+                    <span className="text-muted truncate">{row.label}</span>
+                    {row.stored ? (
+                      <span className="text-verified shrink-0">✓</span>
+                    ) : (
+                      <span className="text-muted-2 shrink-0">{t("privacy.never")}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* ── Final CTA ────────────────────────────────────────── */}
-        <section className="border-t border-border bg-surface">
+        <section className="border-t border-border bg-bg">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
-              {t("cta.title")}
-            </h2>
-            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed mb-8">
-              {t("cta.sub")}
-            </p>
-
-            <CopyableEmail variant="hero" caption={t("heroCta")} />
-
-            <p className="mt-10 text-base sm:text-lg text-txt font-semibold max-w-xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-txt font-semibold max-w-xl mx-auto leading-relaxed mb-8">
               {t("cta.built")}
+            </p>
+            <CopyableEmail variant="hero" />
+            <p className="mt-4 text-xs text-muted-2 font-mono">
+              {t("cta.sub")}
             </p>
           </div>
         </section>
