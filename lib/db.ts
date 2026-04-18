@@ -66,13 +66,17 @@ export async function getDomain(domain: string): Promise<Domain | null> {
 
 // Fetch recent events for a domain (latest 50).
 export async function getEvents(domainId: number): Promise<WitnessEvent[]> {
-  const rows = await sql`
-    SELECT * FROM events
-    WHERE domain_id = ${domainId}
-    ORDER BY witnessed_at DESC
-    LIMIT 50
-  ` as unknown as WitnessEvent[];
-  return rows;
+  try {
+    const rows = await sql`
+      SELECT * FROM events
+      WHERE domain_id = ${domainId}
+      ORDER BY witnessed_at DESC
+      LIMIT 50
+    ` as unknown as WitnessEvent[];
+    return rows;
+  } catch {
+    return [];
+  }
 }
 
 // Count how many witnessed emails list this domain as a receiver
@@ -116,15 +120,19 @@ export async function getDailyActivity(
   domainId: number,
   days: number = 30
 ): Promise<{ date: string; count: number }[]> {
-  const rows = await sql`
-    SELECT
-      to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS date,
-      COUNT(*)::int AS count
-    FROM events
-    WHERE domain_id = ${domainId}
-      AND witnessed_at >= NOW() - (${days} || ' days')::interval
-    GROUP BY 1
-    ORDER BY 1 ASC
-  ` as unknown as { date: string; count: number }[];
-  return rows;
+  try {
+    const rows = await sql`
+      SELECT
+        to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS date,
+        COUNT(*)::int AS count
+      FROM events
+      WHERE domain_id = ${domainId}
+        AND witnessed_at >= NOW() - INTERVAL '1 day' * ${days}
+      GROUP BY 1
+      ORDER BY 1 ASC
+    ` as unknown as { date: string; count: number }[];
+    return rows;
+  } catch {
+    return [];
+  }
 }
