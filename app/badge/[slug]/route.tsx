@@ -41,7 +41,6 @@ type State = "verified" | "building" | "pending";
 interface Palette {
   bg: string;
   border: string;
-  mark: string;
   brand: string;
   sep: string;
   domain: string;
@@ -51,7 +50,6 @@ const PALETTES: Record<Theme, Palette> = {
   dark: {
     bg: "#0c0c0f",
     border: "#25252f",
-    mark: "#7c6af7",
     brand: "#e8e8f2",
     sep: "#60607a",
     domain: "#e8e8f2",
@@ -59,7 +57,6 @@ const PALETTES: Record<Theme, Palette> = {
   light: {
     bg: "#ffffff",
     border: "#e0e0ec",
-    mark: "#6252e8",
     brand: "#18181e",
     sep: "#9090b0",
     domain: "#18181e",
@@ -119,10 +116,9 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${s.label.toLowerCase()})">
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="${p.bg}" stroke="${p.border}"/>
-  <text x="16" y="26" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="${p.mark}">✦</text>
-  <text x="34" y="25" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="${p.brand}" letter-spacing="-0.01em">Witnessed</text>
-  <text x="106" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="${p.sep}">·</text>
-  <text x="116" y="25" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" fill="${p.domain}">${esc(displayDomain)}</text>
+  <text x="16" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="800" fill="${p.brand}" letter-spacing="0.1em">WITNESSED</text>
+  <text x="98" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="${p.sep}">·</text>
+  <text x="108" y="25" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" fill="${p.domain}">${esc(displayDomain)}</text>
   <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${pillH / 2}" fill="${s.fill}" stroke="${s.stroke}"/>
   <circle cx="${pillX + 12}" cy="${pillY + pillH / 2}" r="3" fill="${s.dot}"/>
   <text x="${pillX + 22}" y="${pillY + pillH / 2 + 3.5}" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="0.08em" fill="${s.text}">${s.label}</text>
@@ -156,29 +152,16 @@ function renderPng(domain: string, state: State, theme: Theme) {
           boxSizing: "border-box",
         }}
       >
-        {/* Mark — drawn as inline SVG so we don't depend on fonts */}
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          style={{ marginRight: 14 }}
-        >
-          <polygon
-            points="12,2 14.5,9.5 22,12 14.5,14.5 12,22 9.5,14.5 2,12 9.5,9.5"
-            fill={p.mark}
-          />
-        </svg>
-
         <span
           style={{
             color: p.brand,
-            fontSize: 26,
-            fontWeight: 700,
+            fontSize: 22,
+            fontWeight: 800,
             marginRight: 14,
-            letterSpacing: -0.5,
+            letterSpacing: 2.2,
           }}
         >
-          Witnessed
+          WITNESSED
         </span>
 
         <span style={{ color: p.sep, fontSize: 22, marginRight: 14 }}>·</span>

@@ -33,10 +33,10 @@ export default function NavBar({
 
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold text-sm tracking-tight shrink-0"
+          className="font-brand text-txt text-sm sm:text-base shrink-0"
+          aria-label="Witnessed"
         >
-          <span className="text-accent text-base">✦</span>
-          <span className="text-txt">Witnessed</span>
+          Witnessed
         </Link>
 
         <span className="hidden md:inline text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">

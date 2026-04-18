@@ -32,12 +32,7 @@ export default async function Home({
         {/* ── Hero ─────────────────────────────────────────────── */}
         <section className="relative overflow-hidden">
           <HeroBackdrop />
-          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-14 sm:pb-16 text-center">
-
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface/80 backdrop-blur text-xs text-muted mb-8 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block" />
-              {t("badge")}
-            </div>
+          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-14 sm:pb-16 text-center">
 
             <h1 className="text-[2.25rem] sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
               {t("headline1")}

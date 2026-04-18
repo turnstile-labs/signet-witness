@@ -36,7 +36,6 @@ export default function CopyableEmail({
         className="group inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-surface hover:border-border-h transition-colors text-sm font-mono"
         aria-label={`${t("aria")} (${email})`}
       >
-        <span className="text-accent">✦</span>
         <code className="text-txt">{email}</code>
         <span
           className={`ml-1 text-[0.65rem] uppercase tracking-widest transition-colors ${

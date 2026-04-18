@@ -65,7 +65,7 @@ Consistent CC activity for 90 days (with at least 10 witnessed emails) earns
 a **Verified** badge — a live image you embed anywhere that updates
 automatically as your history grows.
 
-> ✦ `acme.com` · Verified · 847 Days Active
+> **WITNESSED** · `acme.com` · Verified · 847 Days Active
 
 A scammer can copy the image. They can't copy the history. One click reveals
 the real record.
