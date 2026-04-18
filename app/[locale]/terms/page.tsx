@@ -1,6 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import ThemeToggle from "@/app/components/ThemeToggle";
+import { setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
 
 export const metadata: Metadata = {
@@ -8,21 +9,19 @@ export const metadata: Metadata = {
   description: "Terms of service for Witnessed.",
 };
 
-export default function TermsPage() {
+export default async function TermsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return (
     <div className="flex flex-col min-h-screen bg-bg">
 
-      <header className="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-md">
-        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-sm tracking-tight">
-            <span className="text-accent text-base">✦</span>
-            <span className="text-txt">Witnessed</span>
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
+      <NavBar variant="landing" />
 
-      <main className="flex-1 max-w-2xl mx-auto px-6 py-16 w-full">
+      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16 w-full">
 
         <p className="text-xs text-muted-2 font-mono uppercase tracking-widest mb-3">Legal</p>
         <h1 className="text-3xl font-bold text-txt mb-2">Terms of Service</h1>

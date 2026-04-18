@@ -1,0 +1,169 @@
+{
+  "nav": {
+    "eyebrow": "Proof of business",
+    "searchPlaceholder": "Look up a domain",
+    "searchAria": "Look up a domain",
+    "lookupAria": "Look up"
+  },
+  "footer": {
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
+  "copyableEmail": {
+    "caption": "CC this on your next business email",
+    "copy": "Copy",
+    "copied": "Copied ✓",
+    "aria": "Copy sender address"
+  },
+  "home": {
+    "badge": "Proof of business",
+    "headline1": "AI can fake everything.",
+    "headline2": "Except yesterday.",
+    "subhead": "A verifiable record of every business email you send — built automatically, impossible to backdate.",
+    "counter": {
+      "one": "{domains} business · {events} verified email on record",
+      "many": "{domains} businesses · {events} verified emails on record"
+    },
+    "heroCta": "CC on your next business email",
+    "heroLiveLink": "See a live seal page →",
+    "mock": {
+      "eyebrow": "Every domain gets one",
+      "title": "A public page anyone can check.",
+      "sub": "Real sender. Real timestamps. Real volume. Nothing staged, nothing self-reported.",
+      "verifiedActive": "Verified Active",
+      "statsVerifiedEmails": "Verified emails",
+      "statsVerifiedEmailsSub": "independently confirmed",
+      "statsActiveHistory": "Active history",
+      "statsActiveHistorySub": "first to last email",
+      "statsCounterparties": "Counterparties",
+      "statsCounterpartiesSub": "distinct businesses",
+      "disclaimerStrong": "This record cannot be backdated.",
+      "disclaimerRest": "Each entry is verified at the moment of sending — not self-reported.",
+      "realOne": "Want to see a real one?",
+      "realOneLink": "View witnessed.cc →"
+    },
+    "why": {
+      "title": "Trust, without the theater.",
+      "sub": "Anyone can generate a polished website, a LinkedIn history, or a wall of testimonials. No one can retroactively send email.",
+      "fakeTitle": "AI can fake",
+      "fakeItems": [
+        "Testimonials",
+        "Case studies",
+        "Portfolio sites",
+        "Press releases",
+        "LinkedIn history",
+        "About pages",
+        "Service agreements",
+        "“Years in business”"
+      ],
+      "realTitle": "AI can't fake",
+      "realItems": [
+        "Verified email timestamps",
+        "A real history of real conversations",
+        "Volume no one can manufacture",
+        "A track record that only grows with time"
+      ]
+    },
+    "how": {
+      "title": "Three steps. The last one is forever.",
+      "sub": "No app. No account. Just one CC.",
+      "s1Title": "Add one CC",
+      "s1Body": "CC sealed@witnessed.cc on your business emails — proposals, invoices, follow-ups.",
+      "s2Title": "We verify",
+      "s2Body": "The DKIM signature from your mail server is tamper-proof. We check it, log metadata, discard the rest.",
+      "s3Title": "Your proof grows",
+      "s3Body": "Your public record at witnessed.cc/b/yourdomain accumulates automatically. Longer history, stronger proof."
+    },
+    "privacy": {
+      "title": "Private by design.",
+      "body1": "Your emails contain sensitive information. We never see it. The CC reaches us, we verify the sender, record the timestamp, and discard everything else.",
+      "body2": "You choose which conversations count. Nothing is collected without an explicit CC from you.",
+      "tableTitle": "What we store",
+      "senderDomain": "Sender domain",
+      "recipientDomain": "Recipient domain",
+      "timestamp": "Timestamp",
+      "dkimHash": "DKIM signature hash",
+      "subject": "Email subject",
+      "bodyRow": "Email body",
+      "attachments": "Attachments",
+      "names": "Personal names",
+      "never": "✗ never"
+    },
+    "cta": {
+      "title": "Start your record.",
+      "sub": "Your seal page is free forever. CC one email and you're on the record.",
+      "built": "Built for freelancers, agencies, startups — anyone who needs to prove they've been here."
+    }
+  },
+  "seal": {
+    "eyebrow": "Proof of business",
+    "verifiedActive": "Verified Active",
+    "building": "Building",
+    "pending": "Pending",
+    "statVerifiedEmails": "Verified emails",
+    "statVerifiedEmailsSub": "independently confirmed",
+    "statActiveHistory": "Active history",
+    "statActiveHistorySub": "first to last email",
+    "statCounterparties": "Counterparties",
+    "statCounterpartiesSub": "distinct businesses",
+    "disclaimerStrong": "This record cannot be backdated.",
+    "disclaimerRest": "Each entry is verified at the moment of sending — not self-reported.",
+    "buildingTitle": "Building toward Verified",
+    "buildingInProgress": "In progress",
+    "buildingBody": "Verified requires {days}+ days on record and at least {emails} verified emails.",
+    "daysOnRecord": "Days on record",
+    "verifiedEmails": "Verified emails",
+    "last30": "Last 30 days",
+    "verifiedEmailsOne": "verified email",
+    "verifiedEmailsMany": "verified emails",
+    "barLegend": "each bar = one day",
+    "whatThisProves": "What this proves",
+    "proof1": "Every entry was independently verified at the moment of sending — not self-reported.",
+    "proof2": "Timestamps are cryptographic. No entry can be backdated — this history only grows forward.",
+    "proof3": "{domain} was actively doing business on these dates. Proof of operation, not a claim.",
+    "activity": "Verified business activity",
+    "latestOfTotal": "latest 20 of {total}",
+    "ofTotal": "{count} total",
+    "rowFootnote": "Each row is one independently verified email sent from {domain} to that business.",
+    "ownThisDomain": "Own this domain?",
+    "ownThisDomainBody": "Add this badge to your email signature, website, or invoice footer. Each view links back to this live seal page.",
+    "unclaimed": {
+      "noOutbound": "No outbound record yet",
+      "noOutboundBody": "{domain} has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}} — other businesses are already emailing this domain and CCing Witnessed. But {domain} hasn't started building its own outbound record yet.",
+      "ownQ": "Own this domain?",
+      "ownBody": "CC {email} on your outgoing emails to start building your record.",
+      "howItWorks": "How it works →",
+      "recipientMeans": "What recipient activity means",
+      "recipientBody": "When any business sends an email and CCs {email}, we record the recipient's domain too. This shows real companies are already doing business with {domain}.",
+      "noRecord": "No record yet",
+      "noRecordBody": "{domain} hasn't been witnessed yet. Once you CC {email} on a business email, this page will show a verified history — automatically, with no account needed."
+    }
+  },
+  "badge": {
+    "preview": "Preview",
+    "imageUrlLabel": "Image URL — for email signatures (Gmail, Apple Mail, Outlook)",
+    "htmlLabel": "HTML snippet — for websites and invoice footers",
+    "copy": "Copy",
+    "copied": "Copied ✓",
+    "gmailQ": "How to add this to my Gmail signature?",
+    "gmailSteps": {
+      "s1": "In Gmail: click the gear → See all settings.",
+      "s1b": "In Gmail: click the gear → {settings}.",
+      "settings": "See all settings",
+      "s2": "Under {general}, pick your signature.",
+      "general": "General → Signature",
+      "s3": "Click the {insertImage} icon in the toolbar.",
+      "insertImage": "Insert image",
+      "s4": "Choose {webUrl} and paste the image URL above.",
+      "webUrl": "Web Address (URL)",
+      "s5": "Select the inserted badge, click the {link} icon, paste {sealUrl}.",
+      "link": "Link",
+      "s6": "Scroll down and save."
+    }
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "es": "Español"
+  }
+}

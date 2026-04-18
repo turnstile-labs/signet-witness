@@ -1,0 +1,169 @@
+{
+  "nav": {
+    "eyebrow": "Prueba de negocio",
+    "searchPlaceholder": "Buscar un dominio",
+    "searchAria": "Buscar un dominio",
+    "lookupAria": "Buscar"
+  },
+  "footer": {
+    "privacy": "Privacidad",
+    "terms": "Términos"
+  },
+  "copyableEmail": {
+    "caption": "Ponlo en copia en tu próximo email de trabajo",
+    "copy": "Copiar",
+    "copied": "¡Copiado ✓",
+    "aria": "Copiar dirección del remitente"
+  },
+  "home": {
+    "badge": "Prueba de negocio",
+    "headline1": "La IA puede inventar cualquier cosa.",
+    "headline2": "Excepto el ayer.",
+    "subhead": "Un registro verificable de cada email de trabajo que envías — creado automáticamente, imposible de falsificar con fecha anterior.",
+    "counter": {
+      "one": "{domains} negocio · {events} email verificado en el registro",
+      "many": "{domains} negocios · {events} emails verificados en el registro"
+    },
+    "heroCta": "Ponlo en copia en tu próximo email",
+    "heroLiveLink": "Ver una página de sello en vivo →",
+    "mock": {
+      "eyebrow": "Cada dominio tiene la suya",
+      "title": "Una página pública que cualquiera puede consultar.",
+      "sub": "Remitente real. Fechas reales. Volumen real. Nada preparado, nada autodeclarado.",
+      "verifiedActive": "Activo Verificado",
+      "statsVerifiedEmails": "Emails verificados",
+      "statsVerifiedEmailsSub": "confirmados de forma independiente",
+      "statsActiveHistory": "Historial activo",
+      "statsActiveHistorySub": "del primer al último email",
+      "statsCounterparties": "Contrapartes",
+      "statsCounterpartiesSub": "negocios distintos",
+      "disclaimerStrong": "Este registro no se puede falsificar con fecha anterior.",
+      "disclaimerRest": "Cada entrada se verifica en el momento del envío — no es autodeclarada.",
+      "realOne": "¿Quieres ver una real?",
+      "realOneLink": "Ver witnessed.cc →"
+    },
+    "why": {
+      "title": "Confianza, sin teatro.",
+      "sub": "Cualquiera puede generar una web impecable, un historial de LinkedIn o un muro de testimonios. Nadie puede enviar email hacia atrás en el tiempo.",
+      "fakeTitle": "La IA puede falsificar",
+      "fakeItems": [
+        "Testimonios",
+        "Casos de estudio",
+        "Sitios de portfolio",
+        "Notas de prensa",
+        "Historial de LinkedIn",
+        "Páginas “Sobre nosotros”",
+        "Contratos de servicio",
+        "“Años en el mercado”"
+      ],
+      "realTitle": "La IA no puede falsificar",
+      "realItems": [
+        "Marcas de tiempo de email verificadas",
+        "Un historial real de conversaciones reales",
+        "Volumen que nadie puede fabricar",
+        "Un historial que sólo crece con el tiempo"
+      ]
+    },
+    "how": {
+      "title": "Tres pasos. El último es para siempre.",
+      "sub": "Sin app. Sin cuenta. Sólo un CC.",
+      "s1Title": "Añade un CC",
+      "s1Body": "Pon sealed@witnessed.cc en copia en tus emails de trabajo — propuestas, facturas, seguimientos.",
+      "s2Title": "Verificamos",
+      "s2Body": "La firma DKIM de tu servidor de correo es infalsificable. La verificamos, guardamos los metadatos y descartamos el resto.",
+      "s3Title": "Tu prueba crece",
+      "s3Body": "Tu registro público en witnessed.cc/b/tudominio se acumula automáticamente. Más historial, prueba más fuerte."
+    },
+    "privacy": {
+      "title": "Privado por diseño.",
+      "body1": "Tus emails contienen información sensible. Nunca la vemos. El CC llega hasta nosotros, verificamos al remitente, registramos la fecha y descartamos todo lo demás.",
+      "body2": "Tú eliges qué conversaciones cuentan. Nada se recopila sin un CC explícito tuyo.",
+      "tableTitle": "Qué guardamos",
+      "senderDomain": "Dominio del remitente",
+      "recipientDomain": "Dominio del destinatario",
+      "timestamp": "Marca de tiempo",
+      "dkimHash": "Hash de la firma DKIM",
+      "subject": "Asunto del email",
+      "bodyRow": "Cuerpo del email",
+      "attachments": "Archivos adjuntos",
+      "names": "Nombres personales",
+      "never": "✗ nunca"
+    },
+    "cta": {
+      "title": "Empieza tu registro.",
+      "sub": "Tu página de sello es gratuita para siempre. Pon un email en copia y quedas en el registro.",
+      "built": "Hecho para freelancers, agencias y startups — cualquiera que necesite probar que ha estado ahí."
+    }
+  },
+  "seal": {
+    "eyebrow": "Prueba de negocio",
+    "verifiedActive": "Activo Verificado",
+    "building": "En construcción",
+    "pending": "Pendiente",
+    "statVerifiedEmails": "Emails verificados",
+    "statVerifiedEmailsSub": "confirmados de forma independiente",
+    "statActiveHistory": "Historial activo",
+    "statActiveHistorySub": "del primer al último email",
+    "statCounterparties": "Contrapartes",
+    "statCounterpartiesSub": "negocios distintos",
+    "disclaimerStrong": "Este registro no se puede falsificar con fecha anterior.",
+    "disclaimerRest": "Cada entrada se verifica en el momento del envío — no es autodeclarada.",
+    "buildingTitle": "Construyendo hacia Verificado",
+    "buildingInProgress": "En progreso",
+    "buildingBody": "Verificado requiere {days}+ días en el registro y al menos {emails} emails verificados.",
+    "daysOnRecord": "Días en el registro",
+    "verifiedEmails": "Emails verificados",
+    "last30": "Últimos 30 días",
+    "verifiedEmailsOne": "email verificado",
+    "verifiedEmailsMany": "emails verificados",
+    "barLegend": "cada barra = un día",
+    "whatThisProves": "Qué demuestra esto",
+    "proof1": "Cada entrada se verificó de forma independiente en el momento del envío — no es autodeclarada.",
+    "proof2": "Las marcas de tiempo son criptográficas. Ninguna entrada se puede falsificar con fecha anterior — este historial sólo crece hacia adelante.",
+    "proof3": "{domain} estaba haciendo negocios activamente en esas fechas. Prueba de operación, no una afirmación.",
+    "activity": "Actividad empresarial verificada",
+    "latestOfTotal": "últimos 20 de {total}",
+    "ofTotal": "{count} en total",
+    "rowFootnote": "Cada fila es un email verificado de forma independiente enviado desde {domain} a ese negocio.",
+    "ownThisDomain": "¿Eres el dueño del dominio?",
+    "ownThisDomainBody": "Añade este sello a tu firma de email, sitio web o pie de factura. Cada vista enlaza de vuelta a esta página en vivo.",
+    "unclaimed": {
+      "noOutbound": "Todavía sin registro de envíos",
+      "noOutboundBody": "{domain} ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}} — otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia. Pero {domain} aún no ha empezado a construir su propio registro.",
+      "ownQ": "¿Eres el dueño del dominio?",
+      "ownBody": "Pon {email} en copia en tus emails salientes para empezar a construir tu registro.",
+      "howItWorks": "Cómo funciona →",
+      "recipientMeans": "Qué significa la actividad como destinatario",
+      "recipientBody": "Cuando cualquier negocio envía un email y pone {email} en copia, también registramos el dominio del destinatario. Esto muestra que otras empresas ya están haciendo negocios con {domain}.",
+      "noRecord": "Aún sin registro",
+      "noRecordBody": "{domain} todavía no ha sido registrado. En cuanto pongas {email} en copia en un email de trabajo, esta página mostrará un historial verificado — automáticamente, sin necesidad de cuenta."
+    }
+  },
+  "badge": {
+    "preview": "Vista previa",
+    "imageUrlLabel": "URL de la imagen — para firmas de email (Gmail, Apple Mail, Outlook)",
+    "htmlLabel": "Fragmento HTML — para sitios web y pies de factura",
+    "copy": "Copiar",
+    "copied": "¡Copiado ✓",
+    "gmailQ": "¿Cómo añadir esto a mi firma de Gmail?",
+    "gmailSteps": {
+      "s1": "En Gmail: haz clic en el engranaje → Ver todos los ajustes.",
+      "s1b": "En Gmail: haz clic en el engranaje → {settings}.",
+      "settings": "Ver todos los ajustes",
+      "s2": "En {general}, elige tu firma.",
+      "general": "General → Firma",
+      "s3": "Haz clic en el icono {insertImage} de la barra.",
+      "insertImage": "Insertar imagen",
+      "s4": "Elige {webUrl} y pega la URL de la imagen de arriba.",
+      "webUrl": "Dirección web (URL)",
+      "s5": "Selecciona el sello insertado, haz clic en el icono {link}, pega {sealUrl}.",
+      "link": "Enlace",
+      "s6": "Baja y guarda."
+    }
+  },
+  "languageSwitcher": {
+    "label": "Idioma",
+    "en": "English",
+    "es": "Español"
+  }
+}

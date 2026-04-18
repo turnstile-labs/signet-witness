@@ -1,15 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function NavBar({
   variant = "landing",
 }: {
   variant?: "landing" | "seal";
 }) {
+  const t = useTranslations("nav");
   const router = useRouter();
   const [value, setValue] = useState("");
 
@@ -27,7 +29,7 @@ export default function NavBar({
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg/85 backdrop-blur-md">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3 sm:gap-4">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-2 sm:gap-4">
 
         <Link
           href="/"
@@ -37,8 +39,8 @@ export default function NavBar({
           <span className="text-txt">Witnessed</span>
         </Link>
 
-        <span className="hidden sm:inline text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
-          {variant === "seal" ? "Proof of business" : "Proof of business"}
+        <span className="hidden md:inline text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
+          {variant === "seal" ? t("eyebrow") : t("eyebrow")}
         </span>
 
         <form
@@ -50,17 +52,17 @@ export default function NavBar({
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Look up a domain"
+            placeholder={t("searchPlaceholder")}
             spellCheck={false}
             autoCapitalize="none"
             autoCorrect="off"
-            aria-label="Look up a domain"
-            className="bg-transparent outline-none text-xs sm:text-sm font-mono text-txt placeholder:text-muted-2 w-28 sm:w-40 min-w-0"
+            aria-label={t("searchAria")}
+            className="bg-transparent outline-none text-xs sm:text-sm font-mono text-txt placeholder:text-muted-2 w-24 sm:w-40 min-w-0"
           />
           <button
             type="submit"
             disabled={!value.trim()}
-            aria-label="Look up"
+            aria-label={t("lookupAria")}
             className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md text-accent disabled:text-muted-2 disabled:cursor-not-allowed enabled:hover:bg-accent/10 transition-colors"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
@@ -75,6 +77,7 @@ export default function NavBar({
           </button>
         </form>
 
+        <LanguageSwitcher />
         <ThemeToggle />
       </div>
     </header>
