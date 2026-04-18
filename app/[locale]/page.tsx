@@ -4,7 +4,6 @@ import Footer from "@/app/components/Footer";
 import CopyableEmail from "@/app/components/CopyableEmail";
 import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
-import DomainSearch from "@/app/components/DomainSearch";
 import { getNetworkStats } from "@/lib/db";
 
 export const revalidate = 300;
@@ -33,46 +32,36 @@ export default async function Home({
         {/* ── Hero ─────────────────────────────────────────────── */}
         <section className="relative overflow-hidden">
           <HeroBackdrop />
-          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-14 sm:pb-16 text-center">
+          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-16 sm:pb-20 text-center">
 
-            <h1 className="text-[2.25rem] sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
+            <h1 className="text-[2.5rem] sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
               {t("headline1")}
               <br />
               <span className="text-accent">{t("headline2")}</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-8">
+            <p className="text-base sm:text-lg text-muted max-w-lg mx-auto leading-relaxed mb-10">
               {t("subhead")}
             </p>
 
+            <CopyableEmail variant="hero" />
+
             {hasLiveCounter && (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border bg-surface text-xs font-mono mb-8">
+              <div className="inline-flex items-center gap-2 mt-6 text-xs font-mono text-muted-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block shrink-0" />
-                <span className="text-muted">
-                  <span className="text-txt font-semibold tabular-nums">
+                <span>
+                  <span className="text-muted tabular-nums font-medium">
                     {nf.format(stats!.domains)}
                   </span>
                   {" "}{stats!.domains === 1 ? t("counter.singularDomains") : t("counter.pluralDomains")}
                   {" · "}
-                  <span className="text-txt font-semibold tabular-nums">
+                  <span className="text-muted tabular-nums font-medium">
                     {nf.format(stats!.events)}
                   </span>
                   {" "}{stats!.events === 1 ? t("counter.singularEvents") : t("counter.pluralEvents")}
                 </span>
               </div>
             )}
-
-            <div className="flex flex-col items-center gap-4">
-              <CopyableEmail variant="hero" />
-              <div className="flex items-center gap-3 w-full max-w-xs">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-[0.65rem] text-muted-2 font-mono uppercase tracking-widest shrink-0">
-                  {t("heroOr")}
-                </span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <DomainSearch placeholder={t("lookupPlaceholder")} />
-            </div>
 
           </div>
         </section>
@@ -133,8 +122,8 @@ export default async function Home({
 
             <p className="text-center text-xs text-muted-2 mt-6">
               {t("mock.realOne")}{" "}
-              <Link href="/b/witnessed.cc" className="text-accent hover:underline">
-                {t("mock.realOneLink")}
+              <Link href="/b/witnessed.cc" className="text-accent hover:underline font-mono">
+                witnessed.cc →
               </Link>
             </p>
           </div>

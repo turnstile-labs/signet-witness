@@ -20,11 +20,11 @@
   --font-brand: Unbounded, 'Space Grotesk', Inter, -apple-system, sans-serif;
 }
 
-/* Brand wordmark — uppercase, tight-tracked, ink-weight Unbounded */
+/* Brand wordmark — uppercase, Unbounded 700 */
 .font-brand {
   font-family: var(--font-brand);
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
