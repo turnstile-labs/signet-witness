@@ -364,26 +364,34 @@ export default async function SealPage({ params }: Props) {
               </p>
             </div>
             <div className="bg-surface border border-border rounded-xl overflow-hidden">
-              {events.slice(0, 20).map((event, i) => (
-                <div
-                  key={(event as WitnessEvent).id}
-                  className={`flex items-center justify-between px-4 sm:px-5 py-3 gap-3 ${
-                    i < Math.min(events.length, 20) - 1
-                      ? "border-b border-border"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                    <span className="text-xs sm:text-sm font-mono text-txt truncate">
-                      {event.receiver_domain}
+              <div
+                className={
+                  events.length > 7
+                    ? "max-h-[21rem] overflow-y-auto"
+                    : ""
+                }
+              >
+                {events.slice(0, 20).map((event, i) => (
+                  <div
+                    key={(event as WitnessEvent).id}
+                    className={`flex items-center justify-between px-4 sm:px-5 py-3 gap-3 ${
+                      i < Math.min(events.length, 20) - 1
+                        ? "border-b border-border"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                      <span className="text-xs sm:text-sm font-mono text-txt truncate">
+                        {event.receiver_domain}
+                      </span>
+                    </div>
+                    <span className="text-[0.7rem] sm:text-xs font-mono text-muted-2 shrink-0">
+                      {formatDateShort(event.witnessed_at, locale)}
                     </span>
                   </div>
-                  <span className="text-[0.7rem] sm:text-xs font-mono text-muted-2 shrink-0">
-                    {formatDateShort(event.witnessed_at, locale)}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
             <p className="text-xs text-muted-2 mt-2 px-1">
               {t.rich("rowFootnote", {

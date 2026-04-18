@@ -100,37 +100,69 @@ function stateStyle(state: State): StatusStyle {
   }
 }
 
-function truncateDomain(domain: string): string {
-  return domain.length > 22 ? domain.slice(0, 21) + "…" : domain;
+function truncateDomain(domain: string, maxChars: number): string {
+  return domain.length > maxChars
+    ? domain.slice(0, Math.max(1, maxChars - 1)) + "…"
+    : domain;
 }
 
-function renderSvg(domain: string, state: State, theme: Theme): string {
+// Status label shown inside the pill — append the live event count for
+// building/verified states so the badge reflects the current record.
+function statusLabel(state: State, count: number, s: StatusStyle): string {
+  return state === "pending" ? s.label : `${s.label} · ${count}`;
+}
+
+function renderSvg(
+  domain: string,
+  state: State,
+  count: number,
+  theme: Theme
+): string {
   const p = PALETTES[theme];
   const s = stateStyle(state);
-  const displayDomain = truncateDomain(domain);
+  const label = statusLabel(state, count, s);
 
-  const pillW = 92;
+  // Rough character-width approximations for Helvetica at 9px with a
+  // slight letter-spacing — used to size the pill and truncate the domain.
+  const pillCharW = 5.6;
+  const pillW = Math.max(72, Math.round(label.length * pillCharW + 28));
   const pillH = 22;
   const pillX = W - 14 - pillW;
   const pillY = (H - pillH) / 2;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${s.label.toLowerCase()})">
+  // Domain text lives between the separator and the status pill.
+  const domainStartX = 108;
+  const availableDomainW = pillX - 12 - domainStartX;
+  const domainCharW = 6.5;
+  const maxDomainChars = Math.max(4, Math.floor(availableDomainW / domainCharW));
+  const displayDomain = truncateDomain(domain, maxDomainChars);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${label.toLowerCase()})">
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="${p.bg}" stroke="${p.border}"/>
   <text x="16" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="800" fill="${p.brand}" letter-spacing="0.1em">WITNESSED</text>
   <text x="98" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="${p.sep}">·</text>
-  <text x="108" y="25" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" fill="${p.domain}">${esc(displayDomain)}</text>
+  <text x="${domainStartX}" y="25" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" fill="${p.domain}">${esc(displayDomain)}</text>
   <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${pillH / 2}" fill="${s.fill}" stroke="${s.stroke}"/>
   <circle cx="${pillX + 12}" cy="${pillY + pillH / 2}" r="3" fill="${s.dot}"/>
-  <text x="${pillX + 22}" y="${pillY + pillH / 2 + 3.5}" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="0.08em" fill="${s.text}">${s.label}</text>
+  <text x="${pillX + 22}" y="${pillY + pillH / 2 + 3.5}" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="0.08em" fill="${s.text}">${esc(label)}</text>
 </svg>`;
 }
 
 // PNG variant — renders the same badge via next/og so it embeds
 // cleanly in email signatures (Gmail, Outlook, Apple Mail).
-function renderPng(domain: string, state: State, theme: Theme) {
+function renderPng(
+  domain: string,
+  state: State,
+  count: number,
+  theme: Theme,
+  cacheHeaders: Record<string, string>
+) {
   const p = PALETTES[theme];
   const s = stateStyle(state);
-  const displayDomain = truncateDomain(domain);
+  const label = statusLabel(state, count, s);
+  // PNG rendering (flexbox) auto-scales to content, so we only truncate
+  // for very long domains to keep the overall canvas at 360×40.
+  const displayDomain = truncateDomain(domain, 22);
 
   // Rendered at 2× (720×80) and displayed at 360×40 for retina crispness.
   const PNG_W = W * 2;
@@ -199,7 +231,7 @@ function renderPng(domain: string, state: State, theme: Theme) {
               letterSpacing: 1.6,
             }}
           >
-            {s.label}
+            {label}
           </span>
         </div>
       </div>
@@ -207,32 +239,64 @@ function renderPng(domain: string, state: State, theme: Theme) {
     {
       width: PNG_W,
       height: PNG_H,
-      headers: {
-        "Cache-Control":
-          "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: cacheHeaders,
     }
   );
 }
 
-async function resolveState(domain: string): Promise<State> {
+interface Snapshot {
+  state: State;
+  count: number;
+}
+
+async function resolveSnapshot(domain: string): Promise<Snapshot> {
   try {
     const record = await getDomain(domain);
-    if (!record) return "pending";
+    if (!record) return { state: "pending", count: 0 };
     const days = Math.floor(
       (Date.now() - new Date(record.first_seen).getTime()) / 86_400_000
     );
-    if (days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS) {
-      return "verified";
-    }
-    return "building";
+    const state: State =
+      days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS
+        ? "verified"
+        : "building";
+    return { state, count: record.event_count };
   } catch {
-    return "pending";
+    return { state: "pending", count: 0 };
   }
 }
 
-export const revalidate = 300;
+// Aggressive-but-friendly caching for email embeds.
+//
+//   max-age=60           — browsers / Apple Mail refresh at most every minute
+//   s-maxage=120         — Vercel edge caches 2 min, keeping origin hits low
+//   stale-while-revalidate=3600
+//                        — edge serves last version while re-fetching in the
+//                          background, so users never wait on a cold cache
+//
+// Gmail's image proxy has its own cache heuristics that we can't fully
+// control, but a short max-age plus an ETag keyed on (state, count, theme)
+// means it *can* revalidate cheaply and pick up new counts within hours.
+function cacheHeaders(
+  snapshot: Snapshot,
+  theme: Theme,
+  format: "svg" | "png"
+): Record<string, string> {
+  const etag = `W/"${snapshot.state}-${snapshot.count}-${theme}-${format}"`;
+  return {
+    "Cache-Control":
+      "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
+    ETag: etag,
+    "Access-Control-Allow-Origin": "*",
+    ...(format === "svg"
+      ? { "Content-Type": "image/svg+xml; charset=utf-8" }
+      : {}),
+  };
+}
+
+// Tell Next not to ISR-cache this response — we manage freshness via the
+// HTTP headers above, and the payload is tiny.
+export const revalidate = 0;
 
 export async function GET(
   request: Request,
@@ -250,19 +314,20 @@ export async function GET(
       ? "light"
       : "dark";
 
-  const state = await resolveState(domain);
+  const snapshot = await resolveSnapshot(domain);
+  const headers = cacheHeaders(snapshot, theme, format);
 
-  if (format === "png") {
-    return renderPng(domain, state, theme);
+  // Conditional GET — respond 304 when the caller (CDN, Gmail proxy, browser)
+  // already has the same (state, count, theme) fingerprint.
+  const ifNoneMatch = request.headers.get("if-none-match");
+  if (ifNoneMatch && ifNoneMatch === headers.ETag) {
+    return new Response(null, { status: 304, headers });
   }
 
-  const svg = renderSvg(domain, state, theme);
-  return new Response(svg, {
-    headers: {
-      "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control":
-        "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+  if (format === "png") {
+    return renderPng(domain, snapshot.state, snapshot.count, theme, headers);
+  }
+
+  const svg = renderSvg(domain, snapshot.state, snapshot.count, theme);
+  return new Response(svg, { headers });
 }

@@ -47,15 +47,18 @@ export default async function Home({
             <CopyableEmail variant="hero" />
 
             {hasLiveCounter && (
-              <div className="inline-flex items-center gap-2 mt-6 text-xs font-mono text-muted-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block shrink-0" />
-                <span>
-                  <span className="text-muted tabular-nums font-medium">
+              <div className="inline-flex items-center gap-3 mt-10 pl-3.5 pr-5 py-2.5 rounded-full border border-border bg-surface/70 backdrop-blur-sm shadow-sm">
+                <span className="relative flex items-center justify-center shrink-0">
+                  <span className="absolute w-3 h-3 rounded-full bg-verified/50 animate-ping" />
+                  <span className="relative w-2 h-2 rounded-full bg-verified inline-block" />
+                </span>
+                <span className="text-sm font-mono text-muted">
+                  <span className="text-txt tabular-nums font-semibold text-base">
                     {nf.format(stats!.domains)}
                   </span>
                   {" "}{stats!.domains === 1 ? t("counter.singularDomains") : t("counter.pluralDomains")}
-                  {" · "}
-                  <span className="text-muted tabular-nums font-medium">
+                  <span className="text-muted-2 mx-2">·</span>
+                  <span className="text-txt tabular-nums font-semibold text-base">
                     {nf.format(stats!.events)}
                   </span>
                   {" "}{stats!.events === 1 ? t("counter.singularEvents") : t("counter.pluralEvents")}
@@ -120,9 +123,9 @@ export default async function Home({
               </div>
             </div>
 
-            <p className="text-center text-xs text-muted-2 mt-6">
+            <p className="text-center text-sm text-muted mt-8 max-w-lg mx-auto leading-relaxed">
               {t("mock.realOne")}{" "}
-              <Link href="/b/witnessed.cc" className="text-accent hover:underline font-mono">
+              <Link href="/b/witnessed.cc" className="text-accent hover:underline font-mono whitespace-nowrap">
                 witnessed.cc →
               </Link>
             </p>
