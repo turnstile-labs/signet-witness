@@ -58,10 +58,15 @@ export async function insertEvent(
 
 // Fetch a domain record by name. Returns null if not found.
 export async function getDomain(domain: string): Promise<Domain | null> {
-  const rows = await sql`
-    SELECT * FROM domains WHERE domain = ${domain}
-  ` as unknown as Domain[];
-  return rows[0] ?? null;
+  try {
+    const rows = await sql`
+      SELECT * FROM domains WHERE domain = ${domain}
+    ` as unknown as Domain[];
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("[db] getDomain failed", { domain, err });
+    return null;
+  }
 }
 
 // Fetch recent events for a domain (latest 50).
@@ -74,7 +79,8 @@ export async function getEvents(domainId: number): Promise<WitnessEvent[]> {
       LIMIT 50
     ` as unknown as WitnessEvent[];
     return rows;
-  } catch {
+  } catch (err) {
+    console.error("[db] getEvents failed", { domainId, err });
     return [];
   }
 }
@@ -82,10 +88,15 @@ export async function getEvents(domainId: number): Promise<WitnessEvent[]> {
 // Count how many witnessed emails list this domain as a receiver
 // (for the "unclaimed" state on the seal page).
 export async function getReceiverCount(domain: string): Promise<number> {
-  const rows = await sql`
-    SELECT COUNT(*) AS count FROM events WHERE receiver_domain = ${domain}
-  ` as unknown as { count: string }[];
-  return Number(rows[0]?.count ?? 0);
+  try {
+    const rows = await sql`
+      SELECT COUNT(*) AS count FROM events WHERE receiver_domain = ${domain}
+    ` as unknown as { count: string }[];
+    return Number(rows[0]?.count ?? 0);
+  } catch (err) {
+    console.error("[db] getReceiverCount failed", { domain, err });
+    return 0;
+  }
 }
 
 // Network-wide stats for the landing page live counter.
@@ -109,7 +120,8 @@ export async function getNetworkStats(): Promise<NetworkStats | null> {
       domains: Number(row.domains),
       events: Number(row.events),
     };
-  } catch {
+  } catch (err) {
+    console.error("[db] getNetworkStats failed", err);
     return null;
   }
 }
@@ -132,7 +144,8 @@ export async function getDailyActivity(
       ORDER BY 1 ASC
     ` as unknown as { date: string; count: number }[];
     return rows;
-  } catch {
+  } catch (err) {
+    console.error("[db] getDailyActivity failed", { domainId, days, err });
     return [];
   }
 }
