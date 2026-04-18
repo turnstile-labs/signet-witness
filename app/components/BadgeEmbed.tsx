@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 // Owner-facing badge embed panel.
@@ -49,34 +49,21 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
           {t("gmailQ")}
         </summary>
         <ol className="mt-3 text-xs text-muted leading-relaxed list-decimal pl-5 space-y-1">
-          <li>
-            {t.rich("gmailSteps.s1b", {
-              settings: (chunks) => <span className="text-txt">{chunks}</span>,
-            })}
-          </li>
-          <li>
-            {t.rich("gmailSteps.s2", {
-              general: (chunks) => <span className="text-txt">{chunks}</span>,
-            })}
-          </li>
-          <li>
-            {t.rich("gmailSteps.s3", {
-              insertImage: (chunks) => <span className="text-txt">{chunks}</span>,
-            })}
-          </li>
-          <li>
-            {t.rich("gmailSteps.s4", {
-              webUrl: (chunks) => <span className="text-txt">{chunks}</span>,
-            })}
-          </li>
-          <li>
-            {t.rich("gmailSteps.s5", {
-              link: (chunks) => <span className="text-txt">{chunks}</span>,
-              sealUrl: () => (
-                <code className="font-mono text-txt text-[0.7rem] break-all">{sealUrl}</code>
-              ),
-            })}
-          </li>
+          {(["s1", "s2", "s3", "s4", "s5"] as const).map((key) => (
+            <li key={key}>
+              {t.rich(`gmailSteps.${key}`, {
+                url: sealUrl,
+                b: (chunks: ReactNode) => (
+                  <span className="text-txt">{chunks}</span>
+                ),
+                code: (chunks: ReactNode) => (
+                  <code className="font-mono text-txt text-[0.7rem] break-all">
+                    {chunks}
+                  </code>
+                ),
+              })}
+            </li>
+          ))}
           <li>{t("gmailSteps.s6")}</li>
         </ol>
       </details>

@@ -113,19 +113,19 @@
     "activity": "Actividad empresarial verificada",
     "latestOfTotal": "últimos 20 de {total}",
     "ofTotal": "{count} en total",
-    "rowFootnote": "Cada fila es un email verificado de forma independiente enviado desde {domain} a ese negocio.",
+    "rowFootnote": "Cada fila es un email verificado de forma independiente enviado desde <d>{name}</d> a ese negocio.",
     "ownThisDomain": "¿Eres el dueño del dominio?",
     "ownThisDomainBody": "Añade este sello a tu firma de email, sitio web o pie de factura. Cada vista enlaza de vuelta a esta página en vivo.",
     "unclaimed": {
       "noOutbound": "Todavía sin registro de envíos",
-      "noOutboundBody": "{domain} ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}} — otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia. Pero {domain} aún no ha empezado a construir su propio registro.",
+      "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}} — otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia. Pero <d>{name}</d> aún no ha empezado a construir su propio registro.",
       "ownQ": "¿Eres el dueño del dominio?",
-      "ownBody": "Pon {email} en copia en tus emails salientes para empezar a construir tu registro.",
+      "ownBody": "Pon <e>{addr}</e> en copia en tus emails salientes para empezar a construir tu registro.",
       "howItWorks": "Cómo funciona →",
       "recipientMeans": "Qué significa la actividad como destinatario",
-      "recipientBody": "Cuando cualquier negocio envía un email y pone {email} en copia, también registramos el dominio del destinatario. Esto muestra que otras empresas ya están haciendo negocios con {domain}.",
+      "recipientBody": "Cuando cualquier negocio envía un email y pone <e>{addr}</e> en copia, también registramos el dominio del destinatario. Esto muestra que otras empresas ya están haciendo negocios con <d>{name}</d>.",
       "noRecord": "Aún sin registro",
-      "noRecordBody": "{domain} todavía no ha sido registrado. En cuanto pongas {email} en copia en un email de trabajo, esta página mostrará un historial verificado — automáticamente, sin necesidad de cuenta."
+      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. En cuanto pongas <e>{addr}</e> en copia en un email de trabajo, esta página mostrará un historial verificado — automáticamente, sin necesidad de cuenta."
     }
   },
   "badge": {
@@ -136,17 +136,11 @@
     "copied": "¡Copiado ✓",
     "gmailQ": "¿Cómo añadir esto a mi firma de Gmail?",
     "gmailSteps": {
-      "s1": "En Gmail: haz clic en el engranaje → Ver todos los ajustes.",
-      "s1b": "En Gmail: haz clic en el engranaje → {settings}.",
-      "settings": "Ver todos los ajustes",
-      "s2": "En {general}, elige tu firma.",
-      "general": "General → Firma",
-      "s3": "Haz clic en el icono {insertImage} de la barra.",
-      "insertImage": "Insertar imagen",
-      "s4": "Elige {webUrl} y pega la URL de la imagen de arriba.",
-      "webUrl": "Dirección web (URL)",
-      "s5": "Selecciona el sello insertado, haz clic en el icono {link}, pega {sealUrl}.",
-      "link": "Enlace",
+      "s1": "En Gmail: haz clic en el engranaje → <b>Ver todos los ajustes</b>.",
+      "s2": "En <b>General → Firma</b>, elige tu firma.",
+      "s3": "Haz clic en el icono <b>Insertar imagen</b> de la barra.",
+      "s4": "Elige <b>Dirección web (URL)</b> y pega la URL de la imagen de arriba.",
+      "s5": "Selecciona el sello insertado, haz clic en el icono <b>Enlace</b> y pega <code>{url}</code>.",
       "s6": "Baja y guarda."
     }
   },

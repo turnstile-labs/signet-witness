@@ -113,19 +113,19 @@
     "activity": "Verified business activity",
     "latestOfTotal": "latest 20 of {total}",
     "ofTotal": "{count} total",
-    "rowFootnote": "Each row is one independently verified email sent from {domain} to that business.",
+    "rowFootnote": "Each row is one independently verified email sent from <d>{name}</d> to that business.",
     "ownThisDomain": "Own this domain?",
     "ownThisDomainBody": "Add this badge to your email signature, website, or invoice footer. Each view links back to this live seal page.",
     "unclaimed": {
       "noOutbound": "No outbound record yet",
-      "noOutboundBody": "{domain} has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}} — other businesses are already emailing this domain and CCing Witnessed. But {domain} hasn't started building its own outbound record yet.",
+      "noOutboundBody": "<d>{name}</d> has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}} — other businesses are already emailing this domain and CCing Witnessed. But <d>{name}</d> hasn't started building its own outbound record yet.",
       "ownQ": "Own this domain?",
-      "ownBody": "CC {email} on your outgoing emails to start building your record.",
+      "ownBody": "CC <e>{addr}</e> on your outgoing emails to start building your record.",
       "howItWorks": "How it works →",
       "recipientMeans": "What recipient activity means",
-      "recipientBody": "When any business sends an email and CCs {email}, we record the recipient's domain too. This shows real companies are already doing business with {domain}.",
+      "recipientBody": "When any business sends an email and CCs <e>{addr}</e>, we record the recipient's domain too. This shows real companies are already doing business with <d>{name}</d>.",
       "noRecord": "No record yet",
-      "noRecordBody": "{domain} hasn't been witnessed yet. Once you CC {email} on a business email, this page will show a verified history — automatically, with no account needed."
+      "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. Once you CC <e>{addr}</e> on a business email, this page will show a verified history — automatically, with no account needed."
     }
   },
   "badge": {
@@ -136,17 +136,11 @@
     "copied": "Copied ✓",
     "gmailQ": "How to add this to my Gmail signature?",
     "gmailSteps": {
-      "s1": "In Gmail: click the gear → See all settings.",
-      "s1b": "In Gmail: click the gear → {settings}.",
-      "settings": "See all settings",
-      "s2": "Under {general}, pick your signature.",
-      "general": "General → Signature",
-      "s3": "Click the {insertImage} icon in the toolbar.",
-      "insertImage": "Insert image",
-      "s4": "Choose {webUrl} and paste the image URL above.",
-      "webUrl": "Web Address (URL)",
-      "s5": "Select the inserted badge, click the {link} icon, paste {sealUrl}.",
-      "link": "Link",
+      "s1": "In Gmail: click the gear → <b>See all settings</b>.",
+      "s2": "Under <b>General → Signature</b>, pick your signature.",
+      "s3": "Click the <b>Insert image</b> icon in the toolbar.",
+      "s4": "Choose <b>Web Address (URL)</b> and paste the image URL above.",
+      "s5": "Select the inserted badge, click the <b>Link</b> icon, paste <code>{url}</code>.",
       "s6": "Scroll down and save."
     }
   },

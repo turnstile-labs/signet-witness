@@ -387,8 +387,9 @@ export default async function SealPage({ params }: Props) {
             </div>
             <p className="text-xs text-muted-2 mt-2 px-1">
               {t.rich("rowFootnote", {
-                domain: () => (
-                  <span className="font-mono break-all">{decoded}</span>
+                name: decoded,
+                d: (chunks) => (
+                  <span className="font-mono break-all">{chunks}</span>
                 ),
               })}
             </p>
@@ -461,10 +462,11 @@ async function UnclaimedPage({
               </div>
               <p className="text-sm text-muted leading-relaxed mb-4">
                 {tu.rich("noOutboundBody", {
-                  domain: () => (
-                    <span className="font-mono text-txt break-all">{domain}</span>
-                  ),
+                  name: domain,
                   count: receiverCount,
+                  d: (chunks) => (
+                    <span className="font-mono text-txt break-all">{chunks}</span>
+                  ),
                 })}
               </p>
               <div className="bg-bg border border-border rounded-xl p-4">
@@ -473,9 +475,10 @@ async function UnclaimedPage({
                 </p>
                 <p className="text-xs text-muted leading-relaxed">
                   {tu.rich("ownBody", {
-                    email: () => (
+                    addr: "sealed@witnessed.cc",
+                    e: (chunks) => (
                       <code className="font-mono text-accent text-[0.72rem]">
-                        sealed@witnessed.cc
+                        {chunks}
                       </code>
                     ),
                   })}{" "}
@@ -493,13 +496,15 @@ async function UnclaimedPage({
               <EyebrowLabel>{tu("recipientMeans")}</EyebrowLabel>
               <p className="text-sm text-muted leading-relaxed mt-3">
                 {tu.rich("recipientBody", {
-                  email: () => (
+                  addr: "sealed@witnessed.cc",
+                  name: domain,
+                  e: (chunks) => (
                     <code className="font-mono text-txt text-xs">
-                      sealed@witnessed.cc
+                      {chunks}
                     </code>
                   ),
-                  domain: () => (
-                    <span className="font-mono text-txt break-all">{domain}</span>
+                  d: (chunks) => (
+                    <span className="font-mono text-txt break-all">{chunks}</span>
                   ),
                 })}
               </p>
@@ -513,12 +518,14 @@ async function UnclaimedPage({
             </div>
             <p className="text-sm text-muted leading-relaxed mb-5">
               {tu.rich("noRecordBody", {
-                domain: () => (
-                  <span className="font-mono text-txt break-all">{domain}</span>
+                name: domain,
+                addr: "sealed@witnessed.cc",
+                d: (chunks) => (
+                  <span className="font-mono text-txt break-all">{chunks}</span>
                 ),
-                email: () => (
+                e: (chunks) => (
                   <code className="font-mono text-accent text-[0.72rem]">
-                    sealed@witnessed.cc
+                    {chunks}
                   </code>
                 ),
               })}
