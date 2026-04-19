@@ -5,7 +5,8 @@
   },
   "footer": {
     "privacy": "Privacy",
-    "terms": "Terms"
+    "terms": "Terms",
+    "rights": "Your rights"
   },
   "errorPage": {
     "eyebrow": "Something went wrong",
@@ -206,14 +207,113 @@
     "consentBody": "The CC is an explicit, voluntary act on each individual email. You are in full control of which emails contribute to your record. There is no passive collection — Witnessed only receives data when you deliberately include the address in a CC field.",
     "publicTitle": "Public records",
     "publicBody": "Seal pages are public by design. The domain name, event count, first-seen date, and recipient domains are visible to anyone who visits your seal page. This is the product — the public proof of business activity. If you do not want a public record for your domain, do not CC the address.",
+    "basisTitle": "Lawful basis for processing",
+    "basisIntro": "Under the EU General Data Protection Regulation (GDPR), we rely on the following lawful bases:",
+    "basisItems": [
+      ["Legitimate interests (Art 6(1)(f))", "building and maintaining a verified business history that allows senders to prove their domain has been operating over time, and allows recipients to evaluate that proof. We consider this interest proportionate because we store only domain-level metadata and offer a frictionless opt-out."],
+      ["Explicit act of the sender", "the CC is a deliberate, per-email action. Nothing is collected passively."]
+    ],
+    "rightsTitle": "Your rights",
+    "rightsIntro": "If you control a domain that appears in our records — as sender or as recipient — you can exercise the following rights at any time, self-serve, via <link>witnessed.cc/rights</link>:",
+    "rightsItems": [
+      ["Access (Art 15)", "download everything we hold about your domain as a signed JSON export"],
+      ["Erasure (Art 17)", "permanently delete every record referencing your domain, as sender and as recipient"],
+      ["Object / opt out (Art 21)", "block future ingestion without deleting the existing record"],
+      ["Rectification (Art 16)", "the data is observational and rarely wrong; if you believe a specific record is inaccurate, contact us"],
+      ["Portability (Art 20)", "the JSON export is structured and machine-readable"],
+      ["Restriction (Art 18)", "email us to pause processing while a dispute is resolved"]
+    ],
+    "rightsFoot": "Ownership of the domain is proven via a DNS TXT record — the same mechanism used to verify sender authenticity. We answer rights requests within 30 days, as required by Art 12(3).",
     "retentionTitle": "Data retention and deletion",
-    "retentionBody": "Your domain's history is retained for as long as the service operates. You may request deletion of all records associated with your domain at any time by emailing <mail>hello@witnessed.cc</mail> from an address at that domain. Deletion is permanent and irreversible.",
+    "retentionBody": "Your domain's history is retained for as long as the service operates, because the historical nature of the record is the product. You may purge all records at any time via <link>witnessed.cc/rights</link>. Erasure is permanent and irreversible.",
+    "subProcessorsTitle": "Sub-processors",
+    "subProcessorsIntro": "We use a small set of vendors to operate the service. Each is bound by a Data Processing Agreement and processes data only on our instructions:",
+    "subProcessors": [
+      ["Vercel Inc.", "application hosting and edge network"],
+      ["Neon Inc. (Vercel Postgres)", "encrypted database storage"],
+      ["Cloudflare, Inc.", "email routing (SMTP catch-all → Worker → our API)"]
+    ],
+    "subProcessorsFoot": "We do not share data with any other third party. We do not use analytics, advertising, or fingerprinting services of any kind.",
+    "transfersTitle": "International transfers",
+    "transfersBody": "Where data is processed outside the European Economic Area, we rely on the European Commission's Standard Contractual Clauses and the EU-US Data Privacy Framework for our US-based sub-processors. You can request a copy of these safeguards by contacting us.",
+    "complaintTitle": "Right to lodge a complaint",
+    "complaintBody": "If you are in the EU/EEA and believe we have processed your data unlawfully, you have the right to lodge a complaint with your national supervisory authority. A list is maintained by the European Data Protection Board at edpb.europa.eu/about-edpb/about-edpb/members_en.",
     "infraTitle": "Infrastructure and security",
     "infraBody": "Data is stored on Vercel Postgres (Neon), encrypted at rest and in transit. Access is restricted to the application layer. No employee has direct database access in production.",
     "changesTitle": "Changes to this policy",
     "changesBody": "If we make material changes, we will update the date at the top of this page. Continued use of the service after changes constitutes acceptance.",
     "contactTitle": "Contact",
     "contactIntro": "Questions about this policy:"
+  },
+  "rightsPage": {
+    "metaTitle": "Your rights — Witnessed",
+    "metaDescription": "Access, opt out, or erase records for a domain you control. DNS-verified, self-serve.",
+    "title": "Your rights",
+    "lede": "Self-serve access, opt-out, and erasure for any domain you control. Ownership is proven with a short DNS TXT record — the same trust mechanism that underpins the whole service. No email, no ticket, no waiting.",
+    "step1Label": "1. Choose an action",
+    "step2Label": "2. Enter the domain you control",
+    "step3Label": "3. Publish this TXT record",
+    "step3Body": "Add the record below to your domain's DNS. Once it resolves, click the button underneath to complete the action.",
+    "step3Note": "DNS propagation usually takes less than a minute but can take up to a few hours depending on your provider. The challenge is valid for the rest of this UTC day and the next.",
+    "type": "Type",
+    "host": "Host",
+    "value": "Value",
+    "copy": "Copy",
+    "copied": "Copied ✓",
+    "continue": "Continue",
+    "loading": "Loading…",
+    "verifying": "Verifying…",
+    "domainPlaceholder": "acme.com",
+    "domainAria": "Domain you control",
+    "actions": {
+      "access": {
+        "title": "Access",
+        "sub": "Download everything we hold about this domain (Art 15)."
+      },
+      "opt_out": {
+        "title": "Opt out",
+        "sub": "Block future records without deleting the past (Art 21)."
+      },
+      "erasure": {
+        "title": "Erase",
+        "sub": "Permanently delete every record referencing this domain (Art 17)."
+      }
+    },
+    "runButton": {
+      "access": "Verify & download",
+      "opt_out": "Verify & opt out",
+      "erasure": "Verify & erase"
+    },
+    "errorTitle": "That didn't work",
+    "errors": {
+      "invalid_domain": "That doesn't look like a valid domain. Use the bare form, e.g. acme.com.",
+      "invalid_action": "Unknown action.",
+      "no_txt_record": "No TXT record found at the expected host. Check your DNS and wait a minute for propagation.",
+      "dns_error": "We couldn't reach your DNS. Try again in a moment.",
+      "challenge_mismatch": "A TXT record exists but the value doesn't match. Make sure you copied the full value and that no characters were altered by your DNS panel.",
+      "verification_failed": "Verification failed.",
+      "network_error": "Couldn't reach Witnessed. Check your connection and try again.",
+      "server_error": "Something went wrong on our side. Try again in a moment.",
+      "error": "Something went wrong."
+    },
+    "success": {
+      "access": "Access granted.",
+      "accessBody": "Here is everything we hold about this domain. Download the JSON file or inspect it below.",
+      "opt_out": "Opt-out confirmed.",
+      "optOutBody": "This domain has been added to our denylist. Future inbound emails involving it as sender or primary recipient will be silently dropped. Existing records remain — use Erase if you also want them purged.",
+      "erasure": "Erasure complete.",
+      "erasureBody": "We deleted {sender} events where this domain was the sender and {receiver} events where it was a recipient. Other senders' event counts were adjusted accordingly. The domain is now on the denylist so it cannot be re-ingested."
+    },
+    "download": "Download JSON",
+    "viewJson": "View raw JSON",
+    "whyTxtTitle": "Why a DNS TXT record?",
+    "whyTxtBody": "DNS is the existing proof of who controls a domain. If you can publish a record under it, you have administrative control — exactly what we need to trust a rights request. Witnessed never asks for an account, so this is the lightest-weight way to bind a request to an actual owner.",
+    "timingTitle": "How fast do these take effect?",
+    "timingBody": "Opt-out and erasure apply immediately on verification. Our inbound pipeline re-checks the denylist on every email, so even a CC arriving seconds after erasure will be dropped. Access requests return the live state at the moment of verification.",
+    "scopeTitle": "What a rights request does and doesn't cover",
+    "scopeBody": "A verified request covers only the domain named in it. If you control several domains you need to verify each one separately. Erasure removes references to the verified domain even on other senders' records; it does not delete those other senders' accounts or reveal anything about them.",
+    "contactTitle": "Need help?",
+    "contactIntro": "If anything about this flow isn't clear, or you believe we're processing data about you or your domain that you can't see here, reach out:"
   },
   "termsPage": {
     "title": "Terms of Service",

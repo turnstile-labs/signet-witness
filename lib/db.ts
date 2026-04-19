@@ -122,3 +122,140 @@ export async function getDailyActivity(
     return [];
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// GDPR helpers — denylist, erasure, subject access
+// ─────────────────────────────────────────────────────────────
+
+export type DenylistReason = "erasure" | "opt_out";
+
+// True if the domain has been opted out or erased. Failure-mode matters:
+// the inbound path calls this best-effort. If the check errors, we log
+// and return false (fail-open) so a transient DB hiccup doesn't block
+// legitimate email writes. Rights endpoints re-check at write time.
+export async function isDenylisted(domain: string): Promise<boolean> {
+  try {
+    const rows = await sql`
+      SELECT 1 FROM domain_denylist WHERE domain = ${domain} LIMIT 1
+    ` as unknown as unknown[];
+    return rows.length > 0;
+  } catch (err) {
+    console.error("[db] isDenylisted failed", { domain, err });
+    return false;
+  }
+}
+
+export async function addToDenylist(
+  domain: string,
+  reason: DenylistReason
+): Promise<void> {
+  await sql`
+    INSERT INTO domain_denylist (domain, reason)
+    VALUES (${domain}, ${reason})
+    ON CONFLICT (domain) DO UPDATE SET reason = EXCLUDED.reason
+  `;
+}
+
+export interface EraseResult {
+  domainPurged: boolean;
+  eventsAsSender: number;
+  eventsAsReceiver: number;
+}
+
+// Hard-delete every record referencing this domain (Art 17 erasure).
+// 1. Delete the domains row → cascades to events where it was sender.
+// 2. Delete events where it appears as receiver across all senders.
+// 3. Decrement event_count on affected senders.
+export async function eraseDomain(domain: string): Promise<EraseResult> {
+  let domainPurged = false;
+  let eventsAsSender = 0;
+  let eventsAsReceiver = 0;
+
+  const senderRows = await sql`
+    WITH purged AS (
+      DELETE FROM domains WHERE domain = ${domain}
+      RETURNING id, event_count
+    )
+    SELECT
+      COUNT(*)::int AS rows_deleted,
+      COALESCE(SUM(event_count), 0)::int AS events_deleted
+    FROM purged
+  ` as unknown as { rows_deleted: number; events_deleted: number }[];
+  domainPurged = (senderRows[0]?.rows_deleted ?? 0) > 0;
+  eventsAsSender = senderRows[0]?.events_deleted ?? 0;
+
+  const recvRows = await sql`
+    WITH purged AS (
+      DELETE FROM events WHERE receiver_domain = ${domain}
+      RETURNING domain_id
+    ),
+    counts AS (
+      SELECT domain_id, COUNT(*)::int AS n FROM purged GROUP BY domain_id
+    ),
+    updated AS (
+      UPDATE domains d
+      SET event_count = GREATEST(0, d.event_count - c.n),
+          updated_at  = NOW()
+      FROM counts c
+      WHERE d.id = c.domain_id
+      RETURNING 1
+    )
+    SELECT COUNT(*)::int AS total FROM purged
+  ` as unknown as { total: number }[];
+  eventsAsReceiver = recvRows[0]?.total ?? 0;
+
+  return { domainPurged, eventsAsSender, eventsAsReceiver };
+}
+
+export interface DomainExport {
+  domain: Domain | null;
+  events: WitnessEvent[];
+  receivedMentions: Array<{
+    sender_domain: string;
+    witnessed_at: string;
+    dkim_hash: string;
+  }>;
+  denylist: { reason: string; created_at: string } | null;
+  exportedAt: string;
+}
+
+// Full machine-readable dump of everything held about a domain (Art 15).
+export async function exportDomainData(domain: string): Promise<DomainExport> {
+  const domRows = await sql`
+    SELECT * FROM domains WHERE domain = ${domain}
+  ` as unknown as Domain[];
+  const domRow = domRows[0] ?? null;
+
+  let events: WitnessEvent[] = [];
+  if (domRow) {
+    events = (await sql`
+      SELECT * FROM events
+      WHERE domain_id = ${domRow.id}
+      ORDER BY witnessed_at DESC
+    `) as unknown as WitnessEvent[];
+  }
+
+  const receivedMentions = (await sql`
+    SELECT d.domain AS sender_domain, e.witnessed_at, e.dkim_hash
+    FROM events e
+    JOIN domains d ON d.id = e.domain_id
+    WHERE e.receiver_domain = ${domain}
+    ORDER BY e.witnessed_at DESC
+  `) as unknown as {
+    sender_domain: string;
+    witnessed_at: string;
+    dkim_hash: string;
+  }[];
+
+  const denyRows = (await sql`
+    SELECT reason, created_at FROM domain_denylist WHERE domain = ${domain}
+  `) as unknown as { reason: string; created_at: string }[];
+
+  return {
+    domain: domRow,
+    events,
+    receivedMentions,
+    denylist: denyRows[0] ?? null,
+    exportedAt: new Date().toISOString(),
+  };
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
 
@@ -30,6 +31,9 @@ export default async function PrivacyPage({
   const collectItems = t.raw("collectItems") as [string, string][];
   const neverItems = t.raw("neverItems") as string[];
   const useItems = t.raw("useItems") as string[];
+  const rightsItems = t.raw("rightsItems") as [string, string][];
+  const subProcessors = t.raw("subProcessors") as [string, string][];
+  const basisItems = t.raw("basisItems") as [string, string][];
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
@@ -114,20 +118,89 @@ export default async function PrivacyPage({
 
           <section>
             <h2 className="text-base font-semibold text-txt mb-3">
+              {t("basisTitle")}
+            </h2>
+            <p className="mb-3">{t("basisIntro")}</p>
+            <ul className="space-y-2 pl-4 border-l border-border">
+              {basisItems.map(([label, desc]) => (
+                <li key={label}>
+                  <span className="text-txt font-medium">{label}</span> — {desc}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-txt mb-3">
+              {t("rightsTitle")}
+            </h2>
+            <p className="mb-3">
+              {t.rich("rightsIntro", {
+                link: (chunks) => (
+                  <Link
+                    href="/rights"
+                    className="text-accent hover:text-accent-2 transition-colors"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
+            <ul className="space-y-2 pl-4 border-l border-border">
+              {rightsItems.map(([label, desc]) => (
+                <li key={label}>
+                  <span className="text-txt font-medium">{label}</span> — {desc}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4">{t("rightsFoot")}</p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-txt mb-3">
               {t("retentionTitle")}
             </h2>
             <p>
               {t.rich("retentionBody", {
-                mail: (chunks) => (
-                  <a
-                    href="mailto:hello@witnessed.cc"
+                link: (chunks) => (
+                  <Link
+                    href="/rights"
                     className="text-accent hover:text-accent-2 transition-colors"
                   >
                     {chunks}
-                  </a>
+                  </Link>
                 ),
               })}
             </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-txt mb-3">
+              {t("subProcessorsTitle")}
+            </h2>
+            <p className="mb-3">{t("subProcessorsIntro")}</p>
+            <ul className="space-y-2 pl-4 border-l border-border">
+              {subProcessors.map(([name, role]) => (
+                <li key={name}>
+                  <span className="text-txt font-medium">{name}</span> — {role}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4">{t("subProcessorsFoot")}</p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-txt mb-3">
+              {t("transfersTitle")}
+            </h2>
+            <p>{t("transfersBody")}</p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-txt mb-3">
+              {t("complaintTitle")}
+            </h2>
+            <p>{t("complaintBody")}</p>
           </section>
 
           <section>

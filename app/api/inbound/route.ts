@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticate } from "mailauth";
 import { createHash } from "crypto";
-import { upsertDomain, insertEvent } from "@/lib/db";
+import { upsertDomain, insertEvent, isDenylisted } from "@/lib/db";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
 const WITNESS_DOMAIN = "witnessed.cc";
@@ -62,12 +62,30 @@ export async function POST(req: NextRequest) {
 
   const primaryReceiver = receiverDomains[0] ?? "unknown";
 
-  // 7. Hash the DKIM signature for storage (proof without raw sig data).
+  // 7. GDPR — honor the denylist. If either the sender or the primary
+  // receiver has opted out / exercised erasure, silently drop the event.
+  // We 200 so the upstream SMTP path doesn't retry or bounce.
+  try {
+    const [senderBlocked, receiverBlocked] = await Promise.all([
+      isDenylisted(senderDomain),
+      primaryReceiver !== "unknown"
+        ? isDenylisted(primaryReceiver)
+        : Promise.resolve(false),
+    ]);
+    if (senderBlocked || receiverBlocked) {
+      return NextResponse.json({ ok: true, dropped: "denylist" });
+    }
+  } catch (err) {
+    // Best-effort check — log and continue.
+    console.error("[inbound] denylist check failed", err);
+  }
+
+  // 8. Hash the DKIM signature for storage (proof without raw sig data).
   const dkimHash = createHash("sha256")
     .update(passing.signature ?? rawEmail.slice(0, 512))
     .digest("hex");
 
-  // 8. Write to DB.
+  // 9. Write to DB.
   try {
     const domain = await upsertDomain(senderDomain);
     await insertEvent(domain.id, primaryReceiver, dkimHash);

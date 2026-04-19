@@ -29,9 +29,11 @@ No auth. No payments. No setup required from users. The CC is the product.
 - **Dynamic badge endpoint** at `/badge/[domain]` — SVG or PNG (`?theme=light` variant, `ETag`-cached, reflects live event count)
 - **Owner tools** on each seal page — copy the badge as image URL, HTML snippet, or Markdown
 - **Domain lookup** — anyone can search a domain from the landing page
+- **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), and erasure (Art 17), powered by `/api/rights/*`
+- **Inbound denylist gate** — any CC from or to an opted-out / erased domain is silently dropped
 - **English + Spanish** — full i18n via `next-intl`. EN at the root, ES prefixed at `/es/*`
 - **Light + dark theme** — CSS-variable driven, persisted to `localStorage`
-- **Privacy + Terms** pages, fully translated
+- **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — 30-line catch-all forwarder
 
 ---
@@ -62,16 +64,24 @@ signet-witness/
 │   │   ├── b/[domain]/
 │   │   │   ├── page.tsx          # Seal page — the product
 │   │   │   └── error.tsx         # Seal route error boundary
-│   │   ├── privacy/page.tsx      # Privacy policy
-│   │   └── terms/page.tsx        # Terms of service
-│   ├── api/inbound/route.ts      # Email receiver + DKIM verify + DB write
+│   │   ├── privacy/page.tsx      # Privacy policy (GDPR-aligned)
+│   │   ├── terms/page.tsx        # Terms of service
+│   │   └── rights/page.tsx       # GDPR self-serve: access / opt-out / erasure
+│   ├── api/
+│   │   ├── inbound/route.ts      # Email receiver + DKIM verify + denylist gate + DB write
+│   │   └── rights/
+│   │       ├── challenge/route.ts # Mint DNS-TXT challenge for (domain, action)
+│   │       ├── access/route.ts    # Art 15 — JSON export
+│   │       ├── opt-out/route.ts   # Art 21 — denylist only
+│   │       └── erasure/route.ts   # Art 17 — hard-delete + denylist
 │   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge for email signatures
 │   └── components/
 │       ├── NavBar.tsx            # Header — logo + language + theme
-│       ├── Footer.tsx            # Footer — © + privacy/terms links
+│       ├── Footer.tsx            # Footer — © + privacy/terms/rights links
 │       ├── CopyableEmail.tsx     # Click-to-copy CTA for seal@witnessed.cc
 │       ├── DomainSearch.tsx      # Landing-page domain lookup form
 │       ├── BadgeEmbed.tsx        # Owner-tools panel (image URL + HTML + Markdown snippets)
+│       ├── RightsForm.tsx        # Client flow for DNS-TXT-verified rights requests
 │       ├── HeroBackdrop.tsx      # Soft radial accent halo behind the hero headline
 │       ├── Sparkline.tsx         # 30-day activity bar chart for seal pages
 │       ├── LanguageSwitcher.tsx  # EN/ES selector
@@ -85,7 +95,8 @@ signet-witness/
 │   └── es.json                   # Spanish strings
 ├── proxy.ts                      # next-intl middleware (locale detection)
 ├── lib/
-│   └── db.ts                     # Neon SQL client + typed queries
+│   ├── db.ts                     # Neon SQL client + typed queries + GDPR helpers
+│   └── verify-domain.ts          # DNS-TXT owner-proof challenge/verify for /rights
 ├── workers/
 │   └── email-router/             # Cloudflare Worker (~30 lines) — forwards raw email to /api/inbound
 ├── schema.sql                    # Run once to create tables
@@ -207,6 +218,7 @@ emails build history. History built this way cannot be backdated or forged.
 |---|---|
 | `DATABASE_URL` or `STORAGE_URL` | Neon Postgres connection string |
 | `INBOUND_SECRET` | Shared secret between Cloudflare Worker and `/api/inbound` |
+| `RIGHTS_SECRET` | (optional) HMAC key for `/api/rights/*` TXT challenges. Defaults to `INBOUND_SECRET`. Rotating it invalidates any in-flight challenges. |
 
 ---
 
@@ -224,6 +236,25 @@ emails build history. History built this way cannot be backdated or forged.
 | Personal content | Never stored, never read |
 
 The CC is an explicit, voluntary act on each individual email.
+
+---
+
+## GDPR rights (self-serve)
+
+Anyone who controls a domain — as sender or as recipient — can exercise
+their GDPR rights at **[/rights](https://witnessed.cc/rights)** without
+contacting us. Ownership is proven with a single DNS TXT record; the
+same trust primitive the rest of the service is built on.
+
+| Right | Endpoint | Effect |
+|---|---|---|
+| **Access** (Art 15) | `POST /api/rights/access` | Returns a full JSON dump of everything we hold about the domain |
+| **Opt out** (Art 21) | `POST /api/rights/opt-out` | Adds the domain to the denylist; future inbound CCs involving it are dropped |
+| **Erasure** (Art 17) | `POST /api/rights/erasure` | Hard-deletes the domain + every event where it appears as sender or receiver, then denylists it |
+
+All three require a DNS TXT record at `_witnessed.<domain>` containing
+a per-action, per-day HMAC challenge minted by `POST /api/rights/challenge`.
+The `/rights` page handles the whole flow end-to-end.
 
 ---
 

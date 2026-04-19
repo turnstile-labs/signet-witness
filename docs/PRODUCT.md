@@ -112,7 +112,13 @@ content. Never stored. Never logged. No human at Signet can read your emails.
 individual email. Nothing is collected without the user choosing to include
 Signet.
 
-**Deletion:** any domain can request full deletion of their history at any time.
+**Self-serve rights:** anyone who controls a domain — sender or receiver —
+can exercise GDPR rights at `witnessed.cc/rights` without contacting us.
+Ownership is proven via a DNS TXT record. The flow supports **access**
+(download everything we hold, Art 15), **opt-out** (denylist future
+ingestion, Art 21), and **erasure** (purge every record referencing the
+domain, Art 17). Opt-out and erasure take effect immediately; our inbound
+pipeline re-checks the denylist on every email.
 
 ---
 

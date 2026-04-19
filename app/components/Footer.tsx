@@ -15,6 +15,9 @@ export default function Footer() {
           <Link href="/terms" className="hover:text-muted transition-colors">
             {t("terms")}
           </Link>
+          <Link href="/rights" className="hover:text-muted transition-colors">
+            {t("rights")}
+          </Link>
         </nav>
       </div>
     </footer>

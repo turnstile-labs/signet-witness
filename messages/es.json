@@ -5,7 +5,8 @@
   },
   "footer": {
     "privacy": "Privacidad",
-    "terms": "Términos"
+    "terms": "Términos",
+    "rights": "Tus derechos"
   },
   "errorPage": {
     "eyebrow": "Algo ha fallado",
@@ -206,14 +207,113 @@
     "consentBody": "El CC es un acto explícito y voluntario en cada email individual. Tú tienes el control total sobre qué emails contribuyen a tu registro. No hay recopilación pasiva — Witnessed sólo recibe datos cuando incluyes deliberadamente la dirección en el campo CC.",
     "publicTitle": "Registros públicos",
     "publicBody": "Las páginas de sello son públicas por diseño. El nombre del dominio, el número de eventos, la fecha del primer registro y los dominios de destinatarios son visibles para cualquiera que visite tu página. Esa es la esencia del producto — la prueba pública de actividad empresarial. Si no quieres un registro público para tu dominio, no pongas la dirección en copia.",
+    "basisTitle": "Base jurídica del tratamiento",
+    "basisIntro": "Conforme al Reglamento General de Protección de Datos (RGPD), nos amparamos en las siguientes bases:",
+    "basisItems": [
+      ["Interés legítimo (art. 6.1.f)", "construir y mantener un historial empresarial verificado que permita a los remitentes demostrar que su dominio ha estado operando a lo largo del tiempo, y a los destinatarios valorar esa prueba. Consideramos este interés proporcional porque solo almacenamos metadatos a nivel de dominio y ofrecemos una vía de oposición sin fricción."],
+      ["Acto explícito del remitente", "el CC es una acción deliberada y por email. Nada se recopila de forma pasiva."]
+    ],
+    "rightsTitle": "Tus derechos",
+    "rightsIntro": "Si controlas un dominio que aparece en nuestros registros — como remitente o destinatario — puedes ejercer los siguientes derechos en cualquier momento, de forma autoservicio, en <link>witnessed.cc/rights</link>:",
+    "rightsItems": [
+      ["Acceso (art. 15)", "descarga todo lo que guardamos sobre tu dominio como un export JSON firmado"],
+      ["Supresión (art. 17)", "elimina de forma permanente cada registro que mencione tu dominio, como remitente o como destinatario"],
+      ["Oposición (art. 21)", "bloquea futuras ingestas sin borrar el registro existente"],
+      ["Rectificación (art. 16)", "los datos son observacionales y rara vez están equivocados; si crees que un registro concreto es inexacto, contáctanos"],
+      ["Portabilidad (art. 20)", "el export JSON es estructurado y legible por máquina"],
+      ["Limitación (art. 18)", "escríbenos para pausar el tratamiento mientras se resuelve una disputa"]
+    ],
+    "rightsFoot": "La titularidad del dominio se prueba mediante un registro DNS TXT — el mismo mecanismo que usamos para verificar la autenticidad del remitente. Respondemos las solicitudes en un máximo de 30 días, como exige el art. 12.3.",
     "retentionTitle": "Conservación y eliminación de datos",
-    "retentionBody": "El historial de tu dominio se conserva mientras el servicio esté operativo. Puedes solicitar la eliminación de todos los registros asociados a tu dominio en cualquier momento escribiendo a <mail>hello@witnessed.cc</mail> desde una dirección de ese dominio. La eliminación es permanente e irreversible.",
+    "retentionBody": "El historial de tu dominio se conserva mientras el servicio esté operativo, porque el carácter histórico del registro es el producto en sí. Puedes borrar todos los registros cuando quieras desde <link>witnessed.cc/rights</link>. La supresión es permanente e irreversible.",
+    "subProcessorsTitle": "Encargados del tratamiento",
+    "subProcessorsIntro": "Usamos un conjunto reducido de proveedores para operar el servicio. Cada uno está vinculado por un contrato de tratamiento de datos y solo procesa información bajo nuestras instrucciones:",
+    "subProcessors": [
+      ["Vercel Inc.", "alojamiento de la aplicación y red edge"],
+      ["Neon Inc. (Vercel Postgres)", "almacenamiento de base de datos cifrada"],
+      ["Cloudflare, Inc.", "enrutado de email (catch-all SMTP → Worker → nuestra API)"]
+    ],
+    "subProcessorsFoot": "No compartimos datos con ningún otro tercero. No usamos servicios de analítica, publicidad ni fingerprinting de ningún tipo.",
+    "transfersTitle": "Transferencias internacionales",
+    "transfersBody": "Cuando los datos se procesan fuera del Espacio Económico Europeo, nos amparamos en las Cláusulas Contractuales Tipo de la Comisión Europea y en el Marco de Privacidad de Datos UE-EE. UU. para nuestros encargados estadounidenses. Puedes solicitar copia de estas salvaguardas contactándonos.",
+    "complaintTitle": "Derecho a presentar una reclamación",
+    "complaintBody": "Si resides en la UE/EEE y crees que hemos tratado tus datos de forma ilícita, tienes derecho a presentar una reclamación ante la autoridad de control de tu país. El Comité Europeo de Protección de Datos mantiene el listado en edpb.europa.eu/about-edpb/about-edpb/members_en.",
     "infraTitle": "Infraestructura y seguridad",
     "infraBody": "Los datos se almacenan en Vercel Postgres (Neon), cifrados en reposo y en tránsito. El acceso está restringido a la capa de aplicación. Ningún empleado tiene acceso directo a la base de datos en producción.",
     "changesTitle": "Cambios en esta política",
     "changesBody": "Si hacemos cambios sustanciales, actualizaremos la fecha en la parte superior de esta página. El uso continuado del servicio tras los cambios implica su aceptación.",
     "contactTitle": "Contacto",
     "contactIntro": "¿Preguntas sobre esta política?"
+  },
+  "rightsPage": {
+    "metaTitle": "Tus derechos — Witnessed",
+    "metaDescription": "Accede, oponte o suprime los registros de un dominio que controlas. Verificado por DNS, en autoservicio.",
+    "title": "Tus derechos",
+    "lede": "Autoservicio de acceso, oposición y supresión para cualquier dominio que controles. La titularidad se demuestra con un registro DNS TXT corto — el mismo mecanismo de confianza en el que se apoya todo el servicio. Sin email, sin ticket, sin esperas.",
+    "step1Label": "1. Elige una acción",
+    "step2Label": "2. Introduce el dominio que controlas",
+    "step3Label": "3. Publica este registro TXT",
+    "step3Body": "Añade el registro de abajo al DNS de tu dominio. Cuando resuelva, pulsa el botón para completar la acción.",
+    "step3Note": "La propagación DNS suele tardar menos de un minuto, pero puede extenderse a unas horas según tu proveedor. El reto es válido durante el resto de este día UTC y el siguiente.",
+    "type": "Tipo",
+    "host": "Host",
+    "value": "Valor",
+    "copy": "Copiar",
+    "copied": "Copiado ✓",
+    "continue": "Continuar",
+    "loading": "Cargando…",
+    "verifying": "Verificando…",
+    "domainPlaceholder": "acme.com",
+    "domainAria": "Dominio que controlas",
+    "actions": {
+      "access": {
+        "title": "Acceso",
+        "sub": "Descarga todo lo que guardamos sobre este dominio (art. 15)."
+      },
+      "opt_out": {
+        "title": "Oposición",
+        "sub": "Bloquea futuros registros sin borrar el pasado (art. 21)."
+      },
+      "erasure": {
+        "title": "Supresión",
+        "sub": "Elimina permanentemente cada registro que mencione este dominio (art. 17)."
+      }
+    },
+    "runButton": {
+      "access": "Verificar y descargar",
+      "opt_out": "Verificar y oponerse",
+      "erasure": "Verificar y suprimir"
+    },
+    "errorTitle": "Algo ha fallado",
+    "errors": {
+      "invalid_domain": "Ese no parece un dominio válido. Usa la forma sin protocolo, p. ej. acme.com.",
+      "invalid_action": "Acción desconocida.",
+      "no_txt_record": "No encontramos ningún TXT en el host indicado. Revisa tu DNS y espera un minuto a que propague.",
+      "dns_error": "No hemos podido consultar tu DNS. Inténtalo de nuevo en un momento.",
+      "challenge_mismatch": "Existe un TXT pero el valor no coincide. Comprueba que copiaste el valor completo y que tu panel DNS no haya alterado ningún carácter.",
+      "verification_failed": "La verificación ha fallado.",
+      "network_error": "No hemos podido contactar con Witnessed. Revisa tu conexión e inténtalo de nuevo.",
+      "server_error": "Algo ha fallado en nuestro lado. Inténtalo en un momento.",
+      "error": "Algo ha fallado."
+    },
+    "success": {
+      "access": "Acceso concedido.",
+      "accessBody": "Esto es todo lo que guardamos sobre este dominio. Descarga el JSON o inspecciónalo debajo.",
+      "opt_out": "Oposición confirmada.",
+      "optOutBody": "Este dominio se ha añadido a nuestra lista de bloqueo. Los emails entrantes futuros que lo involucren como remitente o destinatario principal se descartarán en silencio. Los registros existentes se mantienen — usa Supresión si además quieres eliminarlos.",
+      "erasure": "Supresión completada.",
+      "erasureBody": "Hemos eliminado {sender} eventos donde este dominio era el remitente y {receiver} eventos donde era destinatario. Los contadores de otros remitentes se han ajustado. El dominio queda en la lista de bloqueo para que no pueda reingestarse."
+    },
+    "download": "Descargar JSON",
+    "viewJson": "Ver JSON sin procesar",
+    "whyTxtTitle": "¿Por qué un registro DNS TXT?",
+    "whyTxtBody": "El DNS es la prueba existente de quién controla un dominio. Si puedes publicar un registro bajo él, tienes control administrativo — justo lo que necesitamos para confiar en una solicitud de derechos. Witnessed nunca pide cuentas, así que esta es la forma más ligera de vincular una solicitud a un titular real.",
+    "timingTitle": "¿Cuándo surten efecto?",
+    "timingBody": "La oposición y la supresión se aplican inmediatamente al verificar. Nuestro pipeline de entrada vuelve a consultar la lista de bloqueo en cada email, así que incluso un CC que llegue segundos después de la supresión se descartará. Las solicitudes de acceso devuelven el estado en vivo en el momento de la verificación.",
+    "scopeTitle": "Qué cubre (y qué no) una solicitud",
+    "scopeBody": "Una solicitud verificada cubre sólo el dominio indicado. Si controlas varios dominios, debes verificar cada uno por separado. La supresión elimina referencias al dominio verificado incluso en registros de otros remitentes; no borra las cuentas de esos remitentes ni revela nada sobre ellos.",
+    "contactTitle": "¿Necesitas ayuda?",
+    "contactIntro": "Si algo del proceso no queda claro, o crees que estamos tratando datos sobre ti o tu dominio que no ves aquí, escríbenos:"
   },
   "termsPage": {
     "title": "Términos del servicio",
