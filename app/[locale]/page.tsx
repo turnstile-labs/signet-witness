@@ -36,7 +36,7 @@ export default async function Home({
               <span className="text-accent">{t("headline2")}</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
+            <p className="text-base sm:text-lg text-muted max-w-lg mx-auto leading-relaxed mb-10">
               {t("subhead")}
             </p>
 
