@@ -34,7 +34,7 @@ export default async function TermsPage({
             <p>
               Witnessed (<code className="font-mono text-xs">witnessed.cc</code>) is a
               service that builds a verified business history for email domains. When you
-              CC <code className="font-mono text-txt text-xs bg-surface border border-border px-1.5 py-0.5 rounded">sealed@witnessed.cc</code> on
+              CC <code className="font-mono text-txt text-xs bg-surface border border-border px-1.5 py-0.5 rounded">seal@witnessed.cc</code> on
               a business email, we verify the DKIM signature, record the metadata, and
               add it to the public proof-of-business record for your domain.
             </p>

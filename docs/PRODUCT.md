@@ -2,7 +2,7 @@
 
 **The business record AI can't fake.**
 
-CC `sealed@witnessed.cc` on your business emails. Signet verifies the DKIM
+CC `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
 signature, records who you emailed and when, and discards everything else.
 Your domain builds a verified communication history — passively, permanently,
 and impossible to manufacture. When you need to prove you're real, the proof
@@ -31,7 +31,7 @@ matters: **how long has this entity actually been doing business?**
 
 **One action. No account. No setup.**
 
-Add `sealed@witnessed.cc` to the CC field on any business email you send.
+Add `seal@witnessed.cc` to the CC field on any business email you send.
 
 Signet receives it, verifies the DKIM signature from your domain, records the
 sender domain, receiver domain, and timestamp. The email body and subject line
@@ -40,7 +40,7 @@ are discarded immediately — never stored, never read.
 Your domain gets a pulse of verified activity. You go back to work and forget
 about it. Every email you CC makes the record stronger.
 
-The receiver sees `sealed@witnessed.cc` in the CC field. If they're curious,
+The receiver sees `seal@witnessed.cc` in the CC field. If they're curious,
 they search it and discover Signet. That's how the network grows — through the
 emails people are already sending.
 
@@ -130,7 +130,7 @@ other verified businesses. *(Planned — not yet in MVP.)*
 
 Two pull-based channels. No outbound spam.
 
-**CC field.** Every CC'd email puts `sealed@witnessed.cc` in front of the
+**CC field.** Every CC'd email puts `seal@witnessed.cc` in front of the
 receiver. Curiosity does the rest.
 
 **Domain search.** Anyone can search any domain on Signet. If a domain appears
@@ -197,7 +197,7 @@ pay for when it matters.
 
 ### Why free for senders
 
-Every business that CCs `sealed@witnessed.cc` is adding a verified data point
+Every business that CCs `seal@witnessed.cc` is adding a verified data point
 to the cache. The intake is the product. Charging for it would slow the
 accumulation that makes the API valuable. Free intake, paid queries and
 credentials — the model only works if the cache grows fast.
@@ -208,7 +208,7 @@ credentials — the model only works if the cache grows fast.
 
 ### Month 1 — Build, ship, and eat your own cooking
 
-CC `sealed@witnessed.cc` on every outgoing business email from day one.
+CC `seal@witnessed.cc` on every outgoing business email from day one.
 Signet's own seal page at `witnessed.cc/b/witnessed.cc` becomes the first
 proof that the product works. Publish 2–3 pieces of content on the AI
 impersonation problem. No product pitch. Plant the thesis: "time is the only

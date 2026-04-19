@@ -41,7 +41,7 @@ export default async function PrivacyPage({
 
           <section>
             <h2 className="text-base font-semibold text-txt mb-3">What we collect</h2>
-            <p className="mb-4">When you CC <code className="font-mono text-txt text-xs bg-surface border border-border px-1.5 py-0.5 rounded">sealed@witnessed.cc</code> on an email, we record:</p>
+            <p className="mb-4">When you CC <code className="font-mono text-txt text-xs bg-surface border border-border px-1.5 py-0.5 rounded">seal@witnessed.cc</code> on an email, we record:</p>
             <ul className="space-y-2 pl-4 border-l border-border">
               <li><span className="text-txt font-medium">Sender domain</span> — the domain portion of your From address (e.g. <code className="font-mono text-xs">acme.com</code>)</li>
               <li><span className="text-txt font-medium">Recipient domain</span> — the domain of the primary recipient</li>

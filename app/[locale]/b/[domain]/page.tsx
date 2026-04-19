@@ -490,7 +490,7 @@ async function UnclaimedPage({
                 })
               : tu.rich("noRecordBody", {
                   name: domain,
-                  addr: "sealed@witnessed.cc",
+                  addr: "seal@witnessed.cc",
                   d: (chunks) => (
                     <span className="font-mono text-txt break-all">{chunks}</span>
                   ),

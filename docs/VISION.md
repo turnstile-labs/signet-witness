@@ -151,7 +151,7 @@ over time? Frequent changes are a flag; stability is a positive signal.
 consistently? Public record, free to check, adds corroboration.
 
 **Two-sided witnessed exchanges.** When a receiver replies and also CCs
-`sealed@witnessed.cc`, the exchange is marked as two-sided — significantly
+`seal@witnessed.cc`, the exchange is marked as two-sided — significantly
 harder to fake and carrying the highest weight.
 
 **Cross-registry corroboration.** If a domain appears in external registries

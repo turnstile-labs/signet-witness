@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 type Variant = "hero" | "compact";
 
 export default function CopyableEmail({
-  email = "sealed@witnessed.cc",
+  email = "seal@witnessed.cc",
   variant = "hero",
   caption,
 }: {
