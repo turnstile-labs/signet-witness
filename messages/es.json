@@ -18,14 +18,6 @@
     "headline1": "La IA puede inventar cualquier cosa.",
     "headline2": "Excepto el ayer.",
     "subhead": "Un registro verificable de cada email de trabajo que envías — creado automáticamente, imposible de falsificar con fecha anterior.",
-    "counter": {
-      "singularDomains": "negocio",
-      "pluralDomains": "negocios",
-      "singularEvents": "email verificado en el registro",
-      "pluralEvents": "emails verificados en el registro"
-    },
-    "heroOr": "o",
-    "lookupPlaceholder": "Busca cualquier dominio",
     "mock": {
       "eyebrow": "Cada dominio tiene la suya",
       "title": "Una página pública que cualquiera puede consultar.",

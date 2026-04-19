@@ -99,33 +99,6 @@ export async function getReceiverCount(domain: string): Promise<number> {
   }
 }
 
-// Network-wide stats for the landing page live counter.
-// Returns null if the DB is unreachable (e.g. local dev without DATABASE_URL)
-// so the UI can gracefully hide the counter instead of crashing.
-export interface NetworkStats {
-  domains: number;
-  events: number;
-}
-
-export async function getNetworkStats(): Promise<NetworkStats | null> {
-  try {
-    const rows = await sql`
-      SELECT
-        (SELECT COUNT(*) FROM domains) AS domains,
-        (SELECT COUNT(*) FROM events)  AS events
-    ` as unknown as { domains: string; events: string }[];
-    const row = rows[0];
-    if (!row) return null;
-    return {
-      domains: Number(row.domains),
-      events: Number(row.events),
-    };
-  } catch (err) {
-    console.error("[db] getNetworkStats failed", err);
-    return null;
-  }
-}
-
 // Daily event counts over the last N days — used for the sparkline
 // on the seal page. Returns buckets in chronological order.
 export async function getDailyActivity(

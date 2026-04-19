@@ -18,14 +18,6 @@
     "headline1": "AI can fake everything.",
     "headline2": "Except yesterday.",
     "subhead": "A verifiable record of every business email you send — built automatically, impossible to backdate.",
-    "counter": {
-      "singularDomains": "business",
-      "pluralDomains": "businesses",
-      "singularEvents": "verified email on record",
-      "pluralEvents": "verified emails on record"
-    },
-    "heroOr": "or",
-    "lookupPlaceholder": "Look up any domain",
     "mock": {
       "eyebrow": "Every domain gets one",
       "title": "A public page anyone can check.",

@@ -41,25 +41,22 @@ type State = "verified" | "building" | "pending";
 interface Palette {
   bg: string;
   border: string;
-  brand: string;
-  sep: string;
-  domain: string;
+  domain: string;   // primary — the domain wordmark
+  attribution: string; // tertiary — the "witnessed.cc" powered-by line
 }
 
 const PALETTES: Record<Theme, Palette> = {
   dark: {
     bg: "#0c0c0f",
     border: "#25252f",
-    brand: "#e8e8f2",
-    sep: "#60607a",
     domain: "#e8e8f2",
+    attribution: "#60607a",
   },
   light: {
     bg: "#ffffff",
     border: "#e0e0ec",
-    brand: "#18181e",
-    sep: "#9090b0",
     domain: "#18181e",
+    attribution: "#9090b0",
   },
 };
 
@@ -122,26 +119,25 @@ function renderSvg(
   const s = stateStyle(state);
   const label = statusLabel(state, count, s);
 
-  // Rough character-width approximations for Helvetica at 9px with a
-  // slight letter-spacing — used to size the pill and truncate the domain.
+  // Status pill — sized to fit the label (state + count).
   const pillCharW = 5.6;
   const pillW = Math.max(72, Math.round(label.length * pillCharW + 28));
   const pillH = 22;
   const pillX = W - 14 - pillW;
   const pillY = (H - pillH) / 2;
 
-  // Domain text lives between the separator and the status pill.
-  const domainStartX = 108;
+  // Domain now owns the left half — no more "WITNESSED ·" prefix.
+  // Truncate to fit the available horizontal space.
+  const domainStartX = 16;
   const availableDomainW = pillX - 12 - domainStartX;
-  const domainCharW = 6.5;
+  const domainCharW = 8.2; // monospace @ 14px
   const maxDomainChars = Math.max(4, Math.floor(availableDomainW / domainCharW));
   const displayDomain = truncateDomain(domain, maxDomainChars);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${label.toLowerCase()})">
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="${p.bg}" stroke="${p.border}"/>
-  <text x="16" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="800" fill="${p.brand}" letter-spacing="0.1em">WITNESSED</text>
-  <text x="98" y="25" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="${p.sep}">·</text>
-  <text x="${domainStartX}" y="25" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" fill="${p.domain}">${esc(displayDomain)}</text>
+  <text x="${domainStartX}" y="19" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="14" font-weight="600" fill="${p.domain}">${esc(displayDomain)}</text>
+  <text x="${domainStartX}" y="32" font-family="Helvetica, Arial, sans-serif" font-size="7.5" fill="${p.attribution}" letter-spacing="0.12em">WITNESSED.CC</text>
   <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${pillH / 2}" fill="${s.fill}" stroke="${s.stroke}"/>
   <circle cx="${pillX + 12}" cy="${pillY + pillH / 2}" r="3" fill="${s.dot}"/>
   <text x="${pillX + 22}" y="${pillY + pillH / 2 + 3.5}" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="0.08em" fill="${s.text}">${esc(label)}</text>
@@ -184,23 +180,36 @@ function renderPng(
           boxSizing: "border-box",
         }}
       >
-        <span
+        <div
           style={{
-            color: p.brand,
-            fontSize: 22,
-            fontWeight: 800,
-            marginRight: 14,
-            letterSpacing: 2.2,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            lineHeight: 1,
           }}
         >
-          WITNESSED
-        </span>
-
-        <span style={{ color: p.sep, fontSize: 22, marginRight: 14 }}>·</span>
-
-        <span style={{ color: p.domain, fontSize: 22, fontFamily: "monospace" }}>
-          {displayDomain}
-        </span>
+          <span
+            style={{
+              color: p.domain,
+              fontSize: 28,
+              fontWeight: 700,
+              fontFamily: "monospace",
+            }}
+          >
+            {displayDomain}
+          </span>
+          <span
+            style={{
+              color: p.attribution,
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: 2.2,
+              marginTop: 8,
+            }}
+          >
+            WITNESSED.CC
+          </span>
+        </div>
 
         <div style={{ display: "flex", flex: 1 }} />
 

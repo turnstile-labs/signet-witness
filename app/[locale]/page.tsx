@@ -5,7 +5,6 @@ import CopyableEmail from "@/app/components/CopyableEmail";
 import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
 import DomainSearch from "@/app/components/DomainSearch";
-import { getNetworkStats } from "@/lib/db";
 
 export const revalidate = 300;
 
@@ -18,10 +17,6 @@ export default async function Home({
   setRequestLocale(locale);
 
   const t = await getTranslations("home");
-  const stats = await getNetworkStats();
-  const hasLiveCounter = stats && stats.domains > 0;
-
-  const nf = new Intl.NumberFormat(locale);
 
   return (
     <div className="flex flex-col min-h-screen bg-bg text-txt">
@@ -46,26 +41,6 @@ export default async function Home({
             </p>
 
             <CopyableEmail variant="hero" />
-
-            {hasLiveCounter && (
-              <div className="inline-flex items-center gap-3 mt-10 pl-3.5 pr-5 py-2.5 rounded-full border border-border bg-surface/70 backdrop-blur-sm shadow-sm">
-                <span className="relative flex items-center justify-center shrink-0">
-                  <span className="absolute w-3 h-3 rounded-full bg-verified/50 animate-ping" />
-                  <span className="relative w-2 h-2 rounded-full bg-verified inline-block" />
-                </span>
-                <span className="text-sm font-mono text-muted">
-                  <span className="text-txt tabular-nums font-semibold text-base">
-                    {nf.format(stats!.domains)}
-                  </span>
-                  {" "}{stats!.domains === 1 ? t("counter.singularDomains") : t("counter.pluralDomains")}
-                  <span className="text-muted-2 mx-2">·</span>
-                  <span className="text-txt tabular-nums font-semibold text-base">
-                    {nf.format(stats!.events)}
-                  </span>
-                  {" "}{stats!.events === 1 ? t("counter.singularEvents") : t("counter.pluralEvents")}
-                </span>
-              </div>
-            )}
 
           </div>
         </section>
