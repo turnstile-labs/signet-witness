@@ -4,7 +4,6 @@ import {
   getEvents,
   getReceiverCount,
   getDailyActivity,
-  type WitnessEvent,
 } from "@/lib/db";
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
@@ -39,13 +38,6 @@ function formatActiveHistory(days: number): string {
   if (days < 365) return `${Math.round(days / 30)} mo`;
   const years = days / 365;
   return years >= 10 ? `${Math.round(years)} yr` : `${years.toFixed(1)} yr`;
-}
-
-function formatDateShort(iso: string, locale: string): string {
-  return new Date(iso).toLocaleDateString(locale, {
-    month: "short",
-    day: "numeric",
-  });
 }
 
 function domainInitials(domain: string): string {
@@ -349,58 +341,6 @@ export default async function SealPage({ params }: Props) {
             ))}
           </div>
         </div>
-
-        {/* Activity feed */}
-        {events.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3 px-1 gap-3">
-              <EyebrowLabel>{t("activity")}</EyebrowLabel>
-              <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-2 font-mono text-right shrink-0">
-                {events.length >= 20
-                  ? t("latestOfTotal", { total: record.event_count })
-                  : t("ofTotal", { count: events.length })}
-              </p>
-            </div>
-            <div className="bg-surface border border-border rounded-xl overflow-hidden">
-              <div
-                className={
-                  events.length > 7
-                    ? "max-h-[21rem] overflow-y-auto thin-scrollbar"
-                    : ""
-                }
-              >
-                {events.slice(0, 20).map((event, i) => (
-                  <div
-                    key={(event as WitnessEvent).id}
-                    className={`flex items-center justify-between px-4 sm:px-5 py-3 gap-3 ${
-                      i < Math.min(events.length, 20) - 1
-                        ? "border-b border-border"
-                        : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                      <span className="text-xs sm:text-sm font-mono text-txt truncate">
-                        {event.receiver_domain}
-                      </span>
-                    </div>
-                    <span className="text-[0.7rem] sm:text-xs font-mono text-muted-2 shrink-0">
-                      {formatDateShort(event.witnessed_at, locale)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="text-xs text-muted-2 mt-2 px-1">
-              {t.rich("rowFootnote", {
-                name: decoded,
-                d: (chunks) => (
-                  <span className="font-mono break-all">{chunks}</span>
-                ),
-              })}
-            </p>
-          </div>
-        )}
 
         {/* Owner tools */}
         <div className="bg-surface border border-border rounded-xl p-5 mb-6">
