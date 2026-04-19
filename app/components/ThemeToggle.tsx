@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function ThemeToggle() {
+  const t = useTranslations("navAria");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      aria-label="Toggle theme"
+      aria-label={t("themeToggle")}
       className="w-6 h-6 flex items-center justify-center rounded-md border border-border text-muted hover:text-txt hover:border-border-h transition-colors"
     >
       {theme === "dark" ? (

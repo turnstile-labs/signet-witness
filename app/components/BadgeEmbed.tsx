@@ -30,7 +30,13 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
           <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
             {t("preview")}
           </p>
-          <ThemeToggle theme={theme} setTheme={setTheme} darkLabel={t("dark")} lightLabel={t("light")} />
+          <ThemeToggle
+            theme={theme}
+            setTheme={setTheme}
+            darkLabel={t("dark")}
+            lightLabel={t("light")}
+            ariaLabel={t("themeAria")}
+          />
         </div>
         <div
           className={`border rounded-lg p-4 flex items-center justify-center overflow-x-auto transition-colors ${
@@ -42,7 +48,7 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewSrc}
-            alt={`Witnessed badge for ${domain}`}
+            alt={t("alt", { domain })}
             width={360}
             height={40}
             className="max-w-full h-auto"
@@ -82,16 +88,18 @@ function ThemeToggle({
   setTheme,
   darkLabel,
   lightLabel,
+  ariaLabel,
 }: {
   theme: Theme;
   setTheme: (t: Theme) => void;
   darkLabel: string;
   lightLabel: string;
+  ariaLabel: string;
 }) {
   return (
     <div
       role="radiogroup"
-      aria-label="Badge theme"
+      aria-label={ariaLabel}
       className="inline-flex items-center gap-0.5 p-0.5 rounded-md border border-border bg-bg"
     >
       <ThemeButton

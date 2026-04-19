@@ -1,17 +1,22 @@
 {
-  "nav": {
-    "searchPlaceholder": "Buscar un dominio",
-    "searchAria": "Buscar un dominio",
-    "lookupAria": "Buscar"
+  "navAria": {
+    "home": "Witnessed — inicio",
+    "themeToggle": "Cambiar tema"
   },
   "footer": {
     "privacy": "Privacidad",
     "terms": "Términos"
   },
+  "errorPage": {
+    "eyebrow": "Algo ha fallado",
+    "body": "No hemos podido cargar esta página. Puede que el registro no esté disponible temporalmente.",
+    "retry": "Reintentar →",
+    "refLabel": "ref:"
+  },
   "copyableEmail": {
-    "caption": "Ponlo en copia en tu próximo email de trabajo",
+    "caption": "Pon esta dirección en copia en tu próximo email de trabajo",
     "copy": "Copiar",
-    "copied": "¡Copiado ✓",
+    "copied": "Copiado ✓",
     "aria": "Copiar dirección del remitente"
   },
   "home": {
@@ -39,7 +44,7 @@
       "eyebrow": "Cada dominio tiene la suya",
       "title": "Una página pública que cualquiera puede consultar.",
       "sub": "Remitente real. Fechas reales. Volumen real. Nada preparado, nada autodeclarado.",
-      "verifiedActive": "Activo Verificado",
+      "verifiedActive": "Activo verificado",
       "statsVerifiedEmails": "Emails verificados",
       "statsVerifiedEmailsSub": "confirmados de forma independiente",
       "statsActiveHistory": "Historial activo",
@@ -99,7 +104,7 @@
   },
   "seal": {
     "eyebrow": "Prueba de negocio",
-    "verifiedActive": "Activo Verificado",
+    "verifiedActive": "Activo verificado",
     "building": "En construcción",
     "pending": "Pendiente",
     "statVerifiedEmails": "Emails verificados",
@@ -115,6 +120,7 @@
     "buildingBody": "Verificado requiere {days}+ días en el registro y al menos {emails} emails verificados.",
     "daysOnRecord": "Días en el registro",
     "verifiedEmails": "Emails verificados",
+    "daysLong": "{count, plural, =0 {< 1 día} =1 {1 día} other {# días}}",
     "last30": "Últimos 30 días",
     "verifiedEmailsOne": "email verificado",
     "verifiedEmailsMany": "emails verificados",
@@ -139,7 +145,7 @@
       "willShow2": "Una línea de tiempo criptográfica que no se puede falsificar, sin guardar asuntos ni contenidos.",
       "willShow3": "Un sello público que cualquiera puede consultar — más un badge en vivo para firmas de email, webs y facturas.",
       "startTitle": "Empieza este registro",
-      "startBody": "Ponla en copia en tu próximo email de trabajo. El registro empieza solo.",
+      "startBody": "Pon esta dirección en copia en tu próximo email de trabajo. El registro empieza solo.",
       "howItWorks": "Cómo funciona →"
     }
   },
@@ -151,11 +157,96 @@
     "copy": "Copiar",
     "copied": "Copiado ✓",
     "dark": "Oscuro",
-    "light": "Claro"
+    "light": "Claro",
+    "themeAria": "Tema del badge",
+    "alt": "Badge de Witnessed para {domain}"
   },
   "languageSwitcher": {
     "label": "Idioma",
     "en": "English",
     "es": "Español"
+  },
+  "legal": {
+    "eyebrow": "Legal",
+    "lastUpdated": "Última actualización: abril de 2026"
+  },
+  "privacyPage": {
+    "title": "Política de privacidad",
+    "metaTitle": "Privacidad — Witnessed",
+    "metaDescription": "Cómo trata Witnessed tus datos.",
+    "shortTitle": "La versión corta",
+    "shortBody": "Registramos únicamente lo imprescindible para verificar que se envió un email de trabajo: el dominio del remitente, el dominio del destinatario, la marca de tiempo y un hash de la firma DKIM. Nunca vemos, guardamos ni procesamos el contenido de tus emails. El CC es un acto explícito y voluntario — no se recopila nada sin una acción deliberada por tu parte.",
+    "collectTitle": "Qué recopilamos",
+    "collectIntro": "Cuando pones <addr>seal@witnessed.cc</addr> en copia en un email, registramos:",
+    "collectItems": [
+      ["Dominio del remitente", "la parte de dominio de tu dirección From (p. ej. acme.com)"],
+      ["Dominio del destinatario", "el dominio del destinatario principal"],
+      ["Marca de tiempo", "cuándo recibió el email nuestro sistema"],
+      ["Hash de la firma DKIM", "un hash unidireccional que usamos para verificar la autenticidad; la firma original se descarta"]
+    ],
+    "neverTitle": "Qué no recopilamos nunca",
+    "neverIntro": "Lo siguiente se descarta en el momento de la recepción y nunca se almacena:",
+    "neverItems": [
+      "Asunto del email",
+      "Cuerpo del email",
+      "Archivos adjuntos",
+      "Nombres, direcciones o datos de contacto personales",
+      "Cualquier contenido de tu email"
+    ],
+    "neverFoot": "Ninguna persona en Witnessed lee tus emails. Esto está garantizado a nivel de arquitectura — el contenido de los emails nunca llega a nuestra base de datos.",
+    "useTitle": "Cómo usamos estos datos",
+    "useIntro": "Los datos recopilados se utilizan únicamente para:",
+    "useItems": [
+      "Construir y mostrar la página pública de sello para tu dominio en witnessed.cc/b/tudominio",
+      "Calcular las métricas de historial verificado que aparecen en esa página",
+      "Respaldar el registro de verificación que demuestra que tu negocio ha estado operativo a lo largo del tiempo"
+    ],
+    "useFoot": "No vendemos datos, no los compartimos con terceros con fines publicitarios, ni los usamos para ningún otro propósito distinto de los anteriores.",
+    "consentTitle": "Modelo de consentimiento",
+    "consentBody": "El CC es un acto explícito y voluntario en cada email individual. Tú tienes el control total sobre qué emails contribuyen a tu registro. No hay recopilación pasiva — Witnessed sólo recibe datos cuando incluyes deliberadamente la dirección en el campo CC.",
+    "publicTitle": "Registros públicos",
+    "publicBody": "Las páginas de sello son públicas por diseño. El nombre del dominio, el número de eventos, la fecha del primer registro y los dominios de destinatarios son visibles para cualquiera que visite tu página. Esa es la esencia del producto — la prueba pública de actividad empresarial. Si no quieres un registro público para tu dominio, no pongas la dirección en copia.",
+    "retentionTitle": "Conservación y eliminación de datos",
+    "retentionBody": "El historial de tu dominio se conserva mientras el servicio esté operativo. Puedes solicitar la eliminación de todos los registros asociados a tu dominio en cualquier momento escribiendo a <mail>hello@witnessed.cc</mail> desde una dirección de ese dominio. La eliminación es permanente e irreversible.",
+    "infraTitle": "Infraestructura y seguridad",
+    "infraBody": "Los datos se almacenan en Vercel Postgres (Neon), cifrados en reposo y en tránsito. El acceso está restringido a la capa de aplicación. Ningún empleado tiene acceso directo a la base de datos en producción.",
+    "changesTitle": "Cambios en esta política",
+    "changesBody": "Si hacemos cambios sustanciales, actualizaremos la fecha en la parte superior de esta página. El uso continuado del servicio tras los cambios implica su aceptación.",
+    "contactTitle": "Contacto",
+    "contactIntro": "¿Preguntas sobre esta política?"
+  },
+  "termsPage": {
+    "title": "Términos del servicio",
+    "metaTitle": "Términos — Witnessed",
+    "metaDescription": "Términos del servicio de Witnessed.",
+    "whatTitle": "Qué es Witnessed",
+    "whatBody": "Witnessed (<code>witnessed.cc</code>) es un servicio que construye un historial empresarial verificado para dominios de email. Cuando pones <addr>seal@witnessed.cc</addr> en copia en un email de trabajo, verificamos la firma DKIM, registramos los metadatos y los añadimos al registro público de prueba de actividad de tu dominio.",
+    "acceptanceTitle": "Aceptación",
+    "acceptanceBody": "Al usar este servicio — ya sea poniendo nuestra dirección en copia, visitando una página de sello o usando la API de verificación — aceptas estos términos. Si no estás de acuerdo, no uses el servicio.",
+    "useTitle": "Uso aceptable",
+    "useIntro": "Te comprometes a no usar Witnessed para:",
+    "useItems": [
+      "Generar un historial empresarial falso o engañoso (p. ej. redes coordinadas de dominios que se ponen mutuamente en copia para fabricar credibilidad artificial)",
+      "Suplantar a otro negocio o dominio que no controlas",
+      "Manipular, aplicar ingeniería inversa o alterar el sistema de verificación",
+      "Abusar del servicio de forma que degrade el rendimiento para otros usuarios"
+    ],
+    "useFoot": "Nos reservamos el derecho de eliminar, marcar o degradar permanentemente los registros asociados a dominios que incurran en manipulación.",
+    "publicTitle": "La página de sello es pública",
+    "publicBody": "Una vez que tu dominio ha sido registrado, existe una página de sello pública en <code>witnessed.cc/b/tudominio</code>. Esta página es accesible públicamente y está indexada. Al construir un registro mediante nuestro servicio, aceptas que esta página pueda ser visible para cualquiera.",
+    "provesTitle": "Qué prueba y qué no prueba Witnessed",
+    "provesBody1": "Witnessed demuestra que un dominio ha enviado emails autenticados con DKIM a contrapartes reales durante un periodo de tiempo. No demuestra personalidad jurídica, solvencia financiera, cumplimiento de ninguna normativa, ni la calidad o legitimidad de la actividad empresarial subyacente.",
+    "provesBody2": "El estado Verificado es una señal, no una garantía. No bases una decisión empresarial importante únicamente en un registro de Witnessed.",
+    "availabilityTitle": "Disponibilidad del servicio",
+    "availabilityBody": "Ofrecemos Witnessed tal cual y según disponibilidad. No garantizamos el tiempo de actividad, la retención de datos más allá de una práctica comercial razonable ni la continuidad del servicio. Haremos esfuerzos razonables por preservar los registros, pero no podemos ser responsables de pérdidas de datos.",
+    "liabilityTitle": "Limitación de responsabilidad",
+    "liabilityBody": "En la medida máxima permitida por la ley, Witnessed y sus operadores no serán responsables de ningún daño indirecto, incidental, especial, consecuente o punitivo derivado del uso del servicio, incluyendo, entre otros, pérdida de negocio, pérdida de datos o la confianza depositada en un registro verificado.",
+    "terminationTitle": "Terminación",
+    "terminationBody1": "Podemos suspender o terminar el acceso al servicio en cualquier momento, con o sin previo aviso, por conductas que incumplan estos términos o que consideremos perjudiciales para la integridad del registro.",
+    "terminationBody2": "Puedes solicitar la eliminación del registro de tu dominio en cualquier momento. Consulta nuestra <link>Política de privacidad</link> para más detalles.",
+    "changesTitle": "Cambios en estos términos",
+    "changesBody": "Podemos actualizar estos términos de vez en cuando. Actualizaremos la fecha en la parte superior de esta página. El uso continuado del servicio tras los cambios implica la aceptación de los nuevos términos.",
+    "contactTitle": "Contacto",
+    "contactIntro": "¿Preguntas sobre estos términos?"
   }
 }

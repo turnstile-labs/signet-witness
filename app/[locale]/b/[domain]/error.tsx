@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
 
@@ -11,6 +12,8 @@ export default function SealError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("errorPage");
+
   useEffect(() => {
     console.error("[seal page error]", {
       message: error.message,
@@ -25,21 +28,20 @@ export default function SealError({
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="text-center max-w-sm">
           <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-4">
-            Something went wrong
+            {t("eyebrow")}
           </p>
           <p className="text-sm text-muted leading-relaxed mb-6">
-            We couldn&apos;t load this seal page. The record may be temporarily
-            unavailable.
+            {t("body")}
           </p>
           <button
             onClick={reset}
             className="text-xs font-mono text-accent hover:underline"
           >
-            Try again →
+            {t("retry")}
           </button>
           {error.digest && (
             <p className="mt-8 text-[0.65rem] font-mono text-muted-2 break-all">
-              ref: {error.digest}
+              {t("refLabel")} {error.digest}
             </p>
           )}
         </div>

@@ -32,12 +32,6 @@ function daysActive(firstSeen: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-function formatDaysLong(days: number): string {
-  if (days === 0) return "< 1 day";
-  if (days === 1) return "1 day";
-  return `${days} days`;
-}
-
 // Compact "active history" formatter — mirrors the landing mock.
 function formatActiveHistory(days: number): string {
   if (days === 0) return "< 1 d";
@@ -168,6 +162,7 @@ function SealCard({
 // ── Building progress ─────────────────────────────────────────
 function BuildingProgress({
   days,
+  daysDisplay,
   eventCount,
   title,
   inProgress,
@@ -176,6 +171,7 @@ function BuildingProgress({
   emailsLabel,
 }: {
   days: number;
+  daysDisplay: string;
   eventCount: number;
   title: string;
   inProgress: string;
@@ -203,7 +199,7 @@ function BuildingProgress({
           <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5 gap-2">
             <span>{daysLabel}</span>
             <span className="shrink-0">
-              {formatDaysLong(days)} / {VERIFIED_DAYS}
+              {daysDisplay} / {VERIFIED_DAYS}
             </span>
           </div>
           <div className="h-1.5 bg-bg rounded-full overflow-hidden">
@@ -301,6 +297,7 @@ export default async function SealPage({ params }: Props) {
         {!isVerified && (
           <BuildingProgress
             days={days}
+            daysDisplay={t("daysLong", { count: days })}
             eventCount={record.event_count}
             title={t("buildingTitle")}
             inProgress={t("buildingInProgress")}
