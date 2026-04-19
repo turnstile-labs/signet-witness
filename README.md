@@ -40,29 +40,40 @@ No auth. No payments. No setup required from users. The CC is the product.
 ```
 signet-witness/
 ├── app/
-│   ├── page.tsx                  # Landing page
-│   ├── layout.tsx                # Root layout + theme flash prevention
+│   ├── layout.tsx                # Root shell (inherited by every locale)
 │   ├── globals.css               # Tailwind v4 + light/dark CSS variables
-│   ├── components/
-│   │   ├── NavBar.tsx            # Shared header with inline domain search
-│   │   ├── Footer.tsx            # Shared footer with CC copy + links
-│   │   ├── CopyableEmail.tsx     # Click-to-copy CTA for seal@witnessed.cc
-│   │   ├── CopyText.tsx          # Generic copy-to-clipboard (URLs, snippets)
-│   │   ├── HeroBackdrop.tsx      # Subtle ascending-timeline SVG behind hero
-│   │   ├── Sparkline.tsx         # 30-day activity bar chart for seal pages
-│   │   └── ThemeToggle.tsx       # Light/dark mode toggle
-│   ├── b/[domain]/page.tsx       # Seal page — the product
-│   ├── privacy/page.tsx          # Privacy policy
-│   ├── terms/page.tsx            # Terms of service
-│   └── api/inbound/route.ts      # Email receiver + DKIM verify + DB write
+│   ├── [locale]/
+│   │   ├── layout.tsx            # Locale shell + theme flash prevention + NextIntlClientProvider
+│   │   ├── page.tsx              # Landing page
+│   │   ├── b/[domain]/
+│   │   │   ├── page.tsx          # Seal page — the product
+│   │   │   └── error.tsx         # Seal route error boundary
+│   │   ├── privacy/page.tsx      # Privacy policy
+│   │   └── terms/page.tsx        # Terms of service
+│   ├── api/inbound/route.ts      # Email receiver + DKIM verify + DB write
+│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge for email signatures
+│   └── components/
+│       ├── NavBar.tsx            # Header — logo + language + theme
+│       ├── Footer.tsx            # Footer — © + privacy/terms links
+│       ├── CopyableEmail.tsx     # Click-to-copy CTA for seal@witnessed.cc
+│       ├── DomainSearch.tsx      # Landing-page domain lookup form
+│       ├── BadgeEmbed.tsx        # Owner-tools panel (image URL + HTML + Markdown snippets)
+│       ├── HeroBackdrop.tsx      # Soft radial accent halo behind the hero headline
+│       ├── Sparkline.tsx         # 30-day activity bar chart for seal pages
+│       ├── LanguageSwitcher.tsx  # EN/ES selector
+│       └── ThemeToggle.tsx       # Light/dark mode toggle
+├── i18n/
+│   ├── routing.ts                # Locales + localePrefix config
+│   ├── navigation.ts             # Locale-aware Link/router helpers
+│   └── request.ts                # Per-request locale + message loader
+├── messages/
+│   ├── en.json                   # English strings
+│   └── es.json                   # Spanish strings
+├── proxy.ts                      # next-intl middleware (locale detection)
 ├── lib/
 │   └── db.ts                     # Neon SQL client + typed queries
 ├── workers/
-│   └── email-router/
-│       ├── index.ts              # Cloudflare Worker (~30 lines)
-│       ├── wrangler.toml
-│       ├── package.json
-│       └── tsconfig.json
+│   └── email-router/             # Cloudflare Worker (~30 lines) — forwards raw email to /api/inbound
 ├── schema.sql                    # Run once to create tables
 ├── .env.example
 └── docs/

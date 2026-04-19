@@ -57,8 +57,7 @@
       "lookupPlaceholder": "acme.com",
       "lookupSubmit": "Look up",
       "lookupAria": "Enter a domain to look up",
-      "realOne": "or see one live:",
-      "realOneLink": "witnessed.cc →"
+      "realOne": "or see one live:"
     },
     "why": {
       "title": "Trust, without the theater.",
@@ -125,6 +124,7 @@
     "verifiedEmailsOne": "verified email",
     "verifiedEmailsMany": "verified emails",
     "barLegend": "each bar = one day",
+    "sparklineAria": "{count} verified emails in the last {days} days",
     "whatThisProves": "What this proves",
     "proof1": "Every entry was independently verified at the moment of sending — not self-reported.",
     "proof2": "Timestamps are cryptographic. No entry can be backdated — this history only grows forward.",

@@ -57,8 +57,7 @@
       "lookupPlaceholder": "acme.com",
       "lookupSubmit": "Buscar",
       "lookupAria": "Escribe un dominio para consultarlo",
-      "realOne": "o mira uno en vivo:",
-      "realOneLink": "witnessed.cc →"
+      "realOne": "o mira uno en vivo:"
     },
     "why": {
       "title": "Confianza, sin teatro.",
@@ -125,6 +124,7 @@
     "verifiedEmailsOne": "email verificado",
     "verifiedEmailsMany": "emails verificados",
     "barLegend": "cada barra = un día",
+    "sparklineAria": "{count} emails verificados en los últimos {days} días",
     "whatThisProves": "Qué demuestra esto",
     "proof1": "Cada entrada se verificó de forma independiente en el momento del envío — no es autodeclarada.",
     "proof2": "Las marcas de tiempo son criptográficas. Ninguna entrada se puede falsificar con fecha anterior — este historial sólo crece hacia adelante.",

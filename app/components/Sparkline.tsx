@@ -2,6 +2,8 @@
 // Server-rendered SVG — no client JS. Missing days render as zero bars
 // so the chart always fills the full timeline.
 
+import { useTranslations } from "next-intl";
+
 export default function Sparkline({
   data,
   days = 30,
@@ -13,6 +15,7 @@ export default function Sparkline({
   height?: number;
   className?: string;
 }) {
+  const t = useTranslations("seal");
   const buckets: { date: string; count: number }[] = [];
   const byDate = new Map(data.map((d) => [d.date, d.count] as const));
 
@@ -37,7 +40,10 @@ export default function Sparkline({
       height={height}
       preserveAspectRatio="none"
       className={className}
-      aria-label={`${buckets.reduce((s, b) => s + b.count, 0)} verified emails in the last ${days} days`}
+      aria-label={t("sparklineAria", {
+        count: buckets.reduce((s, b) => s + b.count, 0),
+        days,
+      })}
     >
       {buckets.map((b, i) => {
         const h = b.count === 0 ? 2 : Math.max(3, (b.count / max) * height);

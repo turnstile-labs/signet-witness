@@ -16,11 +16,10 @@ The output: a public seal page at `witnessed.cc/b/yourdomain` that proves a doma
 
 | File | What it covers |
 |---|---|
-| `SIGNET_MVP.md` | What this repo builds — Web2 only, freemium, no roadmap |
-| `SIGNET_WEB2.md` | MVP + full roadmap (receipts, badge tiers, directory, API, portable credentials) |
-| `SIGNET_WITNESS.md` | Long-term vision including wallet-anchored path and unified attestation cache |
+| `PRODUCT.md` | What this repo builds — Web2 only, freemium, how it works, business model, GTM |
+| `VISION.md` | Phased roadmap and long-term Web3/wallet path |
 
-**The relationship between the three:** MVP ships first and proves demand. Web2 roadmap activates as milestones are hit. The Web3/wallet path (SIGNET_WITNESS.md) is a separate future product that will eventually connect to this one via a unified attestation cache.
+**The relationship between the two:** MVP ships first and proves demand. Phase 1+ features in `VISION.md` activate as milestones are hit. The Web3/wallet path is a separate future product that will eventually connect to this one via a unified attestation cache.
 
 ---
 
@@ -64,9 +63,13 @@ WHOIS is a signal that makes history *stronger* but isn't required for history t
 
 Discovery happens through the CC field (receivers see `seal@witnessed.cc`) and direct URL sharing (`witnessed.cc/b/acme.com`). The URL is the search. Add search when users ask for it.
 
-### No badge image at MVP
+### Dynamic badge (implemented)
 
-The `/badge/[domain].svg` route (live badge for email signatures) is deferred. Requires server-side image generation (satori or similar), font loading, and dynamic rendering — meaningful complexity for a feature no user has asked for yet. The seal page link serves the same purpose initially.
+`/badge/[slug]` now serves both SVG and PNG badges (PNG via `next/og`/Satori). The badge shows the domain, current status (`verified` / `building` / `pending`), and live event count, with dark and light themes via `?theme=light`. Cached at the edge with an `ETag` keyed on `(state, count, theme, format)` so email-signature embeds revalidate cheaply as counts grow.
+
+### Internationalization (EN + ES)
+
+Routing is handled by `next-intl` (`i18n/`, `proxy.ts`, `messages/`). `localePrefix: "as-needed"` — English stays at the root (`/b/witnessed.cc`), Spanish is prefixed (`/es/b/witnessed.cc`). All user-facing strings flow through `messages/{en,es}.json`.
 
 ---
 
@@ -75,13 +78,15 @@ The `/badge/[domain].svg` route (live badge for email signatures) is deferred. R
 **Build:** passing (`npm run build` exits 0)
 
 **Routes:**
-- `GET /` — homepage explaining the CC mechanic
-- `GET /b/[domain]` — seal page (claimed: shows history; unclaimed: shows receiver count)
+- `GET /` (and `/es`) — homepage explaining the CC mechanic
+- `GET /b/[domain]` — seal page (claimed: shows history; unclaimed: shows receiver count + badge preview)
+- `GET /privacy`, `GET /terms` — legal pages (fully translated)
+- `GET /badge/[slug]` — dynamic SVG/PNG badge for email signatures (`?theme=light` for light mode)
 - `POST /api/inbound` — receives raw email, verifies DKIM, writes to DB
 
 **DB schema** (run `schema.sql` once in Vercel Postgres dashboard):
 ```sql
-domains (id, domain, first_seen, event_count, updated_at)
+domains (id, domain, first_seen, event_count, tier, updated_at)
 events  (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
 ```
 
@@ -104,14 +109,14 @@ events  (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
 
 ## What comes next (Phase 1 — after 200 domains)
 
-From `SIGNET_WEB2.md` Phase 1:
+From `docs/VISION.md` Phase 1:
 - Timestamped receipt pages (`witnessed.cc/r/[hash]`) — $1/receipt or $29/month unlimited
-- Pro tier split (Stripe) — $9/month for badge embed + custom seal page
-- Badge image endpoint (`/badge/[domain].svg`)
+- Pro tier split (Stripe) — $9/month for custom seal page + premium badge styles
 - WHOIS receiver domain age scoring
+- Directory / discovery surface
 
 ---
 
 ## Related project
 
-`/Users/buitre/code/2026/signet-pass` — the original ZK email gating product (Signet Pass). Separate product, separate repo. Will eventually connect to this one via the unified attestation cache described in `docs/SIGNET_WITNESS.md`.
+`/Users/buitre/code/2026/signet-pass` — the original ZK email gating product (Signet Pass). Separate product, separate repo. Will eventually connect to this one via the unified attestation cache described in `docs/VISION.md`.

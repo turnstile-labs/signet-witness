@@ -6,6 +6,9 @@ workers/email-router/node_modules/
 .next/
 out/
 
+# typescript
+*.tsbuildinfo
+
 # env
 .env
 .env.local
