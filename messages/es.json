@@ -17,23 +17,22 @@
   "home": {
     "headline1": "La IA puede inventar cualquier cosa.",
     "headline2": "Excepto el ayer.",
-    "narrative": "El email se envía en tiempo real, a personas reales. Por eso es el único registro que la IA no puede falsificar.",
-    "subhead": "Un registro verificable de cada email de trabajo que envías — creado automáticamente, imposible de falsificar con fecha anterior.",
+    "subhead": "El email se envía en tiempo real, a personas reales — el único registro que la IA no puede falsificar. Pon a Witnessed en copia y cada mensaje forma parte de un historial verificable, construido automáticamente, imposible de falsificar con fecha anterior.",
     "howItWorks": {
       "eyebrow": "Cómo funciona",
-      "title": "Tres pasos sencillos. Un registro duradero.",
+      "title": "Tres pasos. Listo.",
       "sub": "Nada que instalar, nada que configurar. Ya tienes todo lo necesario.",
       "step1": {
         "title": "Envía email como siempre lo haces",
-        "body": "Eres un freelancer mandando una factura, una agencia confirmando un brief, un fundador respondiendo a un cliente. Tu flujo no cambia — ninguna herramienta que instalar, ningún DNS que editar, ninguna cuenta que crear."
+        "body": "Eres un freelancer mandando una factura, una agencia confirmando un brief, un fundador respondiendo a un cliente. Tu flujo no cambia."
       },
       "step2": {
         "title": "Añade una dirección en copia",
-        "body": "Pon sealed@witnessed.cc en CC en los emails que importan. Esa es toda la configuración. Sin aprobaciones, sin cuotas. Empieza con un email y observa lo que ocurre."
+        "body": "Pon sealed@witnessed.cc en CC en los emails que importan. Eso es todo — sin cuenta, sin cuota."
       },
       "step3": {
         "title": "Una página pública se construye sola",
-        "body": "Cada email con copia se convierte en una entrada verificada y con marca de tiempo en tu página de sello. Comparte witnessed.cc/b/tu-dominio con un posible cliente, en tus facturas o en tu firma — verán un historial vivo de negocio real, creciendo con el tiempo."
+        "body": "Cada email con copia se convierte en una entrada verificada y con marca de tiempo en tu página pública. Comparte el enlace o pega el badge en tu firma — verán un historial vivo, real y creciente."
       }
     },
     "mock": {
@@ -134,13 +133,13 @@
       "noOutbound": "Todavía sin registro de envíos",
       "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}} — otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia. Pero <d>{name}</d> aún no ha empezado a construir su propio registro.",
       "noRecord": "Aún sin registro",
-      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. En cuanto pongas <e>{addr}</e> en copia en un email de trabajo, esta página mostrará un historial verificado — automáticamente, sin necesidad de cuenta.",
+      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Pon <e>{addr}</e> en copia en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
       "willShowTitle": "Qué mostrará esta página",
       "willShow1": "Cada email con Witnessed en copia aparecerá como un registro verificado con marca de tiempo — no declarado por el emisor.",
       "willShow2": "Una línea de tiempo criptográfica que no se puede falsificar, sin guardar asuntos ni contenidos.",
       "willShow3": "Un sello público que cualquiera puede consultar — más un badge en vivo para firmas de email, webs y facturas.",
       "startTitle": "Empieza este registro",
-      "startBody": "Pon esta dirección en copia en tu próximo email de trabajo. Eso es todo — sin cuenta, sin configuración, sin trabajo continuo.",
+      "startBody": "Ponla en copia en tu próximo email de trabajo. El registro empieza solo.",
       "howItWorks": "Cómo funciona →"
     }
   },

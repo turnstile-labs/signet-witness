@@ -17,23 +17,22 @@
   "home": {
     "headline1": "AI can fake everything.",
     "headline2": "Except yesterday.",
-    "narrative": "Email is sent in real time, to real people. That makes it the one record AI can't fake.",
-    "subhead": "A verifiable record of every business email you send — built automatically, impossible to backdate.",
+    "subhead": "Email is sent in real time, to real people — the one record AI can't fake. CC Witnessed, and every message becomes part of a verifiable history, built automatically, impossible to backdate.",
     "howItWorks": {
       "eyebrow": "How it works",
-      "title": "Three small steps. One durable record.",
+      "title": "Three steps. You're set.",
       "sub": "Nothing to install, nothing to configure. You already have everything you need.",
       "step1": {
         "title": "Send email as you already do",
-        "body": "You're a freelancer sending an invoice, an agency confirming a brief, a founder replying to a customer. Your workflow doesn't change — no tool to install, no DNS to edit, no account to create."
+        "body": "You're a freelancer sending an invoice, an agency confirming a brief, a founder replying to a customer. The workflow doesn't change."
       },
       "step2": {
         "title": "Add one address to CC",
-        "body": "Put sealed@witnessed.cc in CC on the emails that matter. That's the entire setup. No approval, no monthly fee. Start with one email and see what happens."
+        "body": "Put sealed@witnessed.cc in CC on the emails that matter. That's it — no account, no fee."
       },
       "step3": {
         "title": "A public seal page builds itself",
-        "body": "Every CC'd email becomes a verified, timestamped entry on your seal page. Share witnessed.cc/b/your-domain with a prospect, on your invoice, or in your email signature — they see a live record of real business, growing over time."
+        "body": "Every CC'd email becomes a timestamped, verified entry on your public seal page. Share the link, or paste the badge in your signature — prospects see a live, growing record of real business."
       }
     },
     "mock": {
@@ -134,13 +133,13 @@
       "noOutbound": "No outbound record yet",
       "noOutboundBody": "<d>{name}</d> has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}} — other businesses are already emailing this domain and CCing Witnessed. But <d>{name}</d> hasn't started building its own outbound record yet.",
       "noRecord": "No record yet",
-      "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. Once you CC <e>{addr}</e> on a business email, this page will show a verified history — automatically, with no account needed.",
+      "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. CC <e>{addr}</e> on a business email, and this page fills in — automatically, no account needed.",
       "willShowTitle": "What this page will show",
       "willShow1": "Every email CC'd to Witnessed as a verified, timestamped entry — not self-reported.",
       "willShow2": "A cryptographic timeline that can't be backdated, with subjects and bodies never stored.",
       "willShow3": "A public seal anyone can check — plus a live badge for your email signature, website, and invoices.",
       "startTitle": "Start this record",
-      "startBody": "CC this address on your next business email. That's it — no account, no setup, no ongoing work.",
+      "startBody": "Put this in CC on your next business email. The record starts itself.",
       "howItWorks": "How it works →"
     }
   },
