@@ -62,6 +62,30 @@ html.light {
 
 html { background-color: var(--bg); }
 
+/* Themed thin scrollbar — used in overflow-x inputs like the HTML
+   snippet field so the default white/grey OS bar doesn't break the UI. */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 3px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--border-h);
+}
+.thin-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 body {
   background-color: var(--bg);
   color: var(--txt);

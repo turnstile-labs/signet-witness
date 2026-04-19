@@ -177,7 +177,9 @@ function CopyField({
       <div className="flex items-stretch gap-2">
         <div
           className={`flex-1 min-w-0 bg-bg border border-border rounded-lg px-3 py-2 text-xs font-mono text-muted ${
-            multiline ? "whitespace-pre overflow-x-auto" : "truncate"
+            multiline
+              ? "whitespace-pre overflow-x-auto thin-scrollbar"
+              : "truncate"
           }`}
         >
           {value}

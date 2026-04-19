@@ -368,7 +368,7 @@ export default async function SealPage({ params }: Props) {
               <div
                 className={
                   events.length > 7
-                    ? "max-h-[21rem] overflow-y-auto"
+                    ? "max-h-[21rem] overflow-y-auto thin-scrollbar"
                     : ""
                 }
               >
