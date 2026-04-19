@@ -16,9 +16,23 @@ A Next.js app that:
 1. Receives emails via a Cloudflare Worker → `/api/inbound`
 2. Verifies the DKIM signature with `mailauth`
 3. Records the sender domain, receiver domain, and timestamp in Postgres
-4. Serves a public seal page at `/b/[domain]`
+4. Serves a public seal page at `/b/[domain]` plus a dynamic SVG/PNG badge at `/badge/[domain]`
 
 No auth. No payments. No setup required from users. The CC is the product.
+
+---
+
+## What's live
+
+- **Seal pages** at `/b/[domain]` — verified/building/pending state, 30-day sparkline, stats, recent activity feed
+- **Unclaimed seal pages** for domains that appear only as receivers — shows inbound witnessed count and an on-ramp to start their own record
+- **Dynamic badge endpoint** at `/badge/[domain]` — SVG or PNG (`?theme=light` variant, `ETag`-cached, reflects live event count)
+- **Owner tools** on each seal page — copy the badge as image URL, HTML snippet, or Markdown
+- **Domain lookup** — anyone can search a domain from the landing page
+- **English + Spanish** — full i18n via `next-intl`. EN at the root, ES prefixed at `/es/*`
+- **Light + dark theme** — CSS-variable driven, persisted to `localStorage`
+- **Privacy + Terms** pages, fully translated
+- **Cloudflare Worker email router** — 30-line catch-all forwarder
 
 ---
 
@@ -103,6 +117,15 @@ psql $DATABASE_URL -f schema.sql
 npm run dev
 ```
 
+Available scripts:
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Next.js dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run typecheck` | `tsc --noEmit` — pure type check, no emit |
+
 ---
 
 ## Deploy
@@ -157,7 +180,12 @@ CREATE TABLE IF NOT EXISTS events (
   dkim_hash        TEXT NOT NULL,
   witnessed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS events_domain_id_idx       ON events(domain_id);
+CREATE INDEX IF NOT EXISTS events_receiver_domain_idx ON events(receiver_domain);
 ```
+
+The canonical schema lives in `schema.sql`; the snippet above is for reference.
 
 ---
 
@@ -179,7 +207,6 @@ emails build history. History built this way cannot be backdated or forged.
 |---|---|
 | `DATABASE_URL` or `STORAGE_URL` | Neon Postgres connection string |
 | `INBOUND_SECRET` | Shared secret between Cloudflare Worker and `/api/inbound` |
-| `NEXT_PUBLIC_APP_URL` | `https://witnessed.cc` (used for metadata) |
 
 ---
 

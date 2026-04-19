@@ -65,8 +65,12 @@ Consistent CC activity for 90 days (with at least 10 witnessed emails) earns
 a **Verified** badge — a live image you embed anywhere that updates
 automatically as your history grows.
 
-> **WITNESSED** · `acme.com` · Verified · 847 Days Active
+> `acme.com`  —  **VERIFIED · 847**
+> witnessed.cc
 
+The badge renders at `/badge/[domain]` in SVG or PNG, in dark or light theme
+(`?theme=light`). The live event count ships inside the pill, so the badge
+in an email signature grows along with the record — no manual swap needed.
 A scammer can copy the image. They can't copy the history. One click reveals
 the real record.
 
