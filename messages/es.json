@@ -17,7 +17,25 @@
   "home": {
     "headline1": "La IA puede inventar cualquier cosa.",
     "headline2": "Excepto el ayer.",
+    "narrative": "El email se envía en tiempo real, a personas reales. Por eso es el único registro que la IA no puede falsificar.",
     "subhead": "Un registro verificable de cada email de trabajo que envías — creado automáticamente, imposible de falsificar con fecha anterior.",
+    "howItWorks": {
+      "eyebrow": "Cómo funciona",
+      "title": "Tres pasos sencillos. Un registro duradero.",
+      "sub": "Nada que instalar, nada que configurar. Ya tienes todo lo necesario.",
+      "step1": {
+        "title": "Envía email como siempre lo haces",
+        "body": "Eres un freelancer mandando una factura, una agencia confirmando un brief, un fundador respondiendo a un cliente. Tu flujo no cambia — ninguna herramienta que instalar, ningún DNS que editar, ninguna cuenta que crear."
+      },
+      "step2": {
+        "title": "Añade una dirección en copia",
+        "body": "Pon sealed@witnessed.cc en CC en los emails que importan. Esa es toda la configuración. Sin aprobaciones, sin cuotas. Empieza con un email y observa lo que ocurre."
+      },
+      "step3": {
+        "title": "Una página pública se construye sola",
+        "body": "Cada email con copia se convierte en una entrada verificada y con marca de tiempo en tu página de sello. Comparte witnessed.cc/b/tu-dominio con un posible cliente, en tus facturas o en tu firma — verán un historial vivo de negocio real, creciendo con el tiempo."
+      }
+    },
     "mock": {
       "eyebrow": "Cada dominio tiene la suya",
       "title": "Una página pública que cualquiera puede consultar.",
@@ -130,6 +148,7 @@
     "preview": "Vista previa",
     "imageUrlLabel": "URL de la imagen — para firmas de email (Gmail, Apple Mail, Outlook)",
     "htmlLabel": "Fragmento HTML — para sitios web y pies de factura",
+    "markdownLabel": "Markdown — para READMEs, docs y GitHub",
     "copy": "Copiar",
     "copied": "Copiado ✓",
     "dark": "Oscuro",

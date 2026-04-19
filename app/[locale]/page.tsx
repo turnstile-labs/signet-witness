@@ -30,11 +30,15 @@ export default async function Home({
           <HeroBackdrop />
           <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24 pb-16 sm:pb-20 text-center">
 
-            <h1 className="text-[2.5rem] sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
+            <h1 className="text-[2.5rem] sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-6">
               {t("headline1")}
               <br />
               <span className="text-accent">{t("headline2")}</span>
             </h1>
+
+            <p className="text-sm sm:text-base text-muted max-w-md mx-auto leading-relaxed mb-4 italic">
+              {t("narrative")}
+            </p>
 
             <p className="text-base sm:text-lg text-muted max-w-lg mx-auto leading-relaxed mb-10">
               {t("subhead")}
@@ -118,6 +122,42 @@ export default async function Home({
                 </Link>
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* ── How it works ────────────────────────────────────── */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="text-center mb-12">
+            <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-3">
+              {t("howItWorks.eyebrow")}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
+              {t("howItWorks.title")}
+            </h2>
+            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
+              {t("howItWorks.sub")}
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:gap-7">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className="flex gap-5 sm:gap-6 items-start bg-surface border border-border rounded-xl p-5 sm:p-6"
+              >
+                <div className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-border bg-bg flex items-center justify-center font-mono text-sm sm:text-base text-muted-2 tabular-nums">
+                  0{n}
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5 sm:pt-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-txt mb-1.5">
+                    {t(`howItWorks.step${n}.title`)}
+                  </h3>
+                  <p className="text-sm text-muted leading-relaxed">
+                    {t(`howItWorks.step${n}.body`)}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 

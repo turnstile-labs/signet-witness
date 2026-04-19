@@ -20,6 +20,7 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
   const imageUrl = `${origin}/badge/${domain}.png${themeParam}`;
   const previewSrc = `/badge/${domain}.png${themeParam}`;
   const htmlSnippet = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="360" height="40" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
+  const markdownSnippet = `[![Witnessed · ${domain}](${imageUrl})](${sealUrl})`;
 
   return (
     <div className="space-y-5">
@@ -59,6 +60,14 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
       <CopyField
         label={t("htmlLabel")}
         value={htmlSnippet}
+        multiline
+        tCopy={t("copy")}
+        tCopied={t("copied")}
+      />
+
+      <CopyField
+        label={t("markdownLabel")}
+        value={markdownSnippet}
         multiline
         tCopy={t("copy")}
         tCopied={t("copied")}

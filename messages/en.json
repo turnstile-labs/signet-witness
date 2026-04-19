@@ -17,7 +17,25 @@
   "home": {
     "headline1": "AI can fake everything.",
     "headline2": "Except yesterday.",
+    "narrative": "Email is sent in real time, to real people. That makes it the one record AI can't fake.",
     "subhead": "A verifiable record of every business email you send — built automatically, impossible to backdate.",
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "title": "Three small steps. One durable record.",
+      "sub": "Nothing to install, nothing to configure. You already have everything you need.",
+      "step1": {
+        "title": "Send email as you already do",
+        "body": "You're a freelancer sending an invoice, an agency confirming a brief, a founder replying to a customer. Your workflow doesn't change — no tool to install, no DNS to edit, no account to create."
+      },
+      "step2": {
+        "title": "Add one address to CC",
+        "body": "Put sealed@witnessed.cc in CC on the emails that matter. That's the entire setup. No approval, no monthly fee. Start with one email and see what happens."
+      },
+      "step3": {
+        "title": "A public seal page builds itself",
+        "body": "Every CC'd email becomes a verified, timestamped entry on your seal page. Share witnessed.cc/b/your-domain with a prospect, on your invoice, or in your email signature — they see a live record of real business, growing over time."
+      }
+    },
     "mock": {
       "eyebrow": "Every domain gets one",
       "title": "A public page anyone can check.",
@@ -130,6 +148,7 @@
     "preview": "Preview",
     "imageUrlLabel": "Image URL — for email signatures (Gmail, Apple Mail, Outlook)",
     "htmlLabel": "HTML snippet — for websites and invoice footers",
+    "markdownLabel": "Markdown — for READMEs, docs, and GitHub",
     "copy": "Copy",
     "copied": "Copied ✓",
     "dark": "Dark",
