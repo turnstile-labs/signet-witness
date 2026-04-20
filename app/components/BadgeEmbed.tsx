@@ -5,26 +5,48 @@ import { useTranslations } from "next-intl";
 
 type Theme = "dark" | "light";
 
-// Owner-facing badge embed panel with a light/dark toggle.
-// Copy either the image URL (paste into any email signature, directly
-// in Gmail, Apple Mail, Outlook) or the full HTML snippet (for websites
-// and invoice footers).
+// Owner-facing badge embed panel. One job: get a *clickable* badge
+// onto the clipboard so the user can paste it into their email
+// signature (Gmail, Apple Mail, Outlook) and distribute it at scale.
+//
+// Rich-text copy via navigator.clipboard.write([ClipboardItem]) is
+// what makes this work — Gmail's signature editor is WYSIWYG and
+// only preserves formatting from the clipboard's text/html entry.
 
 export default function BadgeEmbed({ domain }: { domain: string }) {
   const t = useTranslations("badge");
   const [theme, setTheme] = useState<Theme>("dark");
+  const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
 
   const origin = "https://witnessed.cc";
   const themeParam = theme === "light" ? "?theme=light" : "";
   const sealUrl = `${origin}/b/${domain}`;
   const imageUrl = `${origin}/badge/${domain}.png${themeParam}`;
   const previewSrc = `/badge/${domain}.png${themeParam}`;
-  const htmlSnippet = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="260" height="26" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
-  const markdownSnippet = `[![Witnessed · ${domain}](${imageUrl})](${sealUrl})`;
+  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="260" height="26" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
+
+  async function handleCopy() {
+    try {
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([sealUrl], { type: "text/plain" }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(html);
+      }
+      setStatus("copied");
+      setTimeout(() => setStatus("idle"), 2200);
+    } catch {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2200);
+    }
+  }
 
   return (
     <div className="space-y-5">
-
       <div>
         <div className="flex items-center justify-between mb-2 gap-3">
           <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
@@ -45,40 +67,45 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
               : "bg-white border-[#e0e0ec]"
           }`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewSrc}
-            alt={t("alt", { domain })}
-            width={260}
-            height={26}
-            className="max-w-full h-auto"
-          />
+          <a
+            href={sealUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewSrc}
+              alt={t("alt", { domain })}
+              width={260}
+              height={26}
+              className="max-w-full h-auto block"
+            />
+          </a>
         </div>
       </div>
 
-      <CopyField
-        label={t("imageUrlLabel")}
-        value={imageUrl}
-        tCopy={t("copy")}
-        tCopied={t("copied")}
-      />
+      <button
+        type="button"
+        onClick={handleCopy}
+        className={`w-full h-11 rounded-lg text-sm font-semibold tracking-wide transition-colors border ${
+          status === "copied"
+            ? "bg-verified/15 text-verified border-verified/30"
+            : status === "error"
+              ? "bg-red-500/15 text-red-400 border-red-500/30"
+              : "bg-accent text-bg border-accent hover:bg-accent-2 hover:border-accent-2"
+        }`}
+      >
+        {status === "copied"
+          ? t("copyDone")
+          : status === "error"
+            ? t("copyError")
+            : t("copyBadge")}
+      </button>
 
-      <CopyField
-        label={t("htmlLabel")}
-        value={htmlSnippet}
-        multiline
-        tCopy={t("copy")}
-        tCopied={t("copied")}
-      />
-
-      <CopyField
-        label={t("markdownLabel")}
-        value={markdownSnippet}
-        multiline
-        tCopy={t("copy")}
-        tCopied={t("copied")}
-      />
-
+      <p className="text-[0.7rem] text-muted-2 leading-relaxed">
+        {t("howTo")}
+      </p>
     </div>
   );
 }
@@ -158,62 +185,5 @@ function ThemeButton({
       {children}
       {label}
     </button>
-  );
-}
-
-function CopyField({
-  value,
-  label,
-  multiline = false,
-  tCopy,
-  tCopied,
-}: {
-  value: string;
-  label: string;
-  multiline?: boolean;
-  tCopy: string;
-  tCopied: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* clipboard unavailable */
-    }
-  }
-
-  return (
-    <div>
-      <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-2">
-        {label}
-      </p>
-      <div className="flex items-stretch gap-2">
-        <div
-          className={`flex-1 min-w-0 bg-bg border border-border rounded-lg px-3 py-2 text-xs font-mono text-muted ${
-            multiline
-              ? "whitespace-pre overflow-x-auto thin-scrollbar"
-              : "truncate"
-          }`}
-        >
-          {value}
-        </div>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className={`shrink-0 px-3 rounded-lg text-xs font-semibold tracking-wide transition-colors border ${
-            copied
-              ? "bg-verified/15 text-verified border-verified/30"
-              : "bg-surface border-border text-txt hover:border-border-h"
-          }`}
-          aria-label={label}
-        >
-          {copied ? tCopied : tCopy}
-        </button>
-      </div>
-    </div>
   );
 }
