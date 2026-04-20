@@ -23,24 +23,7 @@
   "home": {
     "headline1": "AI can fake everything.",
     "headline2": "Except yesterday.",
-    "subhead": "A verifiable record of every business email you send — built automatically, impossible to backdate.",
-    "howItWorks": {
-      "eyebrow": "How it works",
-      "title": "Three steps. You're set.",
-      "sub": "Nothing to install, nothing to configure. You already have everything you need.",
-      "step1": {
-        "title": "Send email as you already do",
-        "body": "You're a freelancer sending an invoice, an agency confirming a brief, a founder replying to a customer. The workflow doesn't change."
-      },
-      "step2": {
-        "title": "Add one address to CC",
-        "body": "Put seal@witnessed.cc in CC on the emails that matter. That's it — no account, no fee."
-      },
-      "step3": {
-        "title": "A public seal page builds itself",
-        "body": "Every CC'd email becomes a timestamped, verified entry on your public seal page. Share the link, or paste the badge in your signature — prospects see a live, growing record of real business."
-      }
-    },
+    "subhead": "A verifiable record of every business email you send — built passively, impossible to backdate.",
     "mock": {
       "eyebrow": "Every domain gets one",
       "title": "A public page anyone can check.",

@@ -23,24 +23,7 @@
   "home": {
     "headline1": "La IA puede inventar cualquier cosa.",
     "headline2": "Excepto el ayer.",
-    "subhead": "Un registro verificable de cada email de trabajo que envías — creado automáticamente, imposible de falsificar con fecha anterior.",
-    "howItWorks": {
-      "eyebrow": "Cómo funciona",
-      "title": "Tres pasos. Listo.",
-      "sub": "Nada que instalar, nada que configurar. Ya tienes todo lo necesario.",
-      "step1": {
-        "title": "Envía email como siempre lo haces",
-        "body": "Eres un freelancer mandando una factura, una agencia confirmando un brief, un fundador respondiendo a un cliente. Tu flujo no cambia."
-      },
-      "step2": {
-        "title": "Añade una dirección en copia",
-        "body": "Pon seal@witnessed.cc en CC en los emails que importan. Eso es todo — sin cuenta, sin cuota."
-      },
-      "step3": {
-        "title": "Una página pública se construye sola",
-        "body": "Cada email con copia se convierte en una entrada verificada y con marca de tiempo en tu página pública. Comparte el enlace o pega el badge en tu firma — verán un historial vivo, real y creciente."
-      }
-    },
+    "subhead": "Un registro verificable de cada email de trabajo que envías — creado de forma pasiva, imposible de falsificar con fecha anterior.",
     "mock": {
       "eyebrow": "Cada dominio tiene la suya",
       "title": "Una página pública que cualquiera puede consultar.",

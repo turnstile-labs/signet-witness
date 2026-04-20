@@ -121,42 +121,6 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── How it works ────────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-          <div className="text-center mb-12">
-            <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-3">
-              {t("howItWorks.eyebrow")}
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
-              {t("howItWorks.title")}
-            </h2>
-            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
-              {t("howItWorks.sub")}
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:gap-7">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className="flex gap-5 sm:gap-6 items-start bg-surface border border-border rounded-xl p-5 sm:p-6"
-              >
-                <div className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-border bg-bg flex items-center justify-center font-mono text-sm sm:text-base text-muted-2 tabular-nums">
-                  0{n}
-                </div>
-                <div className="flex-1 min-w-0 pt-0.5 sm:pt-1">
-                  <h3 className="text-base sm:text-lg font-semibold text-txt mb-1.5">
-                    {t(`howItWorks.step${n}.title`)}
-                  </h3>
-                  <p className="text-sm text-muted leading-relaxed">
-                    {t(`howItWorks.step${n}.body`)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* ── Why this matters ─────────────────────────────────── */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
           <div className="text-center mb-10">

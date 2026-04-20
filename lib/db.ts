@@ -207,6 +207,150 @@ export async function eraseDomain(domain: string): Promise<EraseResult> {
   return { domainPurged, eventsAsSender, eventsAsReceiver };
 }
 
+// ─────────────────────────────────────────────────────────────
+// Ops stats — for the internal /ops/<token> dashboard
+// ─────────────────────────────────────────────────────────────
+
+export interface OpsStats {
+  domains: number;
+  events: number;
+  distinctReceivers: number;
+  unclaimedReceivers: number;
+  events24h: number;
+  events7d: number;
+  events30d: number;
+  newDomains7d: number;
+  newDomains30d: number;
+  denylistTotal: number;
+  denylistByReason: Array<{ reason: string; count: number }>;
+  topSenders: Array<{ domain: string; event_count: number; first_seen: string }>;
+  topReceivers: Array<{ receiver_domain: string; count: number }>;
+  eventsByDay: Array<{ day: string; count: number }>;
+  newDomainsByDay: Array<{ day: string; count: number }>;
+  verifiedDomains: number;
+  dbSize: string | null;
+}
+
+export async function getOpsStats(): Promise<OpsStats> {
+  const [
+    totals,
+    windowed,
+    denyTotal,
+    denyByReason,
+    topSenders,
+    topReceivers,
+    eventsByDay,
+    newDomainsByDay,
+    verified,
+    dbSize,
+  ] = await Promise.all([
+    sql`
+      SELECT
+        (SELECT COUNT(*)::int FROM domains)                                     AS domains,
+        (SELECT COUNT(*)::int FROM events)                                      AS events,
+        (SELECT COUNT(DISTINCT receiver_domain)::int FROM events)               AS distinct_receivers,
+        (SELECT COUNT(*)::int FROM (
+           SELECT DISTINCT receiver_domain FROM events
+           EXCEPT
+           SELECT domain FROM domains
+         ) u)                                                                   AS unclaimed_receivers
+    ` as unknown as Promise<
+      {
+        domains: number;
+        events: number;
+        distinct_receivers: number;
+        unclaimed_receivers: number;
+      }[]
+    >,
+    sql`
+      SELECT
+        COALESCE(SUM(CASE WHEN witnessed_at >= NOW() - INTERVAL '24 hours' THEN 1 ELSE 0 END), 0)::int AS d1,
+        COALESCE(SUM(CASE WHEN witnessed_at >= NOW() - INTERVAL '7 days'   THEN 1 ELSE 0 END), 0)::int AS d7,
+        COALESCE(SUM(CASE WHEN witnessed_at >= NOW() - INTERVAL '30 days'  THEN 1 ELSE 0 END), 0)::int AS d30,
+        (SELECT COUNT(*)::int FROM domains WHERE first_seen >= NOW() - INTERVAL '7 days')   AS nd7,
+        (SELECT COUNT(*)::int FROM domains WHERE first_seen >= NOW() - INTERVAL '30 days')  AS nd30
+      FROM events
+    ` as unknown as Promise<
+      { d1: number; d7: number; d30: number; nd7: number; nd30: number }[]
+    >,
+    sql`SELECT COUNT(*)::int AS n FROM domain_denylist` as unknown as Promise<
+      { n: number }[]
+    >,
+    sql`
+      SELECT reason, COUNT(*)::int AS count
+      FROM domain_denylist
+      GROUP BY reason
+      ORDER BY count DESC
+    ` as unknown as Promise<{ reason: string; count: number }[]>,
+    sql`
+      SELECT domain, event_count, first_seen
+      FROM domains
+      ORDER BY event_count DESC, first_seen ASC
+      LIMIT 15
+    ` as unknown as Promise<
+      { domain: string; event_count: number; first_seen: string }[]
+    >,
+    sql`
+      SELECT receiver_domain, COUNT(*)::int AS count
+      FROM events
+      GROUP BY receiver_domain
+      ORDER BY count DESC
+      LIMIT 15
+    ` as unknown as Promise<{ receiver_domain: string; count: number }[]>,
+    sql`
+      SELECT to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS day,
+             COUNT(*)::int AS count
+      FROM events
+      WHERE witnessed_at >= NOW() - INTERVAL '30 days'
+      GROUP BY 1 ORDER BY 1 ASC
+    ` as unknown as Promise<{ day: string; count: number }[]>,
+    sql`
+      SELECT to_char(date_trunc('day', first_seen), 'YYYY-MM-DD') AS day,
+             COUNT(*)::int AS count
+      FROM domains
+      WHERE first_seen >= NOW() - INTERVAL '30 days'
+      GROUP BY 1 ORDER BY 1 ASC
+    ` as unknown as Promise<{ day: string; count: number }[]>,
+    sql`
+      SELECT COUNT(*)::int AS n
+      FROM domains d
+      WHERE d.event_count >= 10
+        AND d.first_seen <= NOW() - INTERVAL '90 days'
+    ` as unknown as Promise<{ n: number }[]>,
+    sql`
+      SELECT pg_size_pretty(pg_database_size(current_database())) AS size
+    ` as unknown as Promise<{ size: string }[]>,
+  ]);
+
+  const t = totals[0] ?? {
+    domains: 0,
+    events: 0,
+    distinct_receivers: 0,
+    unclaimed_receivers: 0,
+  };
+  const w = windowed[0] ?? { d1: 0, d7: 0, d30: 0, nd7: 0, nd30: 0 };
+
+  return {
+    domains: t.domains,
+    events: t.events,
+    distinctReceivers: t.distinct_receivers,
+    unclaimedReceivers: t.unclaimed_receivers,
+    events24h: w.d1,
+    events7d: w.d7,
+    events30d: w.d30,
+    newDomains7d: w.nd7,
+    newDomains30d: w.nd30,
+    denylistTotal: denyTotal[0]?.n ?? 0,
+    denylistByReason: denyByReason,
+    topSenders,
+    topReceivers,
+    eventsByDay,
+    newDomainsByDay,
+    verifiedDomains: verified[0]?.n ?? 0,
+    dbSize: dbSize[0]?.size ?? null,
+  };
+}
+
 export interface DomainExport {
   domain: Domain | null;
   events: WitnessEvent[];
