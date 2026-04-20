@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { getOpsStats, type OpsStats } from "@/lib/db";
 
 // Internal ops dashboard. Secret URL: /ops/<STATS_TOKEN>.
-// If STATS_TOKEN is unset or the token doesn't match, we 404.
 // Not linked from anywhere. Not locale-aware. Temporary.
 
 export const dynamic = "force-dynamic";
@@ -42,225 +41,107 @@ export default async function OpsPage({
     stats = await getOpsStats();
   } catch (err) {
     return (
-      <main className="max-w-5xl mx-auto px-6 py-10 font-mono text-sm">
-        <h1 className="text-xl font-bold mb-4">ops · error</h1>
-        <pre className="text-red-400 whitespace-pre-wrap">
+      <main className="max-w-2xl mx-auto px-6 py-16 font-mono text-sm">
+        <h1 className="text-base font-bold mb-3">ops · error</h1>
+        <pre className="text-red-400 whitespace-pre-wrap text-xs">
           {(err as Error).message}
         </pre>
       </main>
     );
   }
 
-  const now = new Date().toISOString();
-  const region = process.env.VERCEL_REGION ?? "local";
-  const env = process.env.VERCEL_ENV ?? "development";
-  const commit =
-    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
+  const env = process.env.VERCEL_ENV ?? "dev";
+  const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 font-mono text-sm text-txt bg-bg min-h-screen">
-      <header className="mb-8 pb-4 border-b border-border flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold">witnessed · ops</h1>
-          <p className="text-xs text-muted-2 mt-1">
-            internal · do not share · temporary
-          </p>
+    <main className="max-w-2xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
+      {/* Header */}
+      <div className="flex items-baseline justify-between pb-6 mb-8 border-b border-border">
+        <h1 className="text-base font-bold">witnessed · ops</h1>
+        <div className="text-[0.65rem] text-muted-2 text-right">
+          {now} · {env} · {commit}
+          {stats.dbSize && ` · ${stats.dbSize}`}
         </div>
-        <div className="text-[0.7rem] text-muted-2 text-right leading-relaxed">
-          <div>{now}</div>
-          <div>
-            {env} · {region} · {commit}
-          </div>
-          {stats.dbSize && <div>db: {stats.dbSize}</div>}
-        </div>
-      </header>
+      </div>
 
-      {/* Headline counters */}
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        <Tile label="domains" value={stats.domains} />
-        <Tile label="events" value={stats.events} />
-        <Tile label="verified" value={stats.verifiedDomains} />
-        <Tile label="denylist" value={stats.denylistTotal} />
-        <Tile label="events / 24h" value={stats.events24h} accent />
-        <Tile label="events / 7d" value={stats.events7d} />
-        <Tile label="events / 30d" value={stats.events30d} />
-        <Tile label="distinct rcvrs" value={stats.distinctReceivers} />
-        <Tile label="unclaimed rcvrs" value={stats.unclaimedReceivers} />
-        <Tile label="new doms / 7d" value={stats.newDomains7d} />
-        <Tile label="new doms / 30d" value={stats.newDomains30d} />
-        <Tile
-          label="verify rate"
-          value={
-            stats.domains > 0
-              ? Math.round((stats.verifiedDomains / stats.domains) * 100)
-              : 0
-          }
-          suffix="%"
-        />
-      </section>
+      {/* Headline — the four numbers that matter */}
+      <div className="grid grid-cols-2 gap-x-8 gap-y-5 mb-10">
+        <Num label="domains" value={stats.domains} />
+        <Num label="events" value={stats.events} />
+        <Num label="events · 24h" value={stats.events24h} accent />
+        <Num label="verified" value={stats.verifiedDomains} />
+      </div>
 
-      {/* Daily charts */}
-      <section className="grid md:grid-cols-2 gap-4 mb-8">
-        <Chart
-          title="events per day (30d)"
-          data={stats.eventsByDay}
-          days={30}
-        />
-        <Chart
-          title="new domains per day (30d)"
-          data={stats.newDomainsByDay}
-          days={30}
-        />
-      </section>
+      {/* Chart */}
+      <Chart data={stats.eventsByDay} days={30} />
 
-      {/* Tables */}
-      <section className="grid md:grid-cols-2 gap-4 mb-8">
-        <Table
-          title="top senders"
-          rows={stats.topSenders.map((s) => [
-            s.domain,
-            s.event_count.toString(),
-            new Date(s.first_seen).toISOString().slice(0, 10),
-          ])}
-          headers={["domain", "events", "first_seen"]}
-        />
-        <Table
-          title="top receivers"
-          rows={stats.topReceivers.map((r) => [
-            r.receiver_domain,
-            r.count.toString(),
-            "",
-          ])}
-          headers={["receiver", "count", ""]}
-        />
-      </section>
-
-      {/* Denylist breakdown */}
-      {stats.denylistTotal > 0 && (
-        <section className="mb-8">
-          <h2 className="text-xs uppercase tracking-widest text-muted-2 mb-3">
-            denylist by reason
-          </h2>
-          <ul className="text-xs space-y-1">
-            {stats.denylistByReason.map((r) => (
+      {/* Top senders */}
+      <div className="mt-10">
+        <p className="text-[0.65rem] uppercase tracking-widest text-muted-2 mb-3">
+          top senders
+        </p>
+        {stats.topSenders.length === 0 ? (
+          <p className="text-xs text-muted-2 py-4">no data yet</p>
+        ) : (
+          <ul className="divide-y divide-border text-xs">
+            {stats.topSenders.slice(0, 10).map((s) => (
               <li
-                key={r.reason}
-                className="flex justify-between border-b border-border py-1.5"
+                key={s.domain}
+                className="flex justify-between items-baseline py-2"
               >
-                <span>{r.reason}</span>
-                <span className="text-muted">{r.count}</span>
+                <span className="truncate">{s.domain}</span>
+                <span className="text-muted tabular-nums ml-4">
+                  {s.event_count}
+                </span>
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </div>
 
-      <footer className="pt-6 mt-8 border-t border-border text-[0.65rem] text-muted-2">
-        <p>
-          rotate STATS_TOKEN in vercel env to revoke this url. nothing is
-          cached; every load is a fresh query.
-        </p>
-      </footer>
+      {/* Quiet footer */}
+      <p className="mt-12 pt-6 border-t border-border text-[0.6rem] text-muted-2 leading-relaxed">
+        rotate STATS_TOKEN to revoke. no caching · fresh query per load.
+        {stats.denylistTotal > 0 &&
+          ` · ${stats.denylistTotal} domain${stats.denylistTotal === 1 ? "" : "s"} on denylist`}
+      </p>
     </main>
   );
 }
 
-function Tile({
+function Num({
   label,
   value,
-  suffix,
   accent,
 }: {
   label: string;
   value: number;
-  suffix?: string;
   accent?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-lg border p-3 ${
-        accent
-          ? "border-accent/40 bg-accent/5"
-          : "border-border bg-surface"
-      }`}
-    >
+    <div>
       <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1">
         {label}
       </p>
-      <p className="text-2xl font-bold tabular-nums leading-none">
+      <p
+        className={`text-3xl font-bold tabular-nums leading-none ${
+          accent ? "text-accent" : ""
+        }`}
+      >
         {value.toLocaleString()}
-        {suffix && (
-          <span className="text-muted text-base ml-0.5">{suffix}</span>
-        )}
       </p>
-    </div>
-  );
-}
-
-function Table({
-  title,
-  rows,
-  headers,
-}: {
-  title: string;
-  rows: string[][];
-  headers: string[];
-}) {
-  return (
-    <div className="rounded-lg border border-border bg-surface overflow-hidden">
-      <div className="px-3 py-2 border-b border-border text-[0.6rem] uppercase tracking-widest text-muted-2">
-        {title}
-      </div>
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="text-[0.6rem] uppercase tracking-widest text-muted-2">
-            {headers.map((h, i) => (
-              <th key={i} className="text-left px-3 py-1.5 font-normal">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={headers.length}
-                className="px-3 py-3 text-center text-muted-2"
-              >
-                empty
-              </td>
-            </tr>
-          ) : (
-            rows.map((r, i) => (
-              <tr
-                key={i}
-                className="border-t border-border hover:bg-bg/50 transition-colors"
-              >
-                {r.map((c, j) => (
-                  <td key={j} className="px-3 py-1.5 truncate max-w-[220px]">
-                    {c || <span className="text-muted-2">—</span>}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
     </div>
   );
 }
 
 function Chart({
-  title,
   data,
   days,
 }: {
-  title: string;
   data: Array<{ day: string; count: number }>;
   days: number;
 }) {
-  // Fill in missing days so the chart width is consistent.
   const byDay = new Map(data.map((d) => [d.day, d.count]));
   const now = new Date();
   const buckets: Array<{ day: string; count: number }> = [];
@@ -274,29 +155,33 @@ function Chart({
   const total = buckets.reduce((s, b) => s + b.count, 0);
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
+    <div>
       <div className="flex items-baseline justify-between mb-3">
-        <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
-          {title}
+        <p className="text-[0.65rem] uppercase tracking-widest text-muted-2">
+          events · 30d
         </p>
-        <p className="text-xs text-muted">{total.toLocaleString()}</p>
+        <p className="text-xs text-muted tabular-nums">{total.toLocaleString()}</p>
       </div>
-      <div className="flex items-end gap-[2px] h-16">
+      <div className="flex items-end gap-[3px] h-20">
         {buckets.map((b) => {
-          const h = Math.max(2, Math.round((b.count / max) * 60));
+          const h = b.count === 0 ? 2 : Math.max(4, Math.round((b.count / max) * 80));
           return (
             <div
               key={b.day}
-              title={`${b.day}: ${b.count}`}
-              className="flex-1 bg-accent/70 hover:bg-accent rounded-sm transition-colors"
+              title={`${b.day} · ${b.count}`}
+              className={`flex-1 rounded-sm transition-colors ${
+                b.count === 0
+                  ? "bg-border"
+                  : "bg-accent/70 hover:bg-accent"
+              }`}
               style={{ height: `${h}px` }}
             />
           );
         })}
       </div>
       <div className="flex justify-between mt-2 text-[0.6rem] text-muted-2">
-        <span>{buckets[0]?.day ?? ""}</span>
-        <span>{buckets[buckets.length - 1]?.day ?? ""}</span>
+        <span>{buckets[0]?.day.slice(5) ?? ""}</span>
+        <span>{buckets[buckets.length - 1]?.day.slice(5) ?? ""}</span>
       </div>
     </div>
   );
