@@ -107,13 +107,28 @@ events  (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
 
 ---
 
-## What comes next (Phase 1 — after 200 domains)
+## What comes next
 
-From `docs/VISION.md` Phase 1:
-- Timestamped receipt pages (`witnessed.cc/r/[hash]`) — $1/receipt or $29/month unlimited
-- Pro tier split (Stripe) — $9/month for custom seal page + premium badge styles
-- WHOIS receiver domain age scoring
-- Directory / discovery surface
+The operating plan is phased by distribution, not feature count. See
+`docs/PRODUCT.md#business-model` for the full tier matrix.
+
+**Months 1–3 — Free tier only.** Goal: 1,000 active domains. No pricing.
+
+**Months 3–6 — Pro + signed PDF certificate.**
+- Pro subscription ($9–19/mo) via Stripe: custom badge styling, no
+  attribution, anomaly alerts, higher API rate limits. The `domains.tier`
+  column is already in place — enabling Pro is one Stripe webhook + one
+  column flip, not a migration.
+- Signed PDF tenure certificate ($29 one-off).
+- WHOIS receiver-age scoring as a quiet signal multiplier.
+
+**Months 6–12 — Platform API.** Launched only after two prospective
+buyers ask unprompted. Monthly subscription tiers ($99–999/mo), not
+per-query micro-billing. See `docs/VISION.md` Phase 4 for the tier shape.
+
+**Later candidates (unscheduled):** directory / discovery surface,
+Verifiable Credentials, on-chain attestations, wallet path. Each ships
+when a specific buyer or use case pulls for it.
 
 ---
 

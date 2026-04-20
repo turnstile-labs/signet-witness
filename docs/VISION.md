@@ -8,18 +8,19 @@ layer for both Web2 businesses and Web3 operators.
 
 ## Phase 1 — After 200 domains (Months 3–6)
 
-### Timestamped email receipts
+### Pro tier + signed PDF certificate
 
-Every CC generates a unique receipt page at `witnessed.cc/r/[hash]` — a
-permanent, verifiable record that this email was sent from this domain to this
-recipient at this time, with a valid DKIM signature.
+First paid surface for domain owners. Pro ($9–19/mo via Stripe) unlocks
+custom badge styling, removal of the `witnessed.cc` attribution, anomaly
+alerts, and owner analytics. The `domains.tier` column is already in
+place — enabling Pro is a Stripe webhook plus a column flip, not a
+migration.
 
-The receipt is what you attach to an invoice, append to a contract, or save
-for a dispute. Every email you CC becomes a verifiable proof of sending.
-
-The seal page remains free. Receipts as a standalone exportable artifact
-(PDF, signed credential) are a candidate for a one-time fee — but the
-underlying record is always publicly visible at no cost.
+Alongside Pro, the signed PDF tenure certificate ($29 one-off) launches
+for any domain owner — free or Pro — who needs a court-admissible,
+cryptographically signed record for a legal filing, a loan application,
+or a procurement RFP. The seal page remains free and public. The
+certificate is the formal artifact you pay for when it matters.
 
 ---
 
@@ -78,13 +79,19 @@ no technical jargon, just the guarantee.
 
 ## Phase 4 — After the first API partner (Year 1–2)
 
-### Verification API at scale
+### Platform API at scale
+
+Monthly subscription tiers, not per-query micro-billing. Per-call pricing
+invites Sybil abuse, makes invoicing unpredictable for buyers, and creates
+an incentive for checkers to screenshot the free seal page instead of
+calling the meter. The cleaner model is tiered subscriptions with usage
+caps that upgrade the buyer into the next tier when they exceed them.
 
 ```
-GET /verify/acme.com
+GET /api/v1/trust/acme.com
 → { verified: true, since: "2022-03-14", days_active: 1098, counterparties: 214 }
 
-GET /verify/acme.com?detail=full
+GET /api/v1/trust/acme.com?detail=full
 → {
     verified: true,
     since: "2019-03-14",
@@ -93,20 +100,23 @@ GET /verify/acme.com?detail=full
     counterparties: 847,
     two_sided_exchanges: 312,
     dns_stable: true,
+    velocity_anomaly_30d: false,
     credential_hash: "sha256:abc...def"
   }
 ```
 
-| Tier | What it returns | Price |
-|---|---|---|
-| Basic | verified, since, days_active | $0.05/query |
-| Standard | + tier, counterparties | $0.10/query |
-| Full | + two-sided, dns, credential hash | $0.25/query |
-| Enterprise | Bulk, webhook, SLA | Custom |
+| Tier | Monthly cap | What it returns | Price |
+|---|---|---|---|
+| Starter | 5k lookups | verified, since, days_active | **$99 / mo** |
+| Standard | 50k lookups | + tier, counterparties, dns_stable | **$299 / mo** |
+| Growth | 250k lookups | + two-sided, velocity_anomaly, credential_hash | **$799 / mo** |
+| Enterprise | Custom | Bulk, webhooks, SLA, dedicated support | From **$2k / mo** |
 
-At 10 million queries/month from five integration partners, the API alone
-generates $500K–2.5M/month depending on tier mix. That's the infrastructure
-business.
+Revenue at scale is a function of how many platforms integrate, not how
+many queries each one makes. A realistic plausible scenario at Year 2 —
+~30 platform customers across the tier mix — is low-to-mid six figures of
+ARR. The $500K+/month projections belong in a Year 3+ scenario that
+assumes category leadership, and are not the operating plan.
 
 ### On-demand credentials
 
@@ -117,23 +127,24 @@ procurement RFP.
 
 At those moments, the user generates a credential on demand:
 
-- **Signed PDF certificate** — the full verified record, cryptographically
-  signed, suitable for legal submission and compliance documentation
-- **Verifiable Credential (VC)** — W3C-standard, machine-readable, independently
-  verifiable without querying Witnessed's servers
-- **On-chain attestation (NFT)** — the record anchored on a public chain as a
-  permanent, tamper-evident proof
+- **Signed PDF certificate** — $29 one-off. The full verified record with
+  a timestamped cryptographic signature, suitable for legal submission and
+  compliance documentation. Ships first.
+- **Verifiable Credential (VC)** — candidate for later. W3C-standard,
+  machine-readable, independently verifiable without querying Witnessed's
+  servers. Launches when a specific buyer asks for it.
+- **On-chain attestation (NFT)** — candidate for the Web3 path. The record
+  anchored on a public chain as a permanent, tamper-evident proof.
 
-One-time fee per artifact ($50–200 depending on type). No subscription.
-The willingness to pay is self-selecting: someone filing a legal dispute or
-responding to enterprise procurement will pay. Someone just building their
+The PDF is the only credential on the near-term roadmap. Willingness to pay
+is self-selecting: someone filing a legal dispute or responding to
+enterprise procurement pays without thinking. Someone just building their
 passive record never needs to.
 
 The claim flow:
 1. Visit the seal page → "Export record"
 2. Verify domain ownership via DNS TXT record
-3. Choose artifact type
-4. Pay → credential generated, signed, delivered
+3. Pay → credential generated, signed, delivered
 
 The record is always free. The formal proof of it is what costs money —
 at the exact moment it matters most.

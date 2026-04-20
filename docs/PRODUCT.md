@@ -155,62 +155,102 @@ That's the pull.
 
 ## Business Model
 
-The seal page is always free — no tiers, no credit card, no paid upgrade for
-end users. The business is the attestation cache it builds.
+Freemium for domain owners, paid API for platforms that consume the data.
+Standard two-sided B2B SaaS — the boring shape on purpose, because the
+product's differentiation is the accumulated history in the cache, not the
+billing mechanic.
 
-### Revenue — Verification API ($0.05–0.25 per query)
+### The three tiers
 
-Platforms that need to verify counterparties at scale — marketplaces, lenders,
-procurement tools, compliance teams — pay to query the cache. End users never pay.
+| Tier | Who it serves | Price | What they get |
+|---|---|---|---|
+| **Free** | Any domain owner | $0, forever | Seal page, default badge, email CC ingestion, GDPR rights, domain lookup |
+| **Pro** | Serious domain owners | **$9 – 19 / mo** | Custom badge styling, no "Witnessed.cc" attribution, PDF tenure certificate, anomaly alerts, owner analytics, higher API rate limits |
+| **API** | Platforms (KYB, marketplaces, procurement, ad networks) | **$99 – 999 / mo** usage-tiered | Bulk lookups, webhooks on state change, velocity/anomaly signals, historical deltas, SLA, dedicated support |
+
+The seal page and CC ingestion are free forever. Charging owners to
+participate would slow cache growth, which is the only thing that makes the
+API valuable.
+
+### Revenue — Pro subscription ($9–19 / mo)
+
+A small subset of domain owners — founders with public signatures, agencies
+with prospects to impress, freelancers working high-stakes contracts — want
+premium presentation and don't want the "Witnessed.cc" attribution in their
+badge. Pro is the gentle upgrade path.
+
+Realistic conversion: 2–5% of active free domains. At 1,000 domains, that's
+$180–950 MRR. Not the business, but the first signal of willingness to pay.
+
+### Revenue — Platform API ($99–999 / mo)
+
+Platforms that need to verify counterparties at scale — marketplaces,
+lenders, KYB onboarding tools, procurement platforms, ad-network trust
+teams — subscribe to the API. Monthly subscriptions, not per-query
+micro-pricing: per-query invites Sybil abuse, billing friction, and a cold
+public funnel where checkers screenshot the free seal page to avoid the
+meter.
 
 ```
-GET /verify/acme.com
-→ { verified: true, since: "2022-03-14", days_active: 1098, counterparties: 214 }
+GET /api/v1/trust/acme.com
+→ {
+    verified: true,
+    since: "2022-03-14",
+    days_active: 1098,
+    counterparties: 214,
+    velocity_anomaly_30d: false
+  }
 ```
 
 A new vendor applies to a B2B marketplace. Today the team manually reviews
-documents, calls references, and guesses — a process that takes days and still
-fails regularly. With Witnessed, one API call. If the domain has a year of
-verified activity with 50+ distinct counterparties, auto-approve. If no
-history, manual queue. The API doesn't replace judgment. It removes the 80%
-that shouldn't need it.
+documents, calls references, and guesses — a process that takes days and
+still fails regularly. With Witnessed, one API call. If the domain has a
+year of verified activity with 50+ distinct counterparties, auto-approve.
+If no history, manual queue.
 
-The API requires cache depth to be useful. Early partnership conversations
-start on day one; the API goes live when the data justifies it — likely 6–12
-months after launch.
+The API goes live once the cache has enough depth to be useful — likely
+6–12 months after the first 1,000 active domains. One signed design partner
+validates the entire model.
 
-### Revenue — On-demand credentials (one-time fee)
+### Revenue — On-demand credentials ($29 one-off)
 
-The second revenue stream is the moment of formal proof. The seal page is a
-live public record — always free to view. But when someone needs to present
-their history in a high-stakes context — a court filing, a regulatory audit, a
-loan application, an enterprise procurement process — they need a
-tamper-evident, exportable artifact that stands on its own.
+The seal page is a live public record — always free to view. But when
+someone needs to present their history in a high-stakes context — a court
+filing, a regulatory audit, a loan application, an enterprise procurement
+RFP — they need a tamper-evident, exportable artifact that stands on its
+own.
 
-On demand, a business can generate:
+A signed PDF certificate captures the full verified record with a
+timestamped cryptographic signature, suitable for legal filings and
+compliance documentation. Priced at **$29 one-off**. No subscription — the
+willingness to pay is self-selecting. Someone filing a legal dispute or
+responding to procurement pays without thinking. Someone just building
+their passive record never needs to.
 
-- **A signed PDF certificate** — the full verified record, cryptographically
-  signed, suitable for legal filings and compliance documentation
-- **A Verifiable Credential (VC)** — a machine-readable, W3C-standard
-  credential that can be independently verified without querying Witnessed
-- **An on-chain NFT** — the record anchored on-chain as a permanent,
-  independently verifiable attestation
-
-These are not subscriptions. They are generated once, at the moment they're
-needed, and priced accordingly — likely $50–200 depending on the artifact.
-The use case dictates the willingness to pay: someone filing a legal dispute
-or responding to an enterprise RFP will pay to have a court-admissible,
-signed record in their hands.
-
-The record itself is always free. The formal credential is the product you
-pay for when it matters.
+Verifiable Credentials (W3C VC) and on-chain attestations are candidates
+for later — once there's demand from a specific partner or buyer. Not
+launching with them.
 
 ### Why free for senders
 
 Every business that CCs `seal@witnessed.cc` is adding a verified data point
 to the cache. The intake is the product. Charging for it would slow the
-accumulation that makes the API valuable. Free intake, paid queries and
-credentials — the model only works if the cache grows fast.
+accumulation that makes the API valuable. Free intake, paid premium and
+paid API — the model only works if the cache grows fast.
+
+### Phased rollout
+
+Monetisation follows distribution, not the other way around:
+
+| Phase | Milestone | What's priced |
+|---|---|---|
+| Months 1–3 | Free tier only | Nothing. Goal: 1,000 active domains. |
+| Months 3–6 | Ship Pro + PDF certificate | $9/mo Pro, $29 PDF. Goal: 50 paying = signal of PMF. |
+| Months 6–12 | Ship Platform API | Launched only after two prospective buyers ask for it unprompted. |
+
+Do not build the Enterprise API before someone asks for it. Do not ship
+Pro before the free tier has real usage. Anything more exotic (revshare to
+domain owners, tokenization, per-query royalties) stays in v2 territory.
 
 ---
 
