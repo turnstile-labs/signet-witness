@@ -231,6 +231,22 @@ export interface OpsStats {
   dbSize: string | null;
 }
 
+// Swallow "relation does not exist" (42P01) so the ops page keeps
+// working even when optional tables (e.g. domain_denylist) haven't
+// been migrated yet. Any other error propagates.
+async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await p;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const msg = (err as Error).message ?? "";
+    if (code === "42P01" || /does not exist/i.test(msg)) {
+      return fallback;
+    }
+    throw err;
+  }
+}
+
 export async function getOpsStats(): Promise<OpsStats> {
   const [
     totals,
@@ -273,15 +289,21 @@ export async function getOpsStats(): Promise<OpsStats> {
     ` as unknown as Promise<
       { d1: number; d7: number; d30: number; nd7: number; nd30: number }[]
     >,
-    sql`SELECT COUNT(*)::int AS n FROM domain_denylist` as unknown as Promise<
-      { n: number }[]
-    >,
-    sql`
-      SELECT reason, COUNT(*)::int AS count
-      FROM domain_denylist
-      GROUP BY reason
-      ORDER BY count DESC
-    ` as unknown as Promise<{ reason: string; count: number }[]>,
+    safe(
+      sql`SELECT COUNT(*)::int AS n FROM domain_denylist` as unknown as Promise<
+        { n: number }[]
+      >,
+      [{ n: 0 }] as { n: number }[],
+    ),
+    safe(
+      sql`
+        SELECT reason, COUNT(*)::int AS count
+        FROM domain_denylist
+        GROUP BY reason
+        ORDER BY count DESC
+      ` as unknown as Promise<{ reason: string; count: number }[]>,
+      [] as { reason: string; count: number }[],
+    ),
     sql`
       SELECT domain, event_count, first_seen
       FROM domains
@@ -317,9 +339,12 @@ export async function getOpsStats(): Promise<OpsStats> {
       WHERE d.event_count >= 10
         AND d.first_seen <= NOW() - INTERVAL '90 days'
     ` as unknown as Promise<{ n: number }[]>,
-    sql`
-      SELECT pg_size_pretty(pg_database_size(current_database())) AS size
-    ` as unknown as Promise<{ size: string }[]>,
+    safe(
+      sql`
+        SELECT pg_size_pretty(pg_database_size(current_database())) AS size
+      ` as unknown as Promise<{ size: string }[]>,
+      [] as { size: string }[],
+    ),
   ]);
 
   const t = totals[0] ?? {
