@@ -88,12 +88,12 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
       <button
         type="button"
         onClick={handleCopy}
-        className={`w-full h-11 rounded-lg text-sm font-semibold tracking-wide transition-colors border ${
+        className={`w-full h-11 rounded-lg text-sm font-semibold tracking-wide transition-opacity border ${
           status === "copied"
             ? "bg-verified/15 text-verified border-verified/30"
             : status === "error"
               ? "bg-red-500/15 text-red-400 border-red-500/30"
-              : "bg-accent text-bg border-accent hover:bg-accent-2 hover:border-accent-2"
+              : "bg-accent text-white border-accent hover:opacity-90"
         }`}
       >
         {status === "copied"
