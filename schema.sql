@@ -1,6 +1,16 @@
--- Signet witness schema
--- Run once in Vercel Postgres dashboard (or any Postgres client)
+-- ────────────────────────────────────────────────────────────────
+-- Witnessed · database schema
+-- ────────────────────────────────────────────────────────────────
+-- Idempotent. Safe to run repeatedly against an existing database.
+--
+-- Run against prod:
+--   psql "$DATABASE_URL" -f schema.sql
+-- or paste the contents into the Neon / Vercel Postgres SQL editor.
+-- ────────────────────────────────────────────────────────────────
 
+-- Every domain we've ever witnessed as a sender.
+-- `event_count` is denormalised for cheap list/seal reads and is
+-- maintained by lib/db.ts#insertEvent and lib/db.ts#eraseDomain.
 CREATE TABLE IF NOT EXISTS domains (
   id          SERIAL PRIMARY KEY,
   domain      TEXT NOT NULL UNIQUE,
@@ -10,6 +20,8 @@ CREATE TABLE IF NOT EXISTS domains (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- One row per DKIM-verified inbound email. `dkim_hash` is a SHA-256
+-- of the signature — stored as forensic proof, never queried.
 CREATE TABLE IF NOT EXISTS events (
   id               SERIAL PRIMARY KEY,
   domain_id        INTEGER NOT NULL REFERENCES domains(id) ON DELETE CASCADE,
@@ -18,12 +30,21 @@ CREATE TABLE IF NOT EXISTS events (
   witnessed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS events_domain_id_idx       ON events(domain_id);
-CREATE INDEX IF NOT EXISTS events_receiver_domain_idx ON events(receiver_domain);
+-- Hot query paths:
+--   seal page       → WHERE domain_id = ? ORDER BY witnessed_at DESC
+--   receiver lookup → WHERE receiver_domain = ?
+--   ops/daily       → WHERE witnessed_at >= NOW() - INTERVAL '...'
+CREATE INDEX IF NOT EXISTS events_domain_id_witnessed_idx
+  ON events(domain_id, witnessed_at DESC);
+CREATE INDEX IF NOT EXISTS events_receiver_domain_idx
+  ON events(receiver_domain);
+CREATE INDEX IF NOT EXISTS events_witnessed_at_idx
+  ON events(witnessed_at);
 
--- Denylist: domains that have exercised opt-out (Art 21) or erasure (Art 17).
+-- GDPR denylist (Art 17 erasure / Art 21 objection).
 -- Any inbound email whose sender or primary receiver appears here is
--- silently dropped. Controllers can re-enable by removing the row.
+-- silently dropped by /api/inbound. Controllers can re-enable a
+-- domain by deleting its row. Managed via /api/rights/*.
 CREATE TABLE IF NOT EXISTS domain_denylist (
   domain     TEXT PRIMARY KEY,
   reason     TEXT NOT NULL,            -- 'erasure' | 'opt_out'
