@@ -23,6 +23,20 @@ The output: a public seal page at `witnessed.cc/b/yourdomain` that proves a doma
 
 ---
 
+## GDPR invariants (read before touching the seal page or `lib/db.ts`)
+
+These are non-negotiable. Changing any of them requires a DPA review, not a code review.
+
+1. **Receiver domain identities are never public.** The `/b/[domain]` render path consumes aggregates only. `lib/db.ts` exposes `getSealAggregates()` for that purpose — there is no public helper that returns a list of `receiver_domain` values. Do not add one back. Receiver-domain rows are only reachable via `exportDomainData()`, which is called by the authenticated Art 15 endpoint at `/api/rights/access` and requires DNS TXT ownership proof.
+2. **The public activity feed stays gone.** No per-email rows with timestamps + receiver on the seal page, even if truncated or obfuscated. Triangulation risk is real for small-counterparty domains.
+3. **Inbound re-checks the denylist on every email.** `isDenylisted()` is the gate. It is checked in `app/api/inbound/route.ts` before any write. A denylisted domain never enters the cache as sender *or* receiver.
+4. **Erasure is a hard delete.** `eraseDomain()` purges rows across `domains` and `events` and decrements affected sender counts. No tombstones on the public surface.
+5. **Data minimisation at ingest.** Only the DKIM-verified sender domain, receiver domain, signature hash, and timestamp are written. Headers, body, subject, attachments are discarded before the DB insert.
+
+If you're about to surface receiver domains, historical receiver lists, or per-email timelines on a public page, stop and re-read this section.
+
+---
+
 ## Architecture decisions and why
 
 ### New repo, not built on signet-pass

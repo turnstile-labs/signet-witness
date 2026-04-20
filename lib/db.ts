@@ -69,19 +69,41 @@ export async function getDomain(domain: string): Promise<Domain | null> {
   }
 }
 
-// Fetch recent events for a domain (latest 50).
-export async function getEvents(domainId: number): Promise<WitnessEvent[]> {
+// ─────────────────────────────────────────────────────────────
+// GDPR INVARIANT — public surface returns aggregates only.
+//
+// Receiver-domain identities are personal data (sole traders,
+// one-person LLCs, name-based domains). They are never exposed
+// in any public render path (the /b/[domain] seal page). They
+// are only readable via the authenticated Art 15 export at
+// /api/rights/access, which requires DNS TXT ownership proof.
+//
+// This is enforced at the function boundary: there is no public
+// helper that returns a list of `receiver_domain` values. Any
+// future work that touches this invariant must go through DPA
+// review, not code review. Do not add a `getEvents`-style helper
+// back without that review.
+// ─────────────────────────────────────────────────────────────
+
+export interface SealAggregates {
+  uniqueReceivers: number;
+}
+
+// Aggregate-only view for the public seal page. Returns counts,
+// never identities. See GDPR INVARIANT above.
+export async function getSealAggregates(
+  domainId: number
+): Promise<SealAggregates> {
   try {
-    const rows = await sql`
-      SELECT * FROM events
+    const rows = (await sql`
+      SELECT COUNT(DISTINCT receiver_domain)::int AS unique_receivers
+      FROM events
       WHERE domain_id = ${domainId}
-      ORDER BY witnessed_at DESC
-      LIMIT 50
-    ` as unknown as WitnessEvent[];
-    return rows;
+    `) as unknown as { unique_receivers: number }[];
+    return { uniqueReceivers: rows[0]?.unique_receivers ?? 0 };
   } catch (err) {
-    console.error("[db] getEvents failed", { domainId, err });
-    return [];
+    console.error("[db] getSealAggregates failed", { domainId, err });
+    return { uniqueReceivers: 0 };
   }
 }
 

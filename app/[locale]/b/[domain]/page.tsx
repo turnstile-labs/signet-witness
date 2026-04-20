@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getDomain,
-  getEvents,
+  getSealAggregates,
   getReceiverCount,
   getDailyActivity,
 } from "@/lib/db";
@@ -235,13 +235,12 @@ export default async function SealPage({ params }: Props) {
     return <UnclaimedPage domain={decoded} receiverCount={receiverCount} />;
   }
 
-  const [events, daily] = await Promise.all([
-    getEvents(record.id),
+  const [{ uniqueReceivers }, daily] = await Promise.all([
+    getSealAggregates(record.id),
     getDailyActivity(record.id, 30),
   ]);
 
   const days = daysActive(record.first_seen);
-  const uniqueReceivers = new Set(events.map((e) => e.receiver_domain)).size;
   const isVerified =
     days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS;
   const state = isVerified ? "verified" : "building";
