@@ -19,7 +19,7 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
   const sealUrl = `${origin}/b/${domain}`;
   const imageUrl = `${origin}/badge/${domain}.png${themeParam}`;
   const previewSrc = `/badge/${domain}.png${themeParam}`;
-  const htmlSnippet = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="360" height="40" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
+  const htmlSnippet = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="260" height="26" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
   const markdownSnippet = `[![Witnessed · ${domain}](${imageUrl})](${sealUrl})`;
 
   return (
@@ -49,8 +49,8 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
           <img
             src={previewSrc}
             alt={t("alt", { domain })}
-            width={360}
-            height={40}
+            width={260}
+            height={26}
             className="max-w-full h-auto"
           />
         </div>

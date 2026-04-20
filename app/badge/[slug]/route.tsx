@@ -6,8 +6,11 @@ const VERIFIED_DAYS = 90;
 const VERIFIED_EMAILS = 10;
 
 // Badge canvas — compact single-line pill sized for email signatures.
-const W = 360;
-const H = 40;
+// Kept deliberately small: we want this to sit alongside a name + role
+// line without dominating the signature. No brand-attribution strip —
+// the hyperlink target carries the brand.
+const W = 260;
+const H = 26;
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
 function parseSlug(slug: string): { domain: string; format: "svg" | "png" } {
@@ -42,7 +45,6 @@ interface Palette {
   bg: string;
   border: string;
   domain: string;   // primary — the domain wordmark
-  attribution: string; // tertiary — the "witnessed.cc" powered-by line
 }
 
 const PALETTES: Record<Theme, Palette> = {
@@ -50,13 +52,11 @@ const PALETTES: Record<Theme, Palette> = {
     bg: "#0c0c0f",
     border: "#25252f",
     domain: "#e8e8f2",
-    attribution: "#60607a",
   },
   light: {
     bg: "#ffffff",
     border: "#e0e0ec",
     domain: "#18181e",
-    attribution: "#9090b0",
   },
 };
 
@@ -120,27 +120,25 @@ function renderSvg(
   const label = statusLabel(state, count, s);
 
   // Status pill — sized to fit the label (state + count).
-  const pillCharW = 5.6;
-  const pillW = Math.max(72, Math.round(label.length * pillCharW + 28));
-  const pillH = 22;
-  const pillX = W - 14 - pillW;
+  const pillCharW = 5.2;
+  const pillW = Math.max(64, Math.round(label.length * pillCharW + 22));
+  const pillH = 16;
+  const pillX = W - 8 - pillW;
   const pillY = (H - pillH) / 2;
 
-  // Domain now owns the left half — no more "WITNESSED ·" prefix.
-  // Truncate to fit the available horizontal space.
-  const domainStartX = 16;
-  const availableDomainW = pillX - 12 - domainStartX;
-  const domainCharW = 8.2; // monospace @ 14px
+  // Domain on the left — monospaced, centered vertically.
+  const domainStartX = 10;
+  const availableDomainW = pillX - 8 - domainStartX;
+  const domainCharW = 6.6; // monospace @ 11px
   const maxDomainChars = Math.max(4, Math.floor(availableDomainW / domainCharW));
   const displayDomain = truncateDomain(domain, maxDomainChars);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${label.toLowerCase()})">
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="${p.bg}" stroke="${p.border}"/>
-  <text x="${domainStartX}" y="19" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="14" font-weight="600" fill="${p.domain}">${esc(displayDomain)}</text>
-  <text x="${domainStartX}" y="32" font-family="Helvetica, Arial, sans-serif" font-size="7.5" fill="${p.attribution}" letter-spacing="0.12em">WITNESSED.CC</text>
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="6" fill="${p.bg}" stroke="${p.border}"/>
+  <text x="${domainStartX}" y="${H / 2 + 4}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" font-weight="600" fill="${p.domain}">${esc(displayDomain)}</text>
   <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="${pillH / 2}" fill="${s.fill}" stroke="${s.stroke}"/>
-  <circle cx="${pillX + 12}" cy="${pillY + pillH / 2}" r="3" fill="${s.dot}"/>
-  <text x="${pillX + 22}" y="${pillY + pillH / 2 + 3.5}" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="0.08em" fill="${s.text}">${esc(label)}</text>
+  <circle cx="${pillX + 9}" cy="${pillY + pillH / 2}" r="2.5" fill="${s.dot}"/>
+  <text x="${pillX + 16}" y="${pillY + pillH / 2 + 3}" font-family="Helvetica, Arial, sans-serif" font-size="8" font-weight="700" letter-spacing="0.08em" fill="${s.text}">${esc(label)}</text>
 </svg>`;
 }
 
@@ -157,10 +155,11 @@ function renderPng(
   const s = stateStyle(state);
   const label = statusLabel(state, count, s);
   // PNG rendering (flexbox) auto-scales to content, so we only truncate
-  // for very long domains to keep the overall canvas at 360×40.
-  const displayDomain = truncateDomain(domain, 22);
+  // for very long domains to keep the overall canvas proportional.
+  const displayDomain = truncateDomain(domain, 24);
 
-  // Rendered at 2× (720×80) and displayed at 360×40 for retina crispness.
+  // Rendered at 2× for retina crispness; the HTML snippet still
+  // displays the image at W×H logical pixels.
   const PNG_W = W * 2;
   const PNG_H = H * 2;
 
@@ -172,44 +171,25 @@ function renderPng(
           width: "100%",
           height: "100%",
           background: p.bg,
-          borderRadius: 20,
+          borderRadius: 12,
           border: `2px solid ${p.border}`,
           alignItems: "center",
-          padding: "0 28px",
+          padding: "0 14px",
           fontFamily: "sans-serif",
           boxSizing: "border-box",
         }}
       >
-        <div
+        <span
           style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
+            color: p.domain,
+            fontSize: 20,
+            fontWeight: 700,
+            fontFamily: "monospace",
             lineHeight: 1,
           }}
         >
-          <span
-            style={{
-              color: p.domain,
-              fontSize: 28,
-              fontWeight: 700,
-              fontFamily: "monospace",
-            }}
-          >
-            {displayDomain}
-          </span>
-          <span
-            style={{
-              color: p.attribution,
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: 2.2,
-              marginTop: 8,
-            }}
-          >
-            WITNESSED.CC
-          </span>
-        </div>
+          {displayDomain}
+        </span>
 
         <div style={{ display: "flex", flex: 1 }} />
 
@@ -217,7 +197,7 @@ function renderPng(
           style={{
             display: "flex",
             alignItems: "center",
-            padding: "9px 22px",
+            padding: "5px 13px",
             borderRadius: 999,
             background: s.fill,
             border: `2px solid ${s.stroke}`,
@@ -225,19 +205,20 @@ function renderPng(
         >
           <div
             style={{
-              width: 10,
-              height: 10,
+              width: 8,
+              height: 8,
               borderRadius: 999,
               background: s.dot,
-              marginRight: 10,
+              marginRight: 8,
             }}
           />
           <span
             style={{
               color: s.text,
-              fontSize: 16,
+              fontSize: 13,
               fontWeight: 700,
-              letterSpacing: 1.6,
+              letterSpacing: 1.4,
+              lineHeight: 1,
             }}
           >
             {label}
