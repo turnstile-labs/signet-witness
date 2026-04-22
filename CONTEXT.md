@@ -79,7 +79,7 @@ Discovery happens through the CC field (receivers see `seal@witnessed.cc`) and d
 
 ### Dynamic badge (implemented)
 
-`/badge/[slug]` now serves both SVG and PNG badges (PNG via `next/og`/Satori). The badge shows the domain, current status (`verified` / `onRecord` / `pending`), and live event count, with dark and light themes via `?theme=light`. Cached at the edge with an `ETag` keyed on `(state, count, theme, format)` so email-signature embeds revalidate cheaply as counts grow.
+`/badge/[slug]` now serves both SVG and PNG badges (PNG via `next/og`/Satori). The badge shows the domain and a state mark (`verified` / `onRecord` / `pending`), with dark and light themes via `?theme=light`. The live event count lives on the seal page — the badge stays intentionally quiet so it teases the click rather than summarizing the data in the signature. Cached at the edge with an `ETag` keyed on `(state, theme, format)` so caches only invalidate on threshold transitions, not on every +1 email.
 
 ### Internationalization (EN + ES)
 

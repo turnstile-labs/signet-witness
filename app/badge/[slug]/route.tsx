@@ -51,7 +51,6 @@ interface Palette {
   bgBot: string;     // gradient bottom
   border: string;
   domain: string;    // hero text
-  count: string;     // muted metadata
   pendingStroke: string; // outline for the pending mark
 }
 
@@ -61,7 +60,6 @@ const PALETTES: Record<Theme, Palette> = {
     bgBot: "#08080d",
     border: "#2a2a38",
     domain: "#fafafe",
-    count: "#8a8a9a",
     pendingStroke: "#6a6a7a",
   },
   light: {
@@ -69,7 +67,6 @@ const PALETTES: Record<Theme, Palette> = {
     bgBot: "#f4f4fa",
     border: "#d8d8e4",
     domain: "#0a0a14",
-    count: "#6a6a78",
     pendingStroke: "#a0a0b0",
   },
 };
@@ -90,21 +87,14 @@ function stateAria(state: State): string {
   }
 }
 
-function renderSvg(
-  domain: string,
-  state: State,
-  count: number,
-  theme: Theme
-): string {
+function renderSvg(domain: string, state: State, theme: Theme): string {
   const p = PALETTES[theme];
-  const showCount = state !== "pending";
   const gradId = `bg-${theme}`;
 
-  // Typography metrics — SF Mono ~6.6px per char at 11px; at 12px ~7.2px.
-  // Count width at 11px: up to 4 digits → ~28px reserved on the right.
+  // Typography metrics — SF Mono ~7.2px per char at 12px. Count is gone,
+  // so the domain gets the full canvas minus the mark area and side padding.
   const domainStartX = 32; // mark_width(16) + padding_left(8) + gap(8)
-  const countRightX = W - 10;
-  const reservedRight = showCount ? 34 : 10;
+  const reservedRight = 12;
   const availableDomainW = W - domainStartX - reservedRight;
   const domainCharW = 7.2;
   const maxDomainChars = Math.max(4, Math.floor(availableDomainW / domainCharW));
@@ -131,11 +121,6 @@ function renderSvg(
     <circle cx="${MARK_CX}" cy="${markCY}" r="${markR - 0.75}" fill="none" stroke="${p.pendingStroke}" stroke-width="1.5"/>`;
   }
 
-  const countEl = showCount
-    ? `
-    <text x="${countRightX}" y="${H / 2 + 4}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" font-weight="500" fill="${p.count}" text-anchor="end">${count}</text>`
-    : "";
-
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)})">
   <defs>
     <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
@@ -144,7 +129,7 @@ function renderSvg(
     </linearGradient>
   </defs>
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>${markEl}
-  <text x="${domainStartX}" y="${H / 2 + 4}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="12" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(displayDomain)}</text>${countEl}
+  <text x="${domainStartX}" y="${H / 2 + 4}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="12" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(displayDomain)}</text>
 </svg>`;
 }
 
@@ -153,12 +138,10 @@ function renderSvg(
 function renderPng(
   domain: string,
   state: State,
-  count: number,
   theme: Theme,
   cacheHeaders: Record<string, string>
 ) {
   const p = PALETTES[theme];
-  const showCount = state !== "pending";
   const displayDomain = truncateDomain(domain, 24);
 
   // Rendered at 2× for retina crispness.
@@ -272,21 +255,6 @@ function renderPng(
         >
           {displayDomain}
         </span>
-
-        {showCount && (
-          <span
-            style={{
-              color: p.count,
-              fontSize: 22,
-              fontWeight: 500,
-              fontFamily: "monospace",
-              lineHeight: 1,
-              marginLeft: 12,
-            }}
-          >
-            {count}
-          </span>
-        )}
       </div>
     ),
     {
@@ -328,14 +296,20 @@ async function resolveSnapshot(domain: string): Promise<Snapshot> {
 //                          background, so users never wait on a cold cache
 //
 // Gmail's image proxy has its own cache heuristics that we can't fully
-// control, but a short max-age plus an ETag keyed on (state, count, theme)
-// means it *can* revalidate cheaply and pick up new counts within hours.
+// control, but a short max-age plus an ETag keyed on (state, theme)
+// means it *can* revalidate cheaply and pick up state transitions
+// (pending → onRecord → verified) within hours.
 function cacheHeaders(
   snapshot: Snapshot,
   theme: Theme,
   format: "svg" | "png"
 ): Record<string, string> {
-  const etag = `W/"${snapshot.state}-${snapshot.count}-${theme}-${format}-v2"`;
+  // Count no longer appears on the badge — cache key omits it so edge
+  // and client caches stay stable across every-email updates. The
+  // state field already captures threshold transitions (pending →
+  // onRecord → verified), which is the only thing that changes the
+  // rendered output.
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v3"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
@@ -371,16 +345,16 @@ export async function GET(
   const headers = cacheHeaders(snapshot, theme, format);
 
   // Conditional GET — respond 304 when the caller (CDN, Gmail proxy, browser)
-  // already has the same (state, count, theme) fingerprint.
+  // already has the same (state, theme) fingerprint.
   const ifNoneMatch = request.headers.get("if-none-match");
   if (ifNoneMatch && ifNoneMatch === headers.ETag) {
     return new Response(null, { status: 304, headers });
   }
 
   if (format === "png") {
-    return renderPng(domain, snapshot.state, snapshot.count, theme, headers);
+    return renderPng(domain, snapshot.state, theme, headers);
   }
 
-  const svg = renderSvg(domain, snapshot.state, snapshot.count, theme);
+  const svg = renderSvg(domain, snapshot.state, theme);
   return new Response(svg, { headers });
 }
