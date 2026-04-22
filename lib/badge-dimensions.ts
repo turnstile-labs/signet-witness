@@ -1,6 +1,10 @@
 // Badge layout constants + dimension helpers.
 //
-// The badge renders as: [ domain ]   [ witnessed.cc ]   [ ✓ ]
+// The badge renders as: [ ✓ ]   [ domain ]   [ witnessed.cc ]
+// Mark leads on the left as a sign-off glyph, the domain sits in the
+// center-left as the focal point (sized up to pull away from the
+// muted brand), and the attribution settles on the right.
+//
 // Width adapts to the domain length so the canvas feels tailored
 // instead of a stretched template. Height stays fixed so the badge
 // remains compatible with every email signature layout we've tested.
@@ -18,13 +22,17 @@ export const BADGE_MAX_WIDTH = 360;
 export const PAD_L = 12;
 export const PAD_R = 12;
 export const MARK_D = 16;
+export const GAP_MARK_DOMAIN = 12;
 export const GAP_DOMAIN_BRAND = 12;
-export const GAP_BRAND_MARK = 12;
 
 // Typography — metric estimates for SF Mono / Menlo / Consolas. These
 // don't have to be exact; we clamp against min/max and truncate the
 // domain before we'd ever run past the canvas.
-const DOMAIN_CHAR_W = 7.2; // 12px @ weight 600
+//
+// Domain is 13px @ 600; brand is 9px @ 400. The 4px gap (plus the
+// weight difference + muted fill) is what makes the domain read as
+// the focal point at a glance.
+const DOMAIN_CHAR_W = 7.8; // 13px @ weight 600
 const BRAND_CHAR_W = 5.4; // 9px @ weight 400
 
 export const BRAND_TEXT = "witnessed.cc";
@@ -35,11 +43,11 @@ export const BRAND_WIDTH = Math.ceil(BRAND_TEXT.length * BRAND_CHAR_W);
 export const DOMAIN_MAX_CHARS = Math.floor(
   (BADGE_MAX_WIDTH -
     PAD_L -
-    PAD_R -
+    MARK_D -
+    GAP_MARK_DOMAIN -
     GAP_DOMAIN_BRAND -
     BRAND_WIDTH -
-    GAP_BRAND_MARK -
-    MARK_D) /
+    PAD_R) /
     DOMAIN_CHAR_W,
 );
 
@@ -54,11 +62,11 @@ export function computeBadgeWidth(displayDomain: string): number {
   const domainW = displayDomain.length * DOMAIN_CHAR_W;
   const raw =
     PAD_L +
+    MARK_D +
+    GAP_MARK_DOMAIN +
     domainW +
     GAP_DOMAIN_BRAND +
     BRAND_WIDTH +
-    GAP_BRAND_MARK +
-    MARK_D +
     PAD_R;
   const clamped = Math.max(
     BADGE_MIN_WIDTH,

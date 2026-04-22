@@ -4,7 +4,7 @@ import {
   BADGE_HEIGHT,
   BRAND_TEXT,
   BRAND_WIDTH,
-  GAP_BRAND_MARK,
+  GAP_MARK_DOMAIN,
   MARK_D,
   PAD_L,
   PAD_R,
@@ -18,12 +18,14 @@ const VERIFIED_EMAILS = 10;
 // Badge canvas — width adapts to the domain, height stays fixed so
 // the badge stays signature-compatible.
 //
-// Layout:   [ domain ]     [ witnessed.cc ]     [ ✓ ]
-//            left, bold     middle, muted        right, color-coded
+// Layout:   [ ✓ ]     [ domain ]     [ witnessed.cc ]
+//            left      center-left    right, muted
 //
-// The brand sits "almost hidden" in the middle — enough to attribute
-// provenance (this is a Witnessed badge), but muted so the domain
-// keeps focal priority. The checkmark at the end reads as a sign-off.
+// Mark leads as the state glyph (color-coded: verified fill / on-record
+// outline / pending ring). The domain follows at 13px semibold — the
+// focal point. The brand sits right-aligned, 9px and muted ("almost
+// hidden" on a glance, legible on close inspection) so Witnessed is
+// attributed without competing with the domain.
 const H = BADGE_HEIGHT;
 const R = 8; // corner radius
 
@@ -103,19 +105,20 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
 
   const { display, width: W } = sizeBadge(domain);
 
-  // Positions — right-anchor the mark, then the brand just to its left,
-  // with the domain taking the remaining left-hand space.
-  const markCX = W - PAD_R - MARK_D / 2;
+  // Positions — mark on the left, domain follows, brand right-anchored.
+  const markCX = PAD_L + MARK_D / 2;
   const markCY = H / 2;
   const markR = MARK_D / 2;
   const check = `M ${markCX - 4} ${markCY} L ${markCX - 1} ${markCY + 3} L ${markCX + 4} ${markCY - 3}`;
 
-  const brandRightEdge = W - PAD_R - MARK_D - GAP_BRAND_MARK;
-  const brandX = brandRightEdge - BRAND_WIDTH;
+  const domainX = PAD_L + MARK_D + GAP_MARK_DOMAIN;
+  const brandX = W - PAD_R - BRAND_WIDTH;
 
-  const domainX = PAD_L;
-  const domainBaselineY = H / 2 + 4;
-  const brandBaselineY = H / 2 + 3;
+  // Baselines — 13px domain needs slightly more drop to sit centered
+  // in the 32px canvas; 9px brand rides a touch higher but shares a
+  // visual baseline with the domain.
+  const domainBaselineY = H / 2 + 5;
+  const brandBaselineY = H / 2 + 4;
 
   let markEl = "";
   if (state === "verified") {
@@ -138,9 +141,9 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
       <stop offset="100%" stop-color="${p.bgBot}"/>
     </linearGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>
-  <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="12" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(display)}</text>
-  <text x="${brandX}" y="${brandBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="9" font-weight="400" fill="${p.brand}" letter-spacing="0.02em">${BRAND_TEXT}</text>${markEl}
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>${markEl}
+  <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(display)}</text>
+  <text x="${brandX}" y="${brandBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="9" font-weight="400" fill="${p.brand}" letter-spacing="0.02em">${BRAND_TEXT}</text>
 </svg>`;
 }
 
@@ -249,45 +252,45 @@ function renderPng(
           boxSizing: "border-box",
         }}
       >
-        {/* Domain — focal point, left-anchored */}
-        <span
-          style={{
-            color: p.domain,
-            fontSize: 24,
-            fontWeight: 600,
-            fontFamily: "monospace",
-            lineHeight: 1,
-            letterSpacing: -0.2,
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {display}
-        </span>
-
-        {/* Brand + mark cluster — right-anchored */}
+        {/* Mark + domain cluster — left-anchored */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: GAP_BRAND_MARK * 2,
+            gap: GAP_MARK_DOMAIN * 2,
           }}
         >
+          {markNode}
           <span
             style={{
-              color: p.brand,
-              fontSize: 18,
-              fontWeight: 400,
+              color: p.domain,
+              fontSize: 26,
+              fontWeight: 600,
               fontFamily: "monospace",
               lineHeight: 1,
-              letterSpacing: 0.4,
+              letterSpacing: -0.2,
+              overflow: "hidden",
               whiteSpace: "nowrap",
             }}
           >
-            {BRAND_TEXT}
+            {display}
           </span>
-          {markNode}
         </div>
+
+        {/* Brand — right-anchored, muted */}
+        <span
+          style={{
+            color: p.brand,
+            fontSize: 18,
+            fontWeight: 400,
+            fontFamily: "monospace",
+            lineHeight: 1,
+            letterSpacing: 0.4,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {BRAND_TEXT}
+        </span>
       </div>
     ),
     {
@@ -339,8 +342,9 @@ function cacheHeaders(
 ): Record<string, string> {
   // Cache key omits the live count (the badge doesn't render it) and
   // the width (derived from the URL path's domain, which is already
-  // the primary cache key). Bumped to v4 with the brand+mark redesign.
-  const etag = `W/"${snapshot.state}-${theme}-${format}-v4"`;
+  // the primary cache key). Bumped to v5 — mark returned to the left
+  // and domain type scaled up to 13px.
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v5"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
