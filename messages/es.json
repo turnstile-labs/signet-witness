@@ -54,26 +54,9 @@
       "footnote": "Funciona en Gmail, Outlook, Apple Mail y cualquier otra herramienta que admita firmas HTML."
     },
     "why": {
-      "title": "Confianza, sin teatro.",
-      "sub": "Cualquiera puede generar una web impecable, un historial de LinkedIn o un muro de testimonios. Nadie puede enviar email hacia atrás en el tiempo.",
-      "fakeTitle": "La IA puede falsificar",
-      "fakeItems": [
-        "Testimonios",
-        "Casos de estudio",
-        "Sitios de portfolio",
-        "Notas de prensa",
-        "Historial de LinkedIn",
-        "P\u00e1ginas \u201cSobre nosotros\u201d",
-        "Contratos de servicio",
-        "\u201cA\u00f1os en el mercado\u201d"
-      ],
-      "realTitle": "La IA no puede falsificar",
-      "realItems": [
-        "Marcas de tiempo de email verificadas",
-        "Un historial real de conversaciones reales",
-        "Volumen que nadie puede fabricar",
-        "Un historial que sólo crece con el tiempo"
-      ]
+      "eyebrow": "Por qué email",
+      "title": "El único registro que no se puede antedatar.",
+      "body": "Cualquiera puede generar una web, una marca o un muro de testimonios. Nadie puede enviar un email retroactivamente — cada entrada aquí exigió un destinatario real en un buzón real en un momento real."
     },
     "privacy": {
       "title": "Privado por diseño.",

@@ -177,52 +177,24 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── Why this matters ─────────────────────────────────── */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
-              {t("why.title")}
-            </h2>
-            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
-              {t("why.sub")}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden">
-            <div className="px-5 sm:px-6 py-6 sm:py-7 bg-surface">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-red-400 text-sm font-bold">✗</span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-red-400">
-                  {t("why.fakeTitle")}
-                </span>
-              </div>
-              <ul className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-sm text-muted">
-                {(t.raw("why.fakeItems") as string[]).map((item) => (
-                  <li key={item} className="flex items-center gap-2 min-w-0">
-                    <span className="w-1 h-1 rounded-full bg-muted-2 inline-block shrink-0" />
-                    <span className="truncate">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="px-5 sm:px-6 py-6 sm:py-7 bg-surface-2">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-verified text-sm font-bold">✓</span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-verified">
-                  {t("why.realTitle")}
-                </span>
-              </div>
-              <ul className="flex flex-col gap-2.5 text-sm text-muted">
-                {(t.raw("why.realItems") as string[]).map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <span className="w-1 h-1 rounded-full bg-verified inline-block mt-2 shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+        {/* ── Why email ────────────────────────────────────────────
+             Thesis paragraph, single statement, no columns. The old
+             'AI can/can't fake' grid was dated, unfocused, and missed
+             the actual asymmetry: everything else on the internet is
+             generatable. Email history isn't — because each entry
+             required a real recipient on a real mailbox at a real
+             moment in time, and the moment of delivery can't be
+             rewound. The section now says that in one breath. */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-20 sm:py-24 text-center">
+          <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-4">
+            {t("why.eyebrow")}
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-txt leading-[1.15] mb-6 max-w-xl mx-auto">
+            {t("why.title")}
+          </h2>
+          <p className="text-muted text-sm sm:text-base leading-relaxed max-w-lg mx-auto">
+            {t("why.body")}
+          </p>
         </section>
 
         {/* ── Private by design ────────────────────────────────── */}

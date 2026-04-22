@@ -54,26 +54,9 @@
       "footnote": "Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
     },
     "why": {
-      "title": "Trust, without the theater.",
-      "sub": "Anyone can generate a polished website, a LinkedIn history, or a wall of testimonials. No one can retroactively send email.",
-      "fakeTitle": "AI can fake",
-      "fakeItems": [
-        "Testimonials",
-        "Case studies",
-        "Portfolio sites",
-        "Press releases",
-        "LinkedIn history",
-        "About pages",
-        "Service agreements",
-        "\u201cYears in business\u201d"
-      ],
-      "realTitle": "AI can't fake",
-      "realItems": [
-        "Verified email timestamps",
-        "A real history of real conversations",
-        "Volume no one can manufacture",
-        "A track record that only grows with time"
-      ]
+      "eyebrow": "Why email",
+      "title": "The one record that can't be backdated.",
+      "body": "Anyone can generate a website, a brand, or a wall of testimonials. No one can retroactively send an email — every entry here required a real recipient on a real mailbox at a real moment in time."
     },
     "privacy": {
       "title": "Private by design.",
