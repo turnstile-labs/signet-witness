@@ -5,12 +5,13 @@ import { useTranslations } from "next-intl";
 
 type Theme = "dark" | "light";
 
-// Owner-facing badge embed panel. One job: get a *clickable* badge
-// onto the clipboard so the user can paste it into their email
-// signature (Gmail, Apple Mail, Outlook) and distribute it at scale.
+// Owner-facing badge surface on the seal page. Visually mirrors the
+// landing's badge section so what you preview is what gets pasted.
+// One job: get a *clickable* badge onto the clipboard so the owner
+// can paste it into their email signature (Gmail, Apple Mail, Outlook).
 //
 // Rich-text copy via navigator.clipboard.write([ClipboardItem]) is
-// what makes this work — Gmail's signature editor is WYSIWYG and
+// what makes that work — Gmail's signature editor is WYSIWYG and
 // only preserves formatting from the clipboard's text/html entry.
 
 export default function BadgeEmbed({ domain }: { domain: string }) {
@@ -45,13 +46,18 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
     }
   }
 
+  const cardBg = theme === "dark" ? "bg-[#0c0c0f]" : "bg-white";
+  const cardBorder = theme === "dark" ? "border-[#25252f]" : "border-[#e0e0ec]";
+  const nameColor = theme === "dark" ? "text-white" : "text-[#0c0c0f]";
+  const roleColor = theme === "dark" ? "text-[#a3a3b2]" : "text-[#4a4a57]";
+  const contactColor = theme === "dark" ? "text-[#6a6a78]" : "text-[#6a6a78]";
+  const labelColor = theme === "dark" ? "text-[#6a6a78]" : "text-[#8a8a99]";
+  const dividerColor = theme === "dark" ? "border-[#25252f]" : "border-[#e0e0ec]";
+
   return (
     <div className="space-y-5">
       <div>
-        <div className="flex items-center justify-between mb-2 gap-3">
-          <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
-            {t("preview")}
-          </p>
+        <div className="flex items-center justify-end mb-2">
           <ThemeToggle
             theme={theme}
             setTheme={setTheme}
@@ -61,27 +67,41 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
           />
         </div>
         <div
-          className={`border rounded-lg p-4 flex items-center justify-center overflow-x-auto transition-colors ${
-            theme === "dark"
-              ? "bg-[#0c0c0f] border-[#25252f]"
-              : "bg-white border-[#e0e0ec]"
-          }`}
+          className={`rounded-xl border overflow-hidden transition-colors ${cardBg} ${cardBorder}`}
         >
-          <a
-            href={sealUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block"
+          <div
+            className={`px-5 py-2.5 border-b text-[0.6rem] font-mono uppercase tracking-widest ${dividerColor} ${labelColor}`}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewSrc}
-              alt={t("alt", { domain })}
-              width={260}
-              height={26}
-              className="max-w-full h-auto block"
-            />
-          </a>
+            {t("mockLabel")}
+          </div>
+          <div className="px-5 py-5">
+            <p className={`text-sm font-semibold leading-tight ${nameColor}`}>
+              {t("signatureName")}
+            </p>
+            <p className={`text-xs mt-0.5 ${roleColor}`}>
+              {t("signatureRole")}
+            </p>
+            <p className={`text-[0.7rem] mt-1 font-mono ${contactColor}`}>
+              {t("signatureContact", { domain })}
+            </p>
+            <div className="mt-4">
+              <a
+                href={sealUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewSrc}
+                  alt={t("alt", { domain })}
+                  width={260}
+                  height={26}
+                  className="max-w-full h-auto block"
+                />
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -123,8 +123,8 @@
     "proof1": "Cada entrada se verificó de forma independiente en el momento del envío — no es autodeclarada.",
     "proof2": "Las marcas de tiempo son criptográficas. Ninguna entrada se puede falsificar con fecha anterior — este historial sólo crece hacia adelante.",
     "proof3": "{domain} estaba haciendo negocios activamente en esas fechas. Prueba de operación, no una afirmación.",
-    "ownThisDomain": "¿Eres el dueño del dominio?",
-    "ownThisDomainBody": "Añade este sello a tu firma de email, sitio web o pie de factura. Cada vista enlaza de vuelta a esta página en vivo.",
+    "ownThisDomain": "Tu insignia",
+    "ownThisDomainBody": "Pégala en tu firma de email — se actualiza sola a medida que crece tu registro y cada clic vuelve aquí.",
     "unclaimed": {
       "noOutbound": "Todavía sin registro de envíos",
       "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}} — otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia. Pero <d>{name}</d> aún no ha empezado a construir su propio registro.",
@@ -133,18 +133,21 @@
       "willShowTitle": "Qué mostrará esta página",
       "willShow1": "Cada email con Witnessed en copia aparecerá como un registro verificado con marca de tiempo — no declarado por el emisor.",
       "willShow2": "Una línea de tiempo criptográfica que no se puede falsificar, sin guardar asuntos ni contenidos.",
-      "willShow3": "Un sello público que cualquiera puede consultar — más un badge en vivo para firmas de email, webs y facturas.",
+      "willShow3": "Una página pública que cualquiera puede consultar — más un badge en vivo para tu firma de email.",
       "startTitle": "Empieza este registro",
       "startBody": "Pon esta dirección en copia en tu próximo email de trabajo. El registro empieza solo.",
       "howItWorks": "Cómo funciona →"
     }
   },
   "badge": {
-    "preview": "Vista previa",
+    "mockLabel": "Tu firma de email",
+    "signatureName": "Tu nombre",
+    "signatureRole": "Cargo · Empresa",
+    "signatureContact": "nombre@{domain}",
     "copyBadge": "Copiar badge para mi firma de email",
     "copyDone": "Copiado — pégalo en tu firma",
     "copyError": "Error al copiar — inténtalo de nuevo",
-    "howTo": "Pégalo en el editor de firma de tu correo (Gmail: Configuración → Firma. Apple Mail: Preferencias → Firmas. Outlook: Opciones → Correo → Firmas). El badge sigue siendo clicable, enlaza a tu página de sello y se actualiza a medida que crece tu registro.",
+    "howTo": "Funciona en Gmail, Outlook y Apple Mail. El badge sigue siendo clicable, enlaza de vuelta a esta página y se actualiza en vivo a medida que crece tu registro.",
     "dark": "Oscuro",
     "light": "Claro",
     "themeAria": "Tema del badge",
@@ -186,7 +189,7 @@
     "useTitle": "Cómo usamos estos datos",
     "useIntro": "Los datos recopilados se utilizan únicamente para:",
     "useItems": [
-      "Construir y mostrar la página pública de sello para tu dominio en witnessed.cc/b/tudominio",
+      "Construir y mostrar la página pública de tu dominio en witnessed.cc/b/tudominio",
       "Calcular las métricas de historial verificado que aparecen en esa página",
       "Respaldar el registro de verificación que demuestra que tu negocio ha estado operativo a lo largo del tiempo"
     ],
@@ -194,7 +197,7 @@
     "consentTitle": "Modelo de consentimiento",
     "consentBody": "El CC es un acto explícito y voluntario en cada email individual. Tú tienes el control total sobre qué emails contribuyen a tu registro. No hay recopilación pasiva — Witnessed sólo recibe datos cuando incluyes deliberadamente la dirección en el campo CC.",
     "publicTitle": "Registros públicos",
-    "publicBody": "Las páginas de sello son públicas por diseño. El nombre del dominio, el número de eventos, la fecha del primer registro y los dominios de destinatarios son visibles para cualquiera que visite tu página. Esa es la esencia del producto — la prueba pública de actividad empresarial. Si no quieres un registro público para tu dominio, no pongas la dirección en copia.",
+    "publicBody": "Estas páginas son públicas por diseño. El nombre del dominio, el número de eventos y la fecha del primer registro son visibles para cualquiera que visite la página en witnessed.cc/b/tudominio. Esa es la esencia del producto — la prueba pública de actividad empresarial. Si no quieres un registro público para tu dominio, no pongas la dirección en copia.",
     "basisTitle": "Base jurídica del tratamiento",
     "basisIntro": "Conforme al Reglamento General de Protección de Datos (RGPD), nos amparamos en las siguientes bases:",
     "basisItems": [
@@ -310,7 +313,7 @@
     "whatTitle": "Qué es Witnessed",
     "whatBody": "Witnessed (<code>witnessed.cc</code>) es un servicio que construye un historial empresarial verificado para dominios de email. Cuando pones <addr>seal@witnessed.cc</addr> en copia en un email de trabajo, verificamos la firma DKIM, registramos los metadatos y los añadimos al registro público de prueba de actividad de tu dominio.",
     "acceptanceTitle": "Aceptación",
-    "acceptanceBody": "Al usar este servicio — ya sea poniendo nuestra dirección en copia, visitando una página de sello o usando la API de verificación — aceptas estos términos. Si no estás de acuerdo, no uses el servicio.",
+    "acceptanceBody": "Al usar este servicio — ya sea poniendo nuestra dirección en copia, visitando una página en witnessed.cc/b/tudominio o usando la API de verificación — aceptas estos términos. Si no estás de acuerdo, no uses el servicio.",
     "useTitle": "Uso aceptable",
     "useIntro": "Te comprometes a no usar Witnessed para:",
     "useItems": [
@@ -320,8 +323,8 @@
       "Abusar del servicio de forma que degrade el rendimiento para otros usuarios"
     ],
     "useFoot": "Nos reservamos el derecho de eliminar, marcar o degradar permanentemente los registros asociados a dominios que incurran en manipulación.",
-    "publicTitle": "La página de sello es pública",
-    "publicBody": "Una vez que tu dominio ha sido registrado, existe una página de sello pública en <code>witnessed.cc/b/tudominio</code>. Esta página es accesible públicamente y está indexada. Al construir un registro mediante nuestro servicio, aceptas que esta página pueda ser visible para cualquiera.",
+    "publicTitle": "Tu página es pública",
+    "publicBody": "Una vez que tu dominio ha sido registrado, existe una página pública en <code>witnessed.cc/b/tudominio</code>. Esta página es accesible públicamente y está indexada. Al construir un registro mediante nuestro servicio, aceptas que esta página pueda ser visible para cualquiera.",
     "provesTitle": "Qué prueba y qué no prueba Witnessed",
     "provesBody1": "Witnessed demuestra que un dominio ha enviado emails autenticados con DKIM a contrapartes reales durante un periodo de tiempo. No demuestra personalidad jurídica, solvencia financiera, cumplimiento de ninguna normativa, ni la calidad o legitimidad de la actividad empresarial subyacente.",
     "provesBody2": "El estado Verificado es una señal, no una garantía. No bases una decisión empresarial importante únicamente en un registro de Witnessed.",

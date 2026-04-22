@@ -10,7 +10,7 @@
   },
   "errorPage": {
     "eyebrow": "Something went wrong",
-    "body": "We couldn't load this seal page. The record may be temporarily unavailable.",
+    "body": "We couldn't load this page. The record may be temporarily unavailable.",
     "retry": "Try again →",
     "refLabel": "ref:"
   },
@@ -123,8 +123,8 @@
     "proof1": "Every entry was independently verified at the moment of sending — not self-reported.",
     "proof2": "Timestamps are cryptographic. No entry can be backdated — this history only grows forward.",
     "proof3": "{domain} was actively doing business on these dates. Proof of operation, not a claim.",
-    "ownThisDomain": "Own this domain?",
-    "ownThisDomainBody": "Add this badge to your email signature, website, or invoice footer. Each view links back to this live seal page.",
+    "ownThisDomain": "Your badge",
+    "ownThisDomainBody": "Paste it into your email signature — it updates automatically as your record grows, and every click lands back here.",
     "unclaimed": {
       "noOutbound": "No outbound record yet",
       "noOutboundBody": "<d>{name}</d> has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}} — other businesses are already emailing this domain and CCing Witnessed. But <d>{name}</d> hasn't started building its own outbound record yet.",
@@ -133,18 +133,21 @@
       "willShowTitle": "What this page will show",
       "willShow1": "Every email CC'd to Witnessed as a verified, timestamped entry — not self-reported.",
       "willShow2": "A cryptographic timeline that can't be backdated, with subjects and bodies never stored.",
-      "willShow3": "A public seal anyone can check — plus a live badge for your email signature, website, and invoices.",
+      "willShow3": "A public page anyone can check — plus a live badge for your email signature.",
       "startTitle": "Start this record",
       "startBody": "Put this in CC on your next business email. The record starts itself.",
       "howItWorks": "How it works →"
     }
   },
   "badge": {
-    "preview": "Preview",
+    "mockLabel": "Your email signature",
+    "signatureName": "Your name",
+    "signatureRole": "Role · Company",
+    "signatureContact": "name@{domain}",
     "copyBadge": "Copy badge for my email signature",
     "copyDone": "Copied — paste into your signature",
     "copyError": "Copy failed — try again",
-    "howTo": "Paste it into your email signature editor (Gmail: Settings → Signature. Apple Mail: Preferences → Signatures. Outlook: Options → Mail → Signatures). The badge stays clickable, points to your seal page, and updates as your record grows.",
+    "howTo": "Works in Gmail, Outlook, and Apple Mail. The badge stays clickable, links back to this page, and updates live as your record grows.",
     "dark": "Dark",
     "light": "Light",
     "themeAria": "Badge theme",
@@ -186,7 +189,7 @@
     "useTitle": "How we use this data",
     "useIntro": "The data we collect is used solely to:",
     "useItems": [
-      "Build and display the public seal page for your domain at witnessed.cc/b/yourdomain",
+      "Build and display the public page for your domain at witnessed.cc/b/yourdomain",
       "Compute the verified business history metrics shown on that page",
       "Power the verification record that proves your business has been operational over time"
     ],
@@ -194,7 +197,7 @@
     "consentTitle": "Consent model",
     "consentBody": "The CC is an explicit, voluntary act on each individual email. You are in full control of which emails contribute to your record. There is no passive collection — Witnessed only receives data when you deliberately include the address in a CC field.",
     "publicTitle": "Public records",
-    "publicBody": "Seal pages are public by design. The domain name, event count, first-seen date, and recipient domains are visible to anyone who visits your seal page. This is the product — the public proof of business activity. If you do not want a public record for your domain, do not CC the address.",
+    "publicBody": "These pages are public by design. The domain name, event count, and first-seen date are visible to anyone who visits the page at witnessed.cc/b/yourdomain. This is the product — the public proof of business activity. If you do not want a public record for your domain, do not CC the address.",
     "basisTitle": "Lawful basis for processing",
     "basisIntro": "Under the EU General Data Protection Regulation (GDPR), we rely on the following lawful bases:",
     "basisItems": [
@@ -310,7 +313,7 @@
     "whatTitle": "What Witnessed is",
     "whatBody": "Witnessed (<code>witnessed.cc</code>) is a service that builds a verified business history for email domains. When you CC <addr>seal@witnessed.cc</addr> on a business email, we verify the DKIM signature, record the metadata, and add it to the public proof-of-business record for your domain.",
     "acceptanceTitle": "Acceptance",
-    "acceptanceBody": "By using this service — including by CCing our address, visiting a seal page, or using the verification API — you agree to these terms. If you do not agree, do not use the service.",
+    "acceptanceBody": "By using this service — including by CCing our address, visiting a page at witnessed.cc/b/yourdomain, or using the verification API — you agree to these terms. If you do not agree, do not use the service.",
     "useTitle": "Acceptable use",
     "useIntro": "You agree not to use Witnessed to:",
     "useItems": [
@@ -320,8 +323,8 @@
       "Abuse the service in a way that degrades performance for other users"
     ],
     "useFoot": "We reserve the right to remove, flag, or permanently downgrade records associated with domains found to be engaging in manipulation.",
-    "publicTitle": "The seal page is public",
-    "publicBody": "Once your domain has been witnessed, a public seal page exists at <code>witnessed.cc/b/yourdomain</code>. This page is publicly accessible and indexed. You agree that building a record using our service means this page may be visible to anyone.",
+    "publicTitle": "Your page is public",
+    "publicBody": "Once your domain has been witnessed, a public page exists at <code>witnessed.cc/b/yourdomain</code>. This page is publicly accessible and indexed. You agree that building a record using our service means this page may be visible to anyone.",
     "provesTitle": "What Witnessed proves and does not prove",
     "provesBody1": "Witnessed proves that a domain has been sending DKIM-authenticated email to real counterparties over a period of time. It does not prove legal standing, financial solvency, compliance with any regulation, or the quality or legitimacy of the underlying business activity.",
     "provesBody2": "Verified status is a signal, not a guarantee. Do not rely on a Witnessed record as the sole basis for a high-stakes business decision.",
