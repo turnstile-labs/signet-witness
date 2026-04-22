@@ -136,9 +136,6 @@
     "copyDone": "Copied — paste into your signature",
     "copyError": "Copy failed — try again",
     "howTo": "Works in Gmail, Outlook, and Apple Mail. The badge stays clickable, links back to this page, and updates live as your record grows.",
-    "dark": "Dark",
-    "light": "Light",
-    "themeAria": "Badge theme",
     "alt": "Witnessed badge for {domain}"
   },
   "languageSwitcher": {

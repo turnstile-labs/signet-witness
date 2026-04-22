@@ -136,9 +136,6 @@
     "copyDone": "Copiado — pégalo en tu firma",
     "copyError": "Error al copiar — inténtalo de nuevo",
     "howTo": "Funciona en Gmail, Outlook y Apple Mail. El badge sigue siendo clicable, enlaza de vuelta a esta página y se actualiza en vivo a medida que crece tu registro.",
-    "dark": "Oscuro",
-    "light": "Claro",
-    "themeAria": "Tema del badge",
     "alt": "Badge de Witnessed para {domain}"
   },
   "languageSwitcher": {
