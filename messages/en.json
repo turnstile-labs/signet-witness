@@ -96,7 +96,11 @@
     "unclaimed": {
       "noOutboundBody": "<d>{name}</d> has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}}. Other businesses are already emailing this domain and CCing Witnessed — but <d>{name}</d> hasn't started building its own outbound record yet.",
       "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. CC <e>{addr}</e> on a business email and this page fills in — automatically, no account needed.",
+      "claimEyebrow": "Claim this page",
       "startEyebrow": "Start this record",
+      "setupBody": "Add Witnessed to every email your domain sends — once. One-time configuration in your mail provider, then this page builds itself in the background.",
+      "setupCTA": "Set it up in 60 seconds →",
+      "manualNote": "Or try it now with a single CC:",
       "startBody": "Put this address in CC on your next business email. The record starts itself.",
       "howItWorks": "How Witnessed works →"
     }
@@ -194,6 +198,62 @@
     "changesBody": "If we make material changes, we will update the date at the top of this page. Continued use of the service after changes constitutes acceptance.",
     "contactTitle": "Contact",
     "contactIntro": "Questions about this policy:"
+  },
+  "setupPage": {
+    "metaTitle": "Set it up once — Witnessed",
+    "metaDescription": "Add Witnessed to every email your domain sends. One-time configuration for Google Workspace, Microsoft 365, and Outlook.",
+    "eyebrow": "Proof setup",
+    "title": "Set it up once.",
+    "intro": "Witnessed only sees the emails you CC it on. This page turns that CC from a thing you remember into a thing that happens automatically — directly inside the mail provider your domain already uses.",
+    "addressLabel": "CC address",
+    "bestFor": "Best for",
+    "workspace": {
+      "eyebrow": "Google Workspace · admin",
+      "bestFor": "teams on Google Workspace with a custom domain. One rule covers every employee, no per-user installs.",
+      "steps": [
+        "Sign in to admin.google.com with an admin account.",
+        "Apps → Google Workspace → Gmail → Compliance.",
+        "Find \"Content compliance\" and click \"Configure\" (or \"Add another rule\").",
+        "Name the rule \"Witnessed BCC\".",
+        "Email messages to affect: select Outbound only. Leave the expression list empty to match every outgoing message.",
+        "Under \"If the above expressions match, do the following\", choose \"Modify message\" → \"Add more recipients\" → \"Add Bcc recipient\" → enter seal@witnessed.cc.",
+        "Save. The rule activates within a few minutes."
+      ],
+      "outcome": "Every email sent from your domain is automatically BCC'd to Witnessed. No employee action, no browser extensions, no per-message decisions."
+    },
+    "m365": {
+      "eyebrow": "Microsoft 365 · admin",
+      "bestFor": "teams on Exchange Online or Microsoft 365 with a custom domain. One transport rule covers the organization.",
+      "steps": [
+        "Sign in to admin.exchange.microsoft.com with an admin account.",
+        "Mail flow → Rules → \"+ Create a new rule\".",
+        "Name the rule \"Witnessed BCC\".",
+        "Apply this rule if: \"The sender is located\" → Inside the organization. Add condition: \"The recipient is located\" → Outside the organization.",
+        "Do the following: \"Bcc the message to\" → enter seal@witnessed.cc.",
+        "Set rule mode to \"Enforce\". Activate and save."
+      ],
+      "outcome": "Every external email sent from your organization is automatically BCC'd to Witnessed. Internal mail is unaffected."
+    },
+    "outlook": {
+      "eyebrow": "Outlook desktop",
+      "bestFor": "individuals on Outlook classic (Windows or Mac) without admin access. The rule runs locally as you send.",
+      "steps": [
+        "File → Manage Rules & Alerts → New Rule.",
+        "Under \"Start from a blank rule\" select \"Apply rule on messages I send\" → Next.",
+        "Leave all conditions unchecked to apply the rule to every message you send → Next → Yes (confirm).",
+        "Actions: tick \"Cc the message to people or public group\". Click the underlined link and enter seal@witnessed.cc → OK.",
+        "Skip exceptions → Next. Name the rule \"Witnessed CC\" → Finish."
+      ],
+      "outcome": "Outlook adds the CC automatically on every outbound email you send. The rule only runs on the machine where it was created — repeat once on each device you use."
+    },
+    "everyoneElse": {
+      "eyebrow": "Gmail personal, Apple Mail, Proton, others",
+      "body": "These providers don't yet support \"always-BCC\" rules natively. A one-click browser extension is on the way. In the meantime, the manual path works reliably — drop this address in CC on any business email and it joins your record automatically.",
+      "outcome": "Paste seal@witnessed.cc into CC the first time; mail clients remember it for next time. You can add more as you send."
+    },
+    "afterTitle": "What happens next",
+    "afterBody": "The first witnessed email appears on <u>witnessed.cc/b/yourdomain</u> within seconds. The page only grows forward — the record cannot be backdated, and you can pause or erase it any time.",
+    "rightsLink": "Manage your rights →"
   },
   "rightsPage": {
     "metaTitle": "Your rights — Witnessed",

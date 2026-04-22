@@ -310,20 +310,37 @@ async function UnclaimedPage({
           </p>
         </section>
 
-        {/* ── Start this record ────────────────────────────────── */}
+        {/* ── Claim / Start record ─────────────────────────────────
+             Eyebrow shifts based on context — "Claim this page" when
+             the domain is already being named in others' emails (so
+             the owner has tangible inbound activity to anchor on),
+             "Start this record" when the page is cold. Both states
+             land on the same CTA: /setup, which converts the CC ritual
+             into a one-time config in the owner's mail provider. The
+             manual CopyableEmail stays as a low-friction fallback for
+             people who want to try it without touching admin tools. */}
         <section className="mt-12 pt-10 border-t border-border">
-          <EyebrowLabel>{tu("startEyebrow")}</EyebrowLabel>
+          <EyebrowLabel>
+            {hasReceiverActivity ? tu("claimEyebrow") : tu("startEyebrow")}
+          </EyebrowLabel>
           <p className="text-sm text-muted leading-relaxed mt-2 mb-6 max-w-lg">
-            {tu("startBody")}
+            {tu("setupBody")}
           </p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-            <CopyableEmail variant="compact" />
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
             <Link
-              href="/"
-              className="text-xs font-semibold text-accent hover:text-accent-2 transition-colors whitespace-nowrap"
+              href="/setup"
+              className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
+              style={{ color: "#fff" }}
             >
-              {tu("howItWorks")}
+              {tu("setupCTA")}
             </Link>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <p className="text-[0.7rem] text-muted-2 whitespace-nowrap">
+                {tu("manualNote")}
+              </p>
+              <CopyableEmail variant="compact" />
+            </div>
           </div>
         </section>
       </main>

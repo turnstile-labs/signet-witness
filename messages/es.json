@@ -96,7 +96,11 @@
     "unclaimed": {
       "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}}. Otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia — pero <d>{name}</d> aún no ha empezado a construir su propio registro de envíos.",
       "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Pon <e>{addr}</e> en copia en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
+      "claimEyebrow": "Reclama esta página",
       "startEyebrow": "Empieza este registro",
+      "setupBody": "Añade Witnessed a cada email que envía tu dominio — una sola vez. Configuración única en tu proveedor de correo y esta página se construye sola en segundo plano.",
+      "setupCTA": "Configúralo en 60 segundos →",
+      "manualNote": "O pruébalo ahora con una copia manual:",
       "startBody": "Pon esta dirección en copia en tu próximo email de trabajo. El registro empieza solo.",
       "howItWorks": "Cómo funciona Witnessed →"
     }
@@ -194,6 +198,62 @@
     "changesBody": "Si hacemos cambios sustanciales, actualizaremos la fecha en la parte superior de esta página. El uso continuado del servicio tras los cambios implica su aceptación.",
     "contactTitle": "Contacto",
     "contactIntro": "¿Preguntas sobre esta política?"
+  },
+  "setupPage": {
+    "metaTitle": "Configúralo una vez — Witnessed",
+    "metaDescription": "Añade Witnessed a cada email que envía tu dominio. Configuración única para Google Workspace, Microsoft 365 y Outlook.",
+    "eyebrow": "Configuración",
+    "title": "Configúralo una vez.",
+    "intro": "Witnessed solo ve los emails en los que lo pones en copia. Esta página convierte esa copia — de algo que tienes que recordar — en algo que ocurre solo, directamente dentro del proveedor de correo que ya usas.",
+    "addressLabel": "Dirección para CC",
+    "bestFor": "Ideal para",
+    "workspace": {
+      "eyebrow": "Google Workspace · admin",
+      "bestFor": "equipos con Google Workspace y dominio propio. Una sola regla cubre a toda la empresa, sin instalaciones por usuario.",
+      "steps": [
+        "Inicia sesión en admin.google.com con una cuenta de administrador.",
+        "Aplicaciones → Google Workspace → Gmail → Cumplimiento normativo.",
+        "Busca «Cumplimiento de contenido» y haz clic en «Configurar» (o «Añadir otra regla»).",
+        "Nombra la regla «Witnessed BCC».",
+        "Mensajes a los que afectar: selecciona solo Salientes. Deja la lista de expresiones vacía para que afecte a todos los envíos.",
+        "En «Si las expresiones anteriores coinciden, haz lo siguiente», elige «Modificar mensaje» → «Añadir más destinatarios» → «Añadir destinatario en Cco» → introduce seal@witnessed.cc.",
+        "Guarda. La regla se activa en unos minutos."
+      ],
+      "outcome": "Cada email enviado desde tu dominio lleva automáticamente una copia oculta a Witnessed. Sin acción del empleado, sin extensiones, sin decisiones por mensaje."
+    },
+    "m365": {
+      "eyebrow": "Microsoft 365 · admin",
+      "bestFor": "equipos con Exchange Online o Microsoft 365 y dominio propio. Una regla de transporte cubre toda la organización.",
+      "steps": [
+        "Inicia sesión en admin.exchange.microsoft.com con una cuenta de administrador.",
+        "Flujo de correo → Reglas → «+ Crear una regla nueva».",
+        "Nombra la regla «Witnessed BCC».",
+        "Aplicar esta regla si: «El remitente está ubicado» → Dentro de la organización. Añade condición: «El destinatario está ubicado» → Fuera de la organización.",
+        "Hacer lo siguiente: «Enviar en Cco el mensaje a» → introduce seal@witnessed.cc.",
+        "Modo: «Aplicar». Activa y guarda."
+      ],
+      "outcome": "Cada email externo enviado desde tu organización lleva automáticamente una copia oculta a Witnessed. El correo interno no se toca."
+    },
+    "outlook": {
+      "eyebrow": "Outlook escritorio",
+      "bestFor": "usuarios de Outlook clásico (Windows o Mac) sin permisos de administrador. La regla se ejecuta localmente al enviar.",
+      "steps": [
+        "Archivo → Administrar reglas y alertas → Nueva regla.",
+        "En «Comenzar desde una regla en blanco» elige «Aplicar regla en los mensajes que envíe» → Siguiente.",
+        "Deja todas las condiciones sin marcar para aplicar la regla a todos los envíos → Siguiente → Sí (confirmar).",
+        "Acciones: marca «Enviar una copia del mensaje a personas o grupo público». Haz clic en el enlace subrayado e introduce seal@witnessed.cc → Aceptar.",
+        "Salta las excepciones → Siguiente. Nombra la regla «Witnessed CC» → Finalizar."
+      ],
+      "outcome": "Outlook añade la copia automáticamente en cada email saliente. La regla vive en la máquina donde la creaste — repítela en cada dispositivo que uses."
+    },
+    "everyoneElse": {
+      "eyebrow": "Gmail personal, Apple Mail, Proton y otros",
+      "body": "Estos proveedores todavía no permiten reglas de «copia oculta siempre» de forma nativa. Estamos trabajando en una extensión de navegador de un solo clic. Mientras tanto, la ruta manual funciona igual de bien: pon esta dirección en copia en cualquier email de trabajo y queda registrado automáticamente.",
+      "outcome": "Pega seal@witnessed.cc en CC la primera vez; los clientes de correo lo recuerdan para la siguiente. Puedes añadir más a medida que envías."
+    },
+    "afterTitle": "Qué pasa después",
+    "afterBody": "El primer email verificado aparece en <u>witnessed.cc/b/tudominio</u> en segundos. La página solo crece hacia adelante — el registro no se puede retroceder y puedes pausarlo o borrarlo cuando quieras.",
+    "rightsLink": "Gestiona tus derechos →"
   },
   "rightsPage": {
     "metaTitle": "Tus derechos — Witnessed",
