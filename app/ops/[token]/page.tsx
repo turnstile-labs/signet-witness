@@ -58,10 +58,26 @@ export default async function OpsPage({
   const avg7d = stats.events7d > 0 ? Math.round(stats.events7d / 7) : 0;
   const vs7dAvg =
     avg7d > 0 ? Math.round(((stats.events24h - avg7d) / avg7d) * 100) : null;
-  const claimedReceivers = Math.max(
-    0,
-    stats.distinctReceivers - stats.unclaimedReceivers,
-  );
+
+  // Compact registry meta. Shows only the parts that actually carry
+  // signal at current scale; skips verified/unclaimed when they'd read
+  // as zero noise. One line, one read.
+  const registryBits: string[] = [
+    `${stats.domains.toLocaleString()} domain${stats.domains === 1 ? "" : "s"}`,
+  ];
+  if (stats.verifiedDomains > 0) {
+    registryBits.push(`${stats.verifiedDomains} verified`);
+  }
+  if (stats.newDomains7d > 0) {
+    registryBits.push(`+${stats.newDomains7d} · 7d`);
+  }
+  if (stats.unclaimedReceivers > 0) {
+    registryBits.push(
+      `${stats.unclaimedReceivers} unclaimed receiver${
+        stats.unclaimedReceivers === 1 ? "" : "s"
+      }`,
+    );
+  }
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
@@ -115,40 +131,12 @@ export default async function OpsPage({
           </span>
         </div>
         <Chart data={stats.eventsByDay} days={30} />
-      </Section>
 
-      {/* SUPPLY — domains on record + growth */}
-      <Section label="supply">
-        <StatRow
-          items={[
-            { label: "domains", value: stats.domains },
-            { label: "verified", value: stats.verifiedDomains },
-            { label: "new · 7d", value: stats.newDomains7d },
-            { label: "new · 30d", value: stats.newDomains30d },
-          ]}
-        />
-      </Section>
-
-      {/* REACH — distinct receivers + unclaimed (viral funnel) */}
-      <Section label="reach">
-        <StatRow
-          items={[
-            { label: "recipient domains", value: stats.distinctReceivers },
-            { label: "claimed", value: claimedReceivers },
-            {
-              label: "unclaimed",
-              value: stats.unclaimedReceivers,
-              accent: stats.unclaimedReceivers > 0,
-            },
-          ]}
-        />
-        {stats.unclaimedReceivers > 0 && (
-          <p className="text-[0.7rem] text-muted-2 mt-3 leading-relaxed">
-            {stats.unclaimedReceivers} domain
-            {stats.unclaimedReceivers === 1 ? " has" : "s have"} been a
-            recipient but hasn&apos;t claimed its own page — organic funnel.
-          </p>
-        )}
+        {/* Registry meta — one line, skips zeros, sits quietly. */}
+        <p className="mt-5 text-[0.7rem] text-muted tabular-nums">
+          <span className="text-muted-2">registry · </span>
+          {registryBits.join(" · ")}
+        </p>
       </Section>
 
       {/* TOP LISTS — senders + receivers side by side */}
@@ -218,31 +206,6 @@ function Section({
       </p>
       {children}
     </section>
-  );
-}
-
-function StatRow({
-  items,
-}: {
-  items: Array<{ label: string; value: number; accent?: boolean }>;
-}) {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
-      {items.map((it) => (
-        <div key={it.label}>
-          <p
-            className={`text-2xl font-bold tabular-nums leading-none ${
-              it.accent ? "text-accent" : ""
-            }`}
-          >
-            {it.value.toLocaleString()}
-          </p>
-          <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mt-1">
-            {it.label}
-          </p>
-        </div>
-      ))}
-    </div>
   );
 }
 
