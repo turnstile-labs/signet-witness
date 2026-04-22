@@ -26,7 +26,7 @@
     "subhead": "Un registro verificable de cada email de trabajo que envías — creado de forma pasiva, imposible de falsificar con fecha anterior.",
     "mock": {
       "eyebrow": "Tu prueba de negocio",
-      "title": "Un enlace. Un historial que crece con cada email que envías.",
+      "title": "Tu página en vivo, creciendo con cada email que envías.",
       "sub": "Comparte witnessed.cc/b/tudominio allí donde alguien vaya a comprobarte. Remitente real, fechas reales, volumen real — verificable por cualquiera que haga clic.",
       "verifiedActive": "Activo verificado",
       "statsVerifiedEmails": "Emails verificados",
@@ -37,16 +37,16 @@
       "statsCounterpartiesSub": "negocios distintos",
       "disclaimerStrong": "Este registro no se puede falsificar con fecha anterior.",
       "disclaimerRest": "Cada entrada se verifica en el momento del envío — no es autodeclarada.",
-      "lookupLabel": "Consulta cualquier dominio",
+      "lookupLabel": "Pruébalo con tu dominio",
       "lookupPlaceholder": "acme.com",
-      "lookupSubmit": "Buscar",
-      "lookupAria": "Escribe un dominio para consultarlo",
-      "realOne": "o mira el historial de un dominio real:"
+      "lookupSubmit": "Ver página",
+      "lookupAria": "Escribe un dominio para ver su página",
+      "realOne": "o mira la página de un dominio real:"
     },
     "badge": {
-      "eyebrow": "Tu credencial, en cada email que envías",
-      "title": "Una insignia pequeña y en vivo para tu firma.",
-      "sub": "Pégala una vez. Se actualiza sola a medida que crece tu historial — sin redesplegar, sin cambiar la imagen, sin alojamiento.",
+      "eyebrow": "La misma página, tamaño firma",
+      "title": "Una insignia en vivo para tu firma de email.",
+      "sub": "La página de arriba, compactada en una imagen que cabe en cualquier firma de email. Pégala una vez — lee del mismo registro y se actualiza sola.",
       "mockLabel": "Tu firma de email",
       "signatureName": "Jane Doe",
       "signatureRole": "Fundadora · Acme Studio",

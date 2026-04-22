@@ -26,7 +26,7 @@
     "subhead": "A verifiable record of every business email you send — built passively, impossible to backdate.",
     "mock": {
       "eyebrow": "Your proof of business",
-      "title": "One link. A record that grows with every email you send.",
+      "title": "Your live page, growing with every email you send.",
       "sub": "Share witnessed.cc/b/yourdomain anywhere a counterparty might look. Real sender, real timestamps, real volume — verifiable by anyone who clicks.",
       "verifiedActive": "Verified Active",
       "statsVerifiedEmails": "Verified emails",
@@ -37,21 +37,21 @@
       "statsCounterpartiesSub": "distinct businesses",
       "disclaimerStrong": "This record cannot be backdated.",
       "disclaimerRest": "Each entry is verified at the moment of sending — not self-reported.",
-      "lookupLabel": "Check any domain",
+      "lookupLabel": "Try it with your domain",
       "lookupPlaceholder": "acme.com",
-      "lookupSubmit": "Look up",
-      "lookupAria": "Enter a domain to look up",
-      "realOne": "or see a real domain's record:"
+      "lookupSubmit": "See page",
+      "lookupAria": "Enter a domain to see its page",
+      "realOne": "or see a real domain's page:"
     },
     "badge": {
-      "eyebrow": "Your credential, everywhere you email",
-      "title": "A tiny live badge for your signature.",
-      "sub": "Paste once. It updates automatically as your history grows — no redeploy, no image swap, no hosting.",
+      "eyebrow": "Same page, signature size",
+      "title": "A live badge for your email signature.",
+      "sub": "The page above, compacted into an image that fits any email signature. Paste once — it reads from the same record, updating in place.",
       "mockLabel": "Your email signature",
       "signatureName": "Jane Doe",
       "signatureRole": "Founder · Acme Studio",
       "signatureContact": "+1 (415) 555-0134 · acme.studio",
-      "footnote": "Links back to your public record. Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
+      "footnote": "Links back to your public page. Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
     },
     "why": {
       "title": "Trust, without the theater.",
