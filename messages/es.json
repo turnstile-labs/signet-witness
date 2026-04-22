@@ -37,10 +37,10 @@
       "statsCounterpartiesSub": "negocios distintos",
       "disclaimerStrong": "Este registro no se puede falsificar con fecha anterior.",
       "disclaimerRest": "Cada entrada se verifica en el momento del envío — no es autodeclarada.",
-      "lookupLabel": "Pruébalo con tu dominio",
+      "lookupLabel": "Comprueba si tu dominio está en el registro",
       "lookupPlaceholder": "acme.com",
-      "lookupSubmit": "Ver página",
-      "lookupAria": "Escribe un dominio para ver su página",
+      "lookupSubmit": "Comprobar",
+      "lookupAria": "Escribe un dominio para comprobar si está en el registro",
       "realOne": "o mira la página de un dominio real:"
     },
     "badge": {
@@ -78,9 +78,7 @@
     "privacy": {
       "title": "Privado por diseño.",
       "body1": "Tus emails contienen información sensible. Nunca la vemos. El CC llega hasta nosotros, verificamos al remitente, registramos la fecha y descartamos todo lo demás.",
-      "body2": "Tú eliges qué conversaciones cuentan. Nada se recopila sin un CC explícito tuyo.",
-      "gdprBadge": "Alineado con RGPD",
-      "gdprBody": "Base jurídica explícita, <r>acceso, oposición y supresión</r> en autoservicio, respuesta en 30 días. Lee la <p>política de privacidad</p>.",
+      "body2": "Tú eliges qué conversaciones cuentan. Nada se recopila sin un CC explícito tuyo — y puedes acceder, exportar o borrar lo que guardamos, cuando quieras.",
       "tableTitle": "Qué guardamos",
       "senderDomain": "Dominio del remitente",
       "recipientDomain": "Dominio del destinatario",

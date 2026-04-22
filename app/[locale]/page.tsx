@@ -228,36 +228,9 @@ export default async function Home({
                 <p className="text-muted text-sm leading-relaxed mb-4">
                   {t("privacy.body1")}
                 </p>
-                <p className="text-muted text-sm leading-relaxed mb-5">
+                <p className="text-muted text-sm leading-relaxed">
                   {t("privacy.body2")}
                 </p>
-
-                <div className="flex flex-wrap items-center gap-2 text-[0.7rem]">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/30 bg-verified/10 text-verified font-mono font-semibold tracking-wide">
-                    <span className="w-1.5 h-1.5 rounded-full bg-verified inline-block" />
-                    {t("privacy.gdprBadge")}
-                  </span>
-                  <span className="text-muted-2 leading-relaxed">
-                    {t.rich("privacy.gdprBody", {
-                      p: (chunks) => (
-                        <Link
-                          href="/privacy"
-                          className="text-accent hover:text-accent-2 transition-colors"
-                        >
-                          {chunks}
-                        </Link>
-                      ),
-                      r: (chunks) => (
-                        <Link
-                          href="/rights"
-                          className="text-accent hover:text-accent-2 transition-colors"
-                        >
-                          {chunks}
-                        </Link>
-                      ),
-                    })}
-                  </span>
-                </div>
               </div>
               <div className="shrink-0 sm:w-64 w-full rounded-xl border border-border bg-bg overflow-hidden text-xs font-mono">
                 <div className="border-b border-border px-4 py-2.5 text-muted-2 uppercase tracking-widest text-[0.6rem]">

@@ -37,10 +37,10 @@
       "statsCounterpartiesSub": "distinct businesses",
       "disclaimerStrong": "This record cannot be backdated.",
       "disclaimerRest": "Each entry is verified at the moment of sending — not self-reported.",
-      "lookupLabel": "Try it with your domain",
+      "lookupLabel": "Check if your domain is on record",
       "lookupPlaceholder": "acme.com",
-      "lookupSubmit": "See page",
-      "lookupAria": "Enter a domain to see its page",
+      "lookupSubmit": "Check",
+      "lookupAria": "Enter a domain to check if it's on record",
       "realOne": "or see a real domain's page:"
     },
     "badge": {
@@ -78,9 +78,7 @@
     "privacy": {
       "title": "Private by design.",
       "body1": "Your emails contain sensitive information. We never see it. The CC reaches us, we verify the sender, record the timestamp, and discard everything else.",
-      "body2": "You choose which conversations count. Nothing is collected without an explicit CC from you.",
-      "gdprBadge": "GDPR-aligned",
-      "gdprBody": "Explicit lawful basis, self-serve <r>access, opt-out and erasure</r>, 30-day response SLA. See the full <p>privacy policy</p>.",
+      "body2": "You choose which conversations count. Nothing is collected without an explicit CC — and you can access, export, or delete anything we hold, anytime.",
       "tableTitle": "What we store",
       "senderDomain": "Sender domain",
       "recipientDomain": "Recipient domain",
