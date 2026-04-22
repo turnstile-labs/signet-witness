@@ -27,7 +27,7 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
   const sealUrl = `${origin}/b/${domain}`;
   const imageUrl = `${origin}/badge/${domain}.png${themeParam}`;
   const previewSrc = `/badge/${domain}.png${themeParam}`;
-  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="260" height="26" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
+  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="220" height="32" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
 
   async function handleCopy() {
     try {
@@ -88,8 +88,8 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
               <img
                 src={previewSrc}
                 alt={t("alt", { domain })}
-                width={260}
-                height={26}
+                width={220}
+                height={32}
                 className="max-w-full h-auto block"
               />
             </a>

@@ -80,16 +80,16 @@ export default async function Home({
                     <img
                       src="/badge/witnessed.cc.svg"
                       alt="Witnessed · witnessed.cc"
-                      width={260}
-                      height={26}
+                      width={220}
+                      height={32}
                       className="border-0 inline-block align-middle light:hidden"
                     />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/badge/witnessed.cc.svg?theme=light"
                       alt="Witnessed · witnessed.cc"
-                      width={260}
-                      height={26}
+                      width={220}
+                      height={32}
                       className="border-0 hidden align-middle light:inline-block"
                     />
                   </Link>
