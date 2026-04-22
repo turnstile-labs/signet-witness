@@ -53,11 +53,6 @@
       "signatureContact": "+1 (415) 555-0134 · acme.studio",
       "footnote": "Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
     },
-    "why": {
-      "eyebrow": "Why email",
-      "title": "AI can fake a brand. It can't fake yesterday.",
-      "body": "Anyone can generate a polished website, a LinkedIn history, or a wall of testimonials. No one can retroactively send an email — every entry here required a real recipient on a real mailbox at a real moment in time."
-    },
     "privacy": {
       "title": "Private by design.",
       "body1": "Your emails contain sensitive information. We never see it. The CC reaches us, we verify the sender, record the timestamp, and discard everything else.",

@@ -53,11 +53,6 @@
       "signatureContact": "+34 612 345 678 · acme.studio",
       "footnote": "Funciona en Gmail, Outlook, Apple Mail y cualquier otra herramienta que admita firmas HTML."
     },
-    "why": {
-      "eyebrow": "Por qué email",
-      "title": "La IA puede falsificar una marca. No puede falsificar el ayer.",
-      "body": "Cualquiera puede generar una web impecable, un historial de LinkedIn o un muro de testimonios. Nadie puede enviar un email retroactivamente — cada entrada aquí exigió un destinatario real en un buzón real en un momento real."
-    },
     "privacy": {
       "title": "Privado por diseño.",
       "body1": "Tus emails contienen información sensible. Nunca la vemos. El CC llega hasta nosotros, verificamos al remitente, registramos la fecha y descartamos todo lo demás.",

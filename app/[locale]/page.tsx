@@ -177,26 +177,6 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── Why email ────────────────────────────────────────────
-             Thesis paragraph, single statement, no columns. The old
-             'AI can/can't fake' grid was dated, unfocused, and missed
-             the actual asymmetry: everything else on the internet is
-             generatable. Email history isn't — because each entry
-             required a real recipient on a real mailbox at a real
-             moment in time, and the moment of delivery can't be
-             rewound. The section now says that in one breath. */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-20 sm:py-24 text-center">
-          <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-4">
-            {t("why.eyebrow")}
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-bold text-txt leading-[1.15] mb-6 max-w-xl mx-auto">
-            {t("why.title")}
-          </h2>
-          <p className="text-muted text-sm sm:text-base leading-relaxed max-w-lg mx-auto">
-            {t("why.body")}
-          </p>
-        </section>
-
         {/* ── Private by design ────────────────────────────────── */}
         <section className="border-y border-border bg-surface py-14 sm:py-16">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
