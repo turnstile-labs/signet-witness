@@ -101,11 +101,8 @@
       "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Pon <e>{addr}</e> en copia en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
       "claimEyebrow": "Reclama esta página",
       "startEyebrow": "Empieza este registro",
-      "setupBody": "Añade Witnessed a cada email que envía tu dominio — una sola vez. Configuración única en tu proveedor de correo y esta página se construye sola en segundo plano.",
-      "setupCTA": "Configúralo en 60 segundos →",
-      "manualNote": "O pruébalo ahora con una copia manual:",
-      "startBody": "Pon esta dirección en copia en tu próximo email de trabajo. El registro empieza solo.",
-      "howItWorks": "Cómo funciona Witnessed →"
+      "orAutoLabel": "O sáltate el copiar y pegar —",
+      "orAutoLink": "configúralo una vez, en automático →"
     }
   },
   "badge": {

@@ -101,11 +101,8 @@
       "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. CC <e>{addr}</e> on a business email and this page fills in — automatically, no account needed.",
       "claimEyebrow": "Claim this page",
       "startEyebrow": "Start this record",
-      "setupBody": "Add Witnessed to every email your domain sends — once. One-time configuration in your mail provider, then this page builds itself in the background.",
-      "setupCTA": "Set it up in 60 seconds →",
-      "manualNote": "Or try it now with a single CC:",
-      "startBody": "Put this address in CC on your next business email. The record starts itself.",
-      "howItWorks": "How Witnessed works →"
+      "orAutoLabel": "Or skip the copy-paste —",
+      "orAutoLink": "set it up once, automatically →"
     }
   },
   "badge": {

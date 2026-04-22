@@ -311,37 +311,32 @@ async function UnclaimedPage({
         </section>
 
         {/* ── Claim / Start record ─────────────────────────────────
+             Visually matches the landing hero CTA: CopyableEmail hero
+             button as the primary action, with the /setup pathway as
+             the secondary accent link right below. Same button, same
+             copy, same rhythm as the rest of the site — consistent
+             visual language wherever someone is about to take action.
              Eyebrow shifts based on context — "Claim this page" when
-             the domain is already being named in others' emails (so
-             the owner has tangible inbound activity to anchor on),
-             "Start this record" when the page is cold. Both states
-             land on the same CTA: /setup, which converts the CC ritual
-             into a one-time config in the owner's mail provider. The
-             manual CopyableEmail stays as a low-friction fallback for
-             people who want to try it without touching admin tools. */}
-        <section className="mt-12 pt-10 border-t border-border">
+             the domain is already being named in others' emails,
+             "Start this record" when the page is cold. */}
+        <section className="mt-12 pt-10 border-t border-border text-center">
           <EyebrowLabel>
             {hasReceiverActivity ? tu("claimEyebrow") : tu("startEyebrow")}
           </EyebrowLabel>
-          <p className="text-sm text-muted leading-relaxed mt-2 mb-6 max-w-lg">
-            {tu("setupBody")}
-          </p>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+          <div className="mt-8">
+            <CopyableEmail variant="hero" />
+          </div>
+
+          <p className="mt-5 text-xs text-muted-2">
+            {tu("orAutoLabel")}{" "}
             <Link
               href="/setup"
-              className="inline-flex items-center justify-center h-11 px-5 rounded-lg bg-accent text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
-              style={{ color: "#fff" }}
+              className="font-semibold text-accent hover:text-accent-2 transition-colors"
             >
-              {tu("setupCTA")}
+              {tu("orAutoLink")}
             </Link>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <p className="text-[0.7rem] text-muted-2 whitespace-nowrap">
-                {tu("manualNote")}
-              </p>
-              <CopyableEmail variant="compact" />
-            </div>
-          </div>
+          </p>
         </section>
       </main>
 
