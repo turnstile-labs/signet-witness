@@ -212,12 +212,19 @@ export async function isRateLimited(senderDomain: string): Promise<boolean> {
 // `example.com.dbl.spamhaus.org` → A record means listed.
 //
 // Semantics (https://www.spamhaus.org/dbl/):
-//   127.0.1.x — spam domain     (treat as listed)
-//   127.0.1.255 — rate-limited  (treat as unknown, fail-open)
-//   NXDOMAIN / no record        — not listed
+//   127.0.1.2 .. 127.0.1.99   — spam / phish / malware  (listed)
+//   127.0.1.255               — rate-limited            (refused → fail-open)
+//   127.255.255.252 .. .255   — public / open resolver blocked, typing
+//                               error, or volume overage. Spamhaus does
+//                               not serve the public internet directly;
+//                               proper use requires their DQS key or a
+//                               local rsync zone. We treat these as
+//                               refused, NOT as listings.
+//   NXDOMAIN / no record      — not listed
 //
 // Cached 24h. Listings come and go; we want to re-check daily so
-// cleaned-up domains aren't punished forever.
+// cleaned-up domains aren't punished forever. Refused responses are
+// never cached — we want the next lookup to retry.
 
 const DBL_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -256,16 +263,32 @@ async function writeDblCache(domain: string, listed: boolean): Promise<void> {
   }
 }
 
+class DblRefusedError extends Error {
+  constructor(public readonly addrs: string[]) {
+    super(`DBL refused query: ${addrs.join(",")}`);
+  }
+}
+
+function isRefusalCode(ip: string): boolean {
+  // 127.0.1.255 = rate-limited.
+  // 127.255.255.x = public/open resolver blocked, typing error, or volume
+  // overage. All non-listings, all "try again from a different path."
+  return ip === "127.0.1.255" || ip.startsWith("127.255.255.");
+}
+
 async function dblLookupLive(domain: string): Promise<boolean> {
   try {
     const addrs = await withTimeout(
       dns.resolve4(`${domain}.dbl.spamhaus.org`),
       DNS_TIMEOUT_MS,
     );
-    // 127.0.1.255 signals rate-limit / query refused, not a real listing.
-    const real = addrs.some((a) => a !== "127.0.1.255");
-    return real;
+    if (addrs.every(isRefusalCode)) {
+      throw new DblRefusedError(addrs);
+    }
+    // Any non-refusal 127.0.1.x response is a real listing.
+    return addrs.some((a) => !isRefusalCode(a));
   } catch (err) {
+    if (err instanceof DblRefusedError) throw err;
     const code = (err as { code?: string }).code;
     if (code === "ENOTFOUND" || code === "ENODATA" || code === "NXDOMAIN") {
       return false;
@@ -291,6 +314,16 @@ export async function isOnDbl(domain: string): Promise<boolean> {
     await writeDblCache(domain, listed);
     return listed;
   } catch (err) {
+    if (err instanceof DblRefusedError) {
+      // Public-resolver refusal or rate-limit. Do NOT cache — we want
+      // the next lookup to retry (ideally through a DQS key once one
+      // is configured). Fail-open so legitimate mail is not dropped.
+      console.warn("[reputation] DBL refused lookup, failing open", {
+        domain,
+        addrs: err.addrs,
+      });
+      return false;
+    }
     console.error("[reputation] dblLookup unclassified error", { domain, err });
     return false;
   }
