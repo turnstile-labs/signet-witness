@@ -31,7 +31,7 @@ function daysActive(firstSeen: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-// Compact "active history" formatter — mirrors the landing mock.
+// Compact "on record" formatter — mirrors the landing mock.
 function formatActiveHistory(days: number): string {
   if (days === 0) return "< 1 d";
   if (days < 30) return `${days} d`;
@@ -40,8 +40,12 @@ function formatActiveHistory(days: number): string {
   return years >= 10 ? `${Math.round(years)} yr` : `${years.toFixed(1)} yr`;
 }
 
-function domainInitials(domain: string): string {
-  return domain.replace(/\.[^.]+$/, "").slice(0, 2).toUpperCase();
+// Locale-aware "Jan 2025" / "ene 2025" label for the first-seen date.
+function formatFirstSeen(firstSeen: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(firstSeen));
 }
 
 // ── Constants ─────────────────────────────────────────────────
@@ -57,16 +61,12 @@ function EyebrowLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatusPill({
-  state,
-  label,
-}: {
-  state: "verified" | "building" | "pending";
-  label: string;
-}) {
+type PillState = "verified" | "building" | "pending";
+
+function StatusPill({ state, label }: { state: PillState; label: string }) {
   if (state === "verified") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/30 bg-verified/10 text-verified text-[0.7rem] sm:text-xs font-semibold shrink-0">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/30 bg-verified/10 text-verified text-xs font-semibold shrink-0 self-start">
         <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse inline-block" />
         {label}
       </span>
@@ -74,147 +74,72 @@ function StatusPill({
   }
   if (state === "building") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-500 text-[0.7rem] sm:text-xs font-semibold shrink-0">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-500 text-xs font-semibold shrink-0 self-start">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
         {label}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-2 text-muted text-[0.7rem] sm:text-xs font-semibold shrink-0">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface text-muted text-xs font-semibold shrink-0 self-start">
       <span className="w-1.5 h-1.5 rounded-full bg-muted-2 inline-block" />
       {label}
     </span>
   );
 }
 
-function SealCard({
-  domain,
-  stats,
-  state,
-  pillLabel,
-  disclaimerStrong,
-  disclaimerRest,
+function Stat({
+  value,
+  label,
+  sub,
+  dim = false,
 }: {
-  domain: string;
-  stats: Array<{ value: string; label: string; sub: string }>;
-  state: "verified" | "building" | "pending";
-  pillLabel: string;
-  disclaimerStrong: string;
-  disclaimerRest: string;
+  value: string;
+  label: string;
+  sub: string;
+  dim?: boolean;
 }) {
   return (
-    <article className="rounded-xl border border-border bg-surface overflow-hidden mb-6">
-      {/* Header */}
-      <header className="border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[0.7rem] sm:text-xs font-mono text-muted shrink-0">
-            {domainInitials(domain)}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm sm:text-base font-semibold text-txt truncate">
-              {domain}
-            </p>
-            <p className="text-[0.7rem] sm:text-xs text-muted font-mono truncate">
-              witnessed.cc/b/{domain}
-            </p>
-          </div>
-        </div>
-        <StatusPill state={state} label={pillLabel} />
-      </header>
-
-      {/* Stats grid */}
-      <div className="px-2 sm:px-6 py-5 sm:py-6 grid grid-cols-3 gap-1 sm:gap-4">
-        {stats.map((s) => (
-          <div key={s.label} className="text-center px-1">
-            <p className="text-xl sm:text-2xl font-bold text-txt font-mono mb-0.5 leading-none">
-              {s.value}
-            </p>
-            <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1">
-              {s.label}
-            </p>
-            <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-2 mt-0.5 leading-tight">
-              {s.sub}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Footer disclaimer */}
-      <div className="border-t border-border px-4 sm:px-6 py-3">
-        <p className="text-[0.7rem] sm:text-xs text-muted text-center leading-relaxed">
-          <span className="text-accent font-semibold">{disclaimerStrong}</span>{" "}
-          {disclaimerRest}
-        </p>
-      </div>
-    </article>
+    <div>
+      <p
+        className={`text-3xl sm:text-4xl font-bold font-mono leading-none ${
+          dim ? "text-muted-2" : "text-txt"
+        }`}
+      >
+        {value}
+      </p>
+      <p className="text-xs sm:text-sm font-semibold text-txt mt-2">{label}</p>
+      <p className="text-[0.65rem] sm:text-xs text-muted-2 mt-0.5 leading-tight">
+        {sub}
+      </p>
+    </div>
   );
 }
 
-// ── Building progress ─────────────────────────────────────────
-function BuildingProgress({
-  days,
-  daysDisplay,
-  eventCount,
-  title,
-  inProgress,
-  body,
-  daysLabel,
-  emailsLabel,
+// Thin inline progress bar used in the "Building toward Verified" block.
+function ProgressRow({
+  label,
+  current,
+  total,
 }: {
-  days: number;
-  daysDisplay: string;
-  eventCount: number;
-  title: string;
-  inProgress: string;
-  body: string;
-  daysLabel: string;
-  emailsLabel: string;
+  label: string;
+  current: number;
+  total: number;
 }) {
-  const daysProgress = Math.min(100, Math.round((days / VERIFIED_DAYS) * 100));
-  const emailsProgress = Math.min(
-    100,
-    Math.round((eventCount / VERIFIED_EMAILS) * 100)
-  );
-
+  const pct = Math.min(100, Math.round((current / total) * 100));
   return (
-    <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-      <div className="flex items-center justify-between mb-2 gap-3">
-        <p className="text-sm font-semibold text-txt">{title}</p>
-        <span className="text-[0.65rem] text-muted-2 bg-bg border border-border px-2 py-0.5 rounded-full font-mono uppercase tracking-widest">
-          {inProgress}
+    <div>
+      <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5 gap-2">
+        <span>{label}</span>
+        <span className="shrink-0">
+          {current} / {total}
         </span>
       </div>
-      <p className="text-xs text-muted leading-relaxed mb-4">{body}</p>
-      <div className="space-y-3">
-        <div>
-          <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5 gap-2">
-            <span>{daysLabel}</span>
-            <span className="shrink-0">
-              {daysDisplay} / {VERIFIED_DAYS}
-            </span>
-          </div>
-          <div className="h-1.5 bg-bg rounded-full overflow-hidden">
-            <div
-              className="h-full bg-accent rounded-full transition-all"
-              style={{ width: `${daysProgress}%` }}
-            />
-          </div>
-        </div>
-        <div>
-          <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5 gap-2">
-            <span>{emailsLabel}</span>
-            <span className="shrink-0">
-              {eventCount} / {VERIFIED_EMAILS}
-            </span>
-          </div>
-          <div className="h-1.5 bg-bg rounded-full overflow-hidden">
-            <div
-              className="h-full bg-accent rounded-full transition-all"
-              style={{ width: `${emailsProgress}%` }}
-            />
-          </div>
-        </div>
+      <div className="h-1.5 bg-surface rounded-full overflow-hidden">
+        <div
+          className="h-full bg-accent rounded-full transition-all"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -243,113 +168,106 @@ export default async function SealPage({ params }: Props) {
   const days = daysActive(record.first_seen);
   const isVerified =
     days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS;
-  const state = isVerified ? "verified" : "building";
+  const state: PillState = isVerified ? "verified" : "building";
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
-
-  const stats = [
-    {
-      value: record.event_count.toString(),
-      label: t("statVerifiedEmails"),
-      sub: t("statVerifiedEmailsSub"),
-    },
-    {
-      value: formatActiveHistory(days),
-      label: t("statActiveHistory"),
-      sub: t("statActiveHistorySub"),
-    },
-    {
-      value: uniqueReceivers.toString(),
-      label: t("statCounterparties"),
-      sub: t("statCounterpartiesSub"),
-    },
-  ];
-
   const pillLabel = isVerified ? t("verifiedActive") : t("building");
+  const firstSeenLabel = formatFirstSeen(record.first_seen, locale);
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
       <NavBar />
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
-
-        <div className="mb-6 text-center sm:text-left">
+      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
+        {/* ── Hero ─────────────────────────────────────────────── */}
+        <section>
           <EyebrowLabel>{t("eyebrow")}</EyebrowLabel>
-        </div>
 
-        <SealCard
-          domain={decoded}
-          stats={stats}
-          state={state}
-          pillLabel={pillLabel}
-          disclaimerStrong={t("disclaimerStrong")}
-          disclaimerRest={t("disclaimerRest")}
-        />
-
-        {!isVerified && (
-          <BuildingProgress
-            days={days}
-            daysDisplay={t("daysLong", { count: days })}
-            eventCount={record.event_count}
-            title={t("buildingTitle")}
-            inProgress={t("buildingInProgress")}
-            body={t("buildingBody", {
-              days: VERIFIED_DAYS,
-              emails: VERIFIED_EMAILS,
-            })}
-            daysLabel={t("daysOnRecord")}
-            emailsLabel={t("verifiedEmails")}
-          />
-        )}
-
-        {/* 30-day activity sparkline */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-          <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="min-w-0">
-              <EyebrowLabel>{t("last30")}</EyebrowLabel>
-              <p className="text-sm font-semibold text-txt mt-1">
-                {recent30}{" "}
-                <span className="text-muted font-normal">
-                  {recent30 === 1
-                    ? t("verifiedEmailsOne")
-                    : t("verifiedEmailsMany")}
-                </span>
+              <h1 className="text-3xl sm:text-5xl font-bold text-txt tracking-tight break-all leading-[1.05]">
+                {decoded}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-2 font-mono mt-2 break-all">
+                witnessed.cc/b/{decoded}
               </p>
             </div>
-            <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-2 font-mono text-right shrink-0">
+            <StatusPill state={state} label={pillLabel} />
+          </div>
+
+          <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10">
+            <Stat
+              value={record.event_count.toString()}
+              label={t("statVerifiedEmails")}
+              sub={t("statVerifiedEmailsSub")}
+            />
+            <Stat
+              value={formatActiveHistory(days)}
+              label={t("statActiveHistory")}
+              sub={t("statActiveHistorySub")}
+            />
+            <Stat
+              value={uniqueReceivers.toString()}
+              label={t("statCounterparties")}
+              sub={t("statCounterpartiesSub")}
+            />
+          </div>
+
+          <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
+            {t("trustLine")}
+          </p>
+        </section>
+
+        {/* ── Building toward Verified ─────────────────────────── */}
+        {!isVerified && (
+          <section className="mt-12 pt-10 border-t border-border">
+            <EyebrowLabel>{t("buildingEyebrow")}</EyebrowLabel>
+            <p className="text-xs text-muted mt-2 mb-6 leading-relaxed max-w-xl">
+              {t("buildingBody", {
+                days: VERIFIED_DAYS,
+                emails: VERIFIED_EMAILS,
+              })}
+            </p>
+            <div className="space-y-4 max-w-md">
+              <ProgressRow
+                label={t("daysOnRecord")}
+                current={days}
+                total={VERIFIED_DAYS}
+              />
+              <ProgressRow
+                label={t("verifiedEmails")}
+                current={record.event_count}
+                total={VERIFIED_EMAILS}
+              />
+            </div>
+          </section>
+        )}
+
+        {/* ── Activity ─────────────────────────────────────────── */}
+        <section className="mt-12 pt-10 border-t border-border">
+          <div className="flex items-baseline justify-between gap-3 mb-5">
+            <EyebrowLabel>{t("activityEyebrow")}</EyebrowLabel>
+            <p className="text-[0.65rem] text-muted-2 font-mono">
               {t("barLegend")}
             </p>
           </div>
-          <Sparkline data={daily} days={30} height={40} />
-        </div>
+          <Sparkline data={daily} days={30} height={56} />
+          <p className="mt-5 text-sm text-muted leading-relaxed">
+            {t("onRecordSince", { date: firstSeenLabel })}{" "}
+            {t("activitySummary", { count: recent30 })}
+          </p>
+        </section>
 
-        {/* What this proves */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-          <EyebrowLabel>{t("whatThisProves")}</EyebrowLabel>
-          <div className="space-y-2.5 mt-3">
-            {[
-              t("proof1"),
-              t("proof2"),
-              t("proof3", { domain: decoded }),
-            ].map((text, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <span className="text-verified text-sm font-bold leading-tight mt-0.5 shrink-0">
-                  ✓
-                </span>
-                <p className="text-sm text-muted leading-relaxed">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Owner tools */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-          <EyebrowLabel>{t("ownThisDomain")}</EyebrowLabel>
-          <p className="text-sm text-muted leading-relaxed mt-2 mb-5">
-            {t("ownThisDomainBody")}
+        {/* ── Share this proof ─────────────────────────────────── */}
+        <section className="mt-12 pt-10 border-t border-border">
+          <EyebrowLabel>{t("shareEyebrow")}</EyebrowLabel>
+          <h2 className="text-xl sm:text-2xl font-bold text-txt mt-3 mb-3 max-w-lg leading-tight">
+            {t("shareTitle")}
+          </h2>
+          <p className="text-sm text-muted leading-relaxed mb-6 max-w-lg">
+            {t("shareSub")}
           </p>
           <BadgeEmbed domain={decoded} />
-        </div>
-
+        </section>
       </main>
 
       <Footer />
@@ -369,110 +287,92 @@ async function UnclaimedPage({
   const tu = await getTranslations("seal.unclaimed");
   const hasReceiverActivity = receiverCount > 0;
 
-  const stats = [
-    { value: "—", label: t("statVerifiedEmails"), sub: "—" },
-    { value: "—", label: t("statActiveHistory"), sub: "—" },
-    { value: "—", label: t("statCounterparties"), sub: "—" },
-  ];
-
-  // Three forward-looking proof points — parallels the record page's
-  // "What this proves" list but in future tense, describing what the
-  // seal page will show once the domain is claimed.
-  const willShow = [
-    tu("willShow1"),
-    tu("willShow2"),
-    tu("willShow3"),
-  ];
-
   return (
     <div className="flex flex-col min-h-screen bg-bg">
       <NavBar />
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full">
-
-        <div className="mb-6 text-center sm:text-left">
+      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
+        {/* ── Hero (dimmed) ────────────────────────────────────── */}
+        <section>
           <EyebrowLabel>{t("eyebrow")}</EyebrowLabel>
-        </div>
 
-        <div className="opacity-60 select-none">
-          <SealCard
-            domain={domain}
-            stats={stats}
-            state="pending"
-            pillLabel={t("pending")}
-            disclaimerStrong={t("disclaimerStrong")}
-            disclaimerRest={t("disclaimerRest")}
-          />
-        </div>
-
-        {/* Status card — parallels BuildingProgress on the record page. */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-          <div className="flex items-center justify-between mb-2 gap-3">
-            <p className="text-sm font-semibold text-txt">
-              {hasReceiverActivity ? tu("noOutbound") : tu("noRecord")}
-            </p>
-            <span className="text-[0.65rem] text-muted-2 bg-bg border border-border px-2 py-0.5 rounded-full font-mono uppercase tracking-widest shrink-0">
-              {t("pending")}
-            </span>
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-3xl sm:text-5xl font-bold text-muted-2 tracking-tight break-all leading-[1.05] select-none">
+                {domain}
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-2 font-mono mt-2 break-all">
+                witnessed.cc/b/{domain}
+              </p>
+            </div>
+            <StatusPill state="pending" label={t("noRecordPill")} />
           </div>
-          <p className="text-sm text-muted leading-relaxed">
+
+          <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10 opacity-60 select-none">
+            <Stat
+              value="—"
+              label={t("statVerifiedEmails")}
+              sub={t("statVerifiedEmailsSub")}
+              dim
+            />
+            <Stat
+              value="—"
+              label={t("statActiveHistory")}
+              sub={t("statActiveHistorySub")}
+              dim
+            />
+            <Stat
+              value="—"
+              label={t("statCounterparties")}
+              sub={t("statCounterpartiesSub")}
+              dim
+            />
+          </div>
+
+          <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
             {hasReceiverActivity
               ? tu.rich("noOutboundBody", {
                   name: domain,
                   count: receiverCount,
                   d: (chunks) => (
-                    <span className="font-mono text-txt break-all">{chunks}</span>
+                    <span className="font-mono text-txt break-all">
+                      {chunks}
+                    </span>
                   ),
                 })
               : tu.rich("noRecordBody", {
                   name: domain,
                   addr: "seal@witnessed.cc",
                   d: (chunks) => (
-                    <span className="font-mono text-txt break-all">{chunks}</span>
+                    <span className="font-mono text-txt break-all">
+                      {chunks}
+                    </span>
                   ),
                   e: (chunks) => (
-                    <code className="font-mono text-accent text-[0.72rem]">
+                    <code className="font-mono text-accent text-[0.8rem]">
                       {chunks}
                     </code>
                   ),
                 })}
           </p>
-        </div>
+        </section>
 
-        {/* What this page will show — parallels "What this proves". */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-          <EyebrowLabel>{tu("willShowTitle")}</EyebrowLabel>
-          <div className="space-y-2.5 mt-3">
-            {willShow.map((text, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <span className="text-muted-2 text-sm font-bold leading-tight mt-0.5 shrink-0">
-                  ○
-                </span>
-                <p className="text-sm text-muted leading-relaxed">{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Start this record — parallels the owner tools (BadgeEmbed). */}
-        <div className="bg-surface border border-border rounded-xl p-5 mb-6">
-          <EyebrowLabel>{tu("startTitle")}</EyebrowLabel>
-          <p className="text-sm text-muted leading-relaxed mt-2 mb-5">
+        {/* ── Start this record ────────────────────────────────── */}
+        <section className="mt-12 pt-10 border-t border-border">
+          <EyebrowLabel>{tu("startEyebrow")}</EyebrowLabel>
+          <p className="text-sm text-muted leading-relaxed mt-2 mb-6 max-w-lg">
             {tu("startBody")}
           </p>
-          <div className="flex justify-center mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
             <CopyableEmail variant="compact" />
-          </div>
-          <p className="text-center">
             <Link
               href="/"
-              className="text-xs font-semibold text-accent hover:text-accent-2 transition-colors"
+              className="text-xs font-semibold text-accent hover:text-accent-2 transition-colors whitespace-nowrap"
             >
               {tu("howItWorks")}
             </Link>
-          </p>
-        </div>
-
+          </div>
+        </section>
       </main>
 
       <Footer />
