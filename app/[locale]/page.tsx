@@ -19,11 +19,13 @@ export default async function Home({
 
   const t = await getTranslations("home");
 
-  // Adapt the landing-page badge demo's <img> dimensions to whatever
-  // width the generator produces for "witnessed.cc". Keeps the SVG's
-  // intrinsic size and the <img> attribute in lockstep so layout doesn't
-  // shift between server render and image load.
-  const demoBadge = sizeBadge("witnessed.cc");
+  // Landing-page signature mock — Jane Doe @ Acme Studio. The badge
+  // advertises acme.studio (matches the persona) and is rendered via
+  // `?preview=verified` so the demo always looks attractive without
+  // adding a fake row to the real registry. The mock is *not*
+  // clickable: this is an illustration, not a real seal page.
+  const DEMO_DOMAIN = "acme.studio";
+  const demoBadge = sizeBadge(DEMO_DOMAIN);
 
   return (
     <div className="flex flex-col min-h-screen bg-bg text-txt">
@@ -82,24 +84,24 @@ export default async function Home({
                   {t("badge.signatureContact")}
                 </p>
                 <div className="mt-4">
-                  <Link href="/b/witnessed.cc" className="inline-block">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/badge/witnessed.cc.svg"
-                      alt="Witnessed · witnessed.cc"
-                      width={demoBadge.width}
-                      height={demoBadge.height}
-                      className="border-0 inline-block align-middle light:hidden"
-                    />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/badge/witnessed.cc.svg?theme=light"
-                      alt="Witnessed · witnessed.cc"
-                      width={demoBadge.width}
-                      height={demoBadge.height}
-                      className="border-0 hidden align-middle light:inline-block"
-                    />
-                  </Link>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified`}
+                    alt={`Witnessed · ${DEMO_DOMAIN}`}
+                    width={demoBadge.width}
+                    height={demoBadge.height}
+                    className="border-0 inline-block align-middle light:hidden select-none"
+                    draggable={false}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&theme=light`}
+                    alt={`Witnessed · ${DEMO_DOMAIN}`}
+                    width={demoBadge.width}
+                    height={demoBadge.height}
+                    className="border-0 hidden align-middle light:inline-block select-none"
+                    draggable={false}
+                  />
                 </div>
               </div>
             </div>

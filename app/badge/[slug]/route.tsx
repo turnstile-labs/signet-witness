@@ -371,12 +371,26 @@ export async function GET(
     return new Response("invalid domain", { status: 400 });
   }
 
+  const url = new URL(request.url);
   const theme: Theme =
-    new URL(request.url).searchParams.get("theme") === "light"
-      ? "light"
-      : "dark";
+    url.searchParams.get("theme") === "light" ? "light" : "dark";
 
-  const snapshot = await resolveSnapshot(domain);
+  // `?preview=<state>` short-circuits the DB lookup and renders the
+  // requested state directly. Used by marketing surfaces (e.g. the
+  // landing page's signature mock) so a fake demo domain still shows
+  // an attractive "verified" badge without polluting the real registry.
+  // Never mutates data; read-only presentation toggle.
+  const previewParam = url.searchParams.get("preview");
+  const previewState: State | null =
+    previewParam === "verified" ||
+    previewParam === "onRecord" ||
+    previewParam === "pending"
+      ? previewParam
+      : null;
+
+  const snapshot: Snapshot = previewState
+    ? { state: previewState, count: 0 }
+    : await resolveSnapshot(domain);
   const headers = cacheHeaders(snapshot, theme, format);
 
   // Conditional GET — respond 304 when the caller (CDN, Gmail proxy, browser)
