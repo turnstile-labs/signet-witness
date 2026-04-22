@@ -82,7 +82,15 @@ export default async function Home({
                       alt="Witnessed · witnessed.cc"
                       width={260}
                       height={26}
-                      className="border-0 inline-block align-middle"
+                      className="border-0 inline-block align-middle light:hidden"
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/badge/witnessed.cc.svg?theme=light"
+                      alt="Witnessed · witnessed.cc"
+                      width={260}
+                      height={26}
+                      className="border-0 hidden align-middle light:inline-block"
                     />
                   </Link>
                 </div>

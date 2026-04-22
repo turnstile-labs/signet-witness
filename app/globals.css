@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Site theme is toggled by flipping `html.light`; expose it as a Tailwind
+   variant so any utility can target light mode — e.g. `light:hidden` on a
+   dark-mode asset, `light:inline-block` on its light-mode counterpart. */
+@custom-variant light (&:where(html.light, html.light *));
+
 /* Tailwind v4 inline theme — CSS custom properties resolve at runtime so
    swapping :root vars when html.light is set updates all utilities instantly. */
 @theme inline {
