@@ -25,9 +25,9 @@
     "headline2": "Excepto el ayer.",
     "subhead": "Un registro verificable de cada email de trabajo que envías — creado de forma pasiva, imposible de falsificar con fecha anterior.",
     "mock": {
-      "eyebrow": "Cada dominio tiene la suya",
-      "title": "Una página pública que cualquiera puede consultar.",
-      "sub": "Remitente real. Fechas reales. Volumen real. Nada preparado, nada autodeclarado.",
+      "eyebrow": "Tu prueba de negocio",
+      "title": "Un enlace. Un historial que crece con cada email que envías.",
+      "sub": "Comparte witnessed.cc/b/tudominio allí donde alguien vaya a comprobarte. Remitente real, fechas reales, volumen real — verificable por cualquiera que haga clic.",
       "verifiedActive": "Activo verificado",
       "statsVerifiedEmails": "Emails verificados",
       "statsVerifiedEmailsSub": "confirmados de forma independiente",
@@ -41,7 +41,17 @@
       "lookupPlaceholder": "acme.com",
       "lookupSubmit": "Buscar",
       "lookupAria": "Escribe un dominio para consultarlo",
-      "realOne": "o mira uno en vivo:"
+      "realOne": "o mira el historial de un dominio real:"
+    },
+    "badge": {
+      "eyebrow": "Tu credencial, en cada email que envías",
+      "title": "Una insignia pequeña y en vivo para tu firma.",
+      "sub": "Pégala una vez. Se actualiza sola a medida que crece tu historial — sin redesplegar, sin cambiar la imagen, sin alojamiento.",
+      "mockLabel": "Tu firma de email",
+      "signatureName": "Jane Doe",
+      "signatureRole": "Fundadora · Acme Studio",
+      "signatureContact": "+34 612 345 678 · acme.studio",
+      "footnote": "Enlaza con tu página pública. Funciona en Gmail, Outlook, Apple Mail y cualquier otra herramienta que admita firmas HTML."
     },
     "why": {
       "title": "Confianza, sin teatro.",

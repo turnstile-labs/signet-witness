@@ -121,6 +121,54 @@ export default async function Home({
           </div>
         </section>
 
+        {/* ── Badge in email signature ─────────────────────────── */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="text-center mb-10">
+            <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-3">
+              {t("badge.eyebrow")}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
+              {t("badge.title")}
+            </h2>
+            <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
+              {t("badge.sub")}
+            </p>
+          </div>
+
+          <div className="max-w-md mx-auto rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
+            <div className="px-5 py-2.5 border-b border-border text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
+              {t("badge.mockLabel")}
+            </div>
+            <div className="px-5 py-5">
+              <p className="text-sm font-semibold text-txt leading-tight">
+                {t("badge.signatureName")}
+              </p>
+              <p className="text-xs text-muted mt-0.5">
+                {t("badge.signatureRole")}
+              </p>
+              <p className="text-[0.7rem] text-muted-2 mt-1 font-mono">
+                {t("badge.signatureContact")}
+              </p>
+              <div className="mt-4">
+                <Link href="/b/witnessed.cc" className="inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/badge/witnessed.cc.svg"
+                    alt="Witnessed · witnessed.cc"
+                    width={260}
+                    height={26}
+                    className="border-0 inline-block align-middle"
+                  />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-2 leading-relaxed max-w-md mx-auto">
+            {t("badge.footnote")}
+          </p>
+        </section>
+
         {/* ── Why this matters ─────────────────────────────────── */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
           <div className="text-center mb-10">

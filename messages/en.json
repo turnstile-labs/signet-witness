@@ -25,9 +25,9 @@
     "headline2": "Except yesterday.",
     "subhead": "A verifiable record of every business email you send — built passively, impossible to backdate.",
     "mock": {
-      "eyebrow": "Every domain gets one",
-      "title": "A public page anyone can check.",
-      "sub": "Real sender. Real timestamps. Real volume. Nothing staged, nothing self-reported.",
+      "eyebrow": "Your proof of business",
+      "title": "One link. A record that grows with every email you send.",
+      "sub": "Share witnessed.cc/b/yourdomain anywhere a counterparty might look. Real sender, real timestamps, real volume — verifiable by anyone who clicks.",
       "verifiedActive": "Verified Active",
       "statsVerifiedEmails": "Verified emails",
       "statsVerifiedEmailsSub": "independently confirmed",
@@ -41,7 +41,17 @@
       "lookupPlaceholder": "acme.com",
       "lookupSubmit": "Look up",
       "lookupAria": "Enter a domain to look up",
-      "realOne": "or see one live:"
+      "realOne": "or see a real domain's record:"
+    },
+    "badge": {
+      "eyebrow": "Your credential, everywhere you email",
+      "title": "A tiny live badge for your signature.",
+      "sub": "Paste once. It updates automatically as your history grows — no redeploy, no image swap, no hosting.",
+      "mockLabel": "Your email signature",
+      "signatureName": "Jane Doe",
+      "signatureRole": "Founder · Acme Studio",
+      "signatureContact": "+1 (415) 555-0134 · acme.studio",
+      "footnote": "Links back to your public record. Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
     },
     "why": {
       "title": "Trust, without the theater.",
