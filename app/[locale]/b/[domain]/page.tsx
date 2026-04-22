@@ -116,35 +116,6 @@ function Stat({
   );
 }
 
-// Thin inline progress bar used in the "Building toward Verified" block.
-function ProgressRow({
-  label,
-  current,
-  total,
-}: {
-  label: string;
-  current: number;
-  total: number;
-}) {
-  const pct = Math.min(100, Math.round((current / total) * 100));
-  return (
-    <div>
-      <div className="flex justify-between text-xs text-muted-2 font-mono mb-1.5 gap-2">
-        <span>{label}</span>
-        <span className="shrink-0">
-          {current} / {total}
-        </span>
-      </div>
-      <div className="h-1.5 bg-surface rounded-full overflow-hidden">
-        <div
-          className="h-full bg-accent rounded-full transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 // ── Seal page ─────────────────────────────────────────────────
 export default async function SealPage({ params }: Props) {
   const { locale, domain } = await params;
@@ -172,6 +143,26 @@ export default async function SealPage({ params }: Props) {
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
   const pillLabel = isVerified ? t("verifiedActive") : t("building");
   const firstSeenLabel = formatFirstSeen(record.first_seen, locale);
+
+  // Context-aware one-liner shown under the trust line when the
+  // domain hasn't yet cleared the Verified Active thresholds. The
+  // previous dashboard-style bars duplicated hero stats and gamified
+  // a wait that isn't actionable for the owner.
+  const daysRemaining = Math.max(0, VERIFIED_DAYS - days);
+  const emailsRemaining = Math.max(0, VERIFIED_EMAILS - record.event_count);
+  let buildingHint: string | null = null;
+  if (!isVerified) {
+    if (daysRemaining > 0 && emailsRemaining > 0) {
+      buildingHint = t("buildingHintBoth", {
+        days: daysRemaining,
+        count: emailsRemaining,
+      });
+    } else if (daysRemaining > 0) {
+      buildingHint = t("buildingHintDays", { days: daysRemaining });
+    } else if (emailsRemaining > 0) {
+      buildingHint = t("buildingHintEmails", { count: emailsRemaining });
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
@@ -215,32 +206,13 @@ export default async function SealPage({ params }: Props) {
           <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
             {t("trustLine")}
           </p>
-        </section>
 
-        {/* ── Building toward Verified ─────────────────────────── */}
-        {!isVerified && (
-          <section className="mt-12 pt-10 border-t border-border">
-            <EyebrowLabel>{t("buildingEyebrow")}</EyebrowLabel>
-            <p className="text-xs text-muted mt-2 mb-6 leading-relaxed max-w-xl">
-              {t("buildingBody", {
-                days: VERIFIED_DAYS,
-                emails: VERIFIED_EMAILS,
-              })}
+          {buildingHint && (
+            <p className="mt-4 text-xs text-muted-2 leading-relaxed max-w-xl">
+              {buildingHint}
             </p>
-            <div className="space-y-4 max-w-md">
-              <ProgressRow
-                label={t("daysOnRecord")}
-                current={days}
-                total={VERIFIED_DAYS}
-              />
-              <ProgressRow
-                label={t("verifiedEmails")}
-                current={record.event_count}
-                total={VERIFIED_EMAILS}
-              />
-            </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* ── Activity ─────────────────────────────────────────── */}
         <section className="mt-12 pt-10 border-t border-border">
