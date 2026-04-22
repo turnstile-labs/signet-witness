@@ -209,14 +209,15 @@ export default async function SealPage({ params }: Props) {
           </p>
         </section>
 
-        {/* ── Share this proof ─────────────────────────────────── */}
+        {/* ── Embeddable badge ────────────────────────────────────
+             Third section follows the same editorial rhythm as hero
+             and activity: noun eyebrow → artifact → one plain line of
+             context. No action CTAs, no marketing headlines — the
+             badge itself IS the content; the eyebrow just names it. */}
         <section className="mt-12 pt-10 border-t border-border">
-          <EyebrowLabel>{t("shareEyebrow")}</EyebrowLabel>
-          <h2 className="text-xl sm:text-2xl font-bold text-txt mt-3 mb-3 max-w-lg leading-tight">
-            {t("shareTitle")}
-          </h2>
-          <p className="text-sm text-muted leading-relaxed mb-6 max-w-lg">
-            {t("shareSub")}
+          <EyebrowLabel>{t("badgeEyebrow")}</EyebrowLabel>
+          <p className="mt-3 mb-6 text-sm text-muted leading-relaxed max-w-xl">
+            {t("badgeIntro")}
           </p>
           <BadgeEmbed domain={decoded} />
         </section>

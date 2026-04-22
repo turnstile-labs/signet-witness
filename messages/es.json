@@ -113,9 +113,8 @@
     "sparklineAria": "{count} emails verificados en los últimos {days} días",
     "activitySummary": "{count, plural, =0 {Ningún email verificado en los últimos 30 días.} =1 {# email verificado en los últimos 30 días.} other {# emails verificados en los últimos 30 días.}}",
     "onRecordSince": "En el registro desde {date}.",
-    "shareEyebrow": "Comparte esta prueba",
-    "shareTitle": "Pégala en tu firma de email. Viaja con cada email que envías.",
-    "shareSub": "Cada clic abre esta página.",
+    "badgeEyebrow": "Insignia integrable",
+    "badgeIntro": "Una forma compacta de esta página. Vive en las firmas de email y se actualiza a medida que crece el registro — cada clic abre aquí.",
     "unclaimed": {
       "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}}. Otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia — pero <d>{name}</d> aún no ha empezado a construir su propio registro de envíos.",
       "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Pon <e>{addr}</e> en copia en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
@@ -132,7 +131,7 @@
     "copyBadge": "Copiar badge",
     "copyDone": "Copiado — pégalo en tu firma",
     "copyError": "Error al copiar — inténtalo de nuevo",
-    "howTo": "Funciona en Gmail, Outlook y Apple Mail. El badge sigue siendo clicable, enlaza de vuelta a esta página y se actualiza en vivo a medida que crece tu registro.",
+    "howTo": "Funciona en Gmail, Outlook y Apple Mail. La insignia mantiene el enlace al pegarla.",
     "alt": "Badge de Witnessed para {domain}"
   },
   "languageSwitcher": {
