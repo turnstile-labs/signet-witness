@@ -4,6 +4,7 @@ import { createHash } from "crypto";
 import { upsertDomain, insertEvent, isDenylisted } from "@/lib/db";
 import {
   receiverHasMx,
+  isOnDbl,
   isRateLimited,
   recordThrottled,
 } from "@/lib/reputation";
@@ -92,14 +93,22 @@ export async function POST(req: NextRequest) {
     .update(passing.signature ?? rawEmail.slice(0, 512))
     .digest("hex");
 
-  // 9. Anti-abuse · Layer 0 — receiver must have an MX record. A
-  // DKIM-valid email addressed to a domain with no mail exchange is
-  // either a typo, a sinkhole, or (most commonly) a deliberately
-  // chosen spoof target the attacker picked because nobody will
-  // bounce the email back. We record it in events_throttled for ops
-  // forensics but never count it toward the sender's public record.
+  // 9. Anti-abuse · receiver must have an MX record and must not be
+  // on Spamhaus DBL. DKIM-valid mail addressed to a domain with no
+  // mail exchange is a typo, a sinkhole, or a deliberately chosen
+  // spoof target; mail addressed to a DBL-listed domain is almost
+  // certainly part of an abuse loop. Both go to events_throttled
+  // for ops review and never touch the sender's public record.
+  //
+  // Both lookups run in parallel — MX is a single DNS query (cached
+  // 7d/1d) and DBL is a single DNS query to dbl.spamhaus.org (cached
+  // 24h). Typical added latency on cache hit: ~0ms. On cache miss:
+  // ~30-80ms.
   if (primaryReceiver !== "unknown") {
-    const hasMx = await receiverHasMx(primaryReceiver);
+    const [hasMx, dblListed] = await Promise.all([
+      receiverHasMx(primaryReceiver),
+      isOnDbl(primaryReceiver),
+    ]);
     if (!hasMx) {
       await recordThrottled(
         senderDomain,
@@ -108,6 +117,15 @@ export async function POST(req: NextRequest) {
         "receiver_no_mx",
       );
       return NextResponse.json({ ok: true, dropped: "receiver_no_mx" });
+    }
+    if (dblListed) {
+      await recordThrottled(
+        senderDomain,
+        primaryReceiver,
+        dkimHash,
+        "receiver_blocklist",
+      );
+      return NextResponse.json({ ok: true, dropped: "receiver_blocklist" });
     }
   }
 

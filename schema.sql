@@ -11,14 +11,32 @@
 -- Every domain we've ever witnessed as a sender.
 -- `event_count` is denormalised for cheap list/seal reads and is
 -- maintained by lib/db.ts#insertEvent and lib/db.ts#eraseDomain.
+-- `grandfathered_verified` preserves verified status for domains that
+-- met the pre-Layer-2 rule (90d + 10 events) so a quality-scoring
+-- rollout never silently yanks a badge from an active user. Operators
+-- can flip it off for a proven abuser.
 CREATE TABLE IF NOT EXISTS domains (
-  id          SERIAL PRIMARY KEY,
-  domain      TEXT NOT NULL UNIQUE,
-  first_seen  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  event_count INTEGER NOT NULL DEFAULT 0,
-  tier        TEXT NOT NULL DEFAULT 'free',
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                      SERIAL PRIMARY KEY,
+  domain                  TEXT NOT NULL UNIQUE,
+  first_seen              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  event_count             INTEGER NOT NULL DEFAULT 0,
+  tier                    TEXT NOT NULL DEFAULT 'free',
+  grandfathered_verified  BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Additive migration for existing prod tables.
+ALTER TABLE domains
+  ADD COLUMN IF NOT EXISTS grandfathered_verified BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- One-time grandfather: flip any domain that already met the prior
+-- verified rule. Idempotent — re-runs either hit already-TRUE rows
+-- or rows that never matched the rule.
+UPDATE domains d
+SET grandfathered_verified = TRUE
+WHERE d.first_seen <= NOW() - INTERVAL '90 days'
+  AND d.event_count >= 10
+  AND grandfathered_verified = FALSE;
 
 -- One row per DKIM-verified inbound email. `dkim_hash` is a SHA-256
 -- of the signature — stored as forensic proof, never queried.
@@ -97,3 +115,27 @@ CREATE INDEX IF NOT EXISTS events_throttled_sender_idx
   ON events_throttled(sender_domain, witnessed_at DESC);
 CREATE INDEX IF NOT EXISTS events_throttled_witnessed_idx
   ON events_throttled(witnessed_at DESC);
+
+-- Precomputed quality-adjusted score per sender domain (Layer 1+).
+-- `domains.event_count` remains the raw ingest counter; this table
+-- holds the derived signals that feed the public trust_index.
+--
+-- Refresh is lazy: insertEvent() flips `stale = TRUE`, and the seal
+-- page recomputes on read when stale OR older than SCORE_TTL.
+-- Recompute is a handful of SQL aggregates — cheap at current scale.
+CREATE TABLE IF NOT EXISTS domain_scores (
+  domain_id               INTEGER PRIMARY KEY REFERENCES domains(id) ON DELETE CASCADE,
+  verified_event_count    INTEGER NOT NULL DEFAULT 0,   -- events toward non-throttled, non-free-mail receivers
+  counterparty_count      INTEGER NOT NULL DEFAULT 0,   -- distinct receivers, all-time
+  mutual_counterparties   INTEGER NOT NULL DEFAULT 0,   -- receivers that are also senders who CC'd us
+  diversity               NUMERIC(5,4) NOT NULL DEFAULT 0,   -- 1 - Gini(events per receiver), 0 = single receiver
+  tenure_days             INTEGER NOT NULL DEFAULT 0,   -- max(now - first_seen, now - first_cert_at)
+  trust_index             INTEGER NOT NULL DEFAULT 0,   -- 0-100 composite, see lib/scores.ts
+  stale                   BOOLEAN NOT NULL DEFAULT TRUE,
+  computed_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS domain_scores_trust_idx
+  ON domain_scores(trust_index DESC);
+CREATE INDEX IF NOT EXISTS domain_scores_stale_idx
+  ON domain_scores(stale, computed_at);

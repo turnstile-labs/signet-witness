@@ -139,17 +139,10 @@ export default async function OpsPage({
         </p>
       </Section>
 
-      {/* TOP LISTS — senders + receivers side by side */}
+      {/* TOP LISTS — senders (ranked by trust) + receivers */}
       <Section label="top domains">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-          <TopList
-            title="senders"
-            rows={stats.topSenders.slice(0, 8).map((s) => ({
-              label: s.domain,
-              value: s.event_count,
-            }))}
-            emptyLabel="no senders yet"
-          />
+          <SenderList rows={stats.topSenders.slice(0, 8)} />
           <TopList
             title="receivers"
             rows={stats.topReceivers.slice(0, 8).map((r) => ({
@@ -245,6 +238,57 @@ function Section({
       </p>
       {children}
     </section>
+  );
+}
+
+// Senders list carries an extra column — the trust index — so the
+// ranking visible in the UI matches the ranking the list was built
+// on. Mutuality is shown inline when present as a tiny "· m7" tag;
+// silent otherwise to avoid a column of zeroes.
+function SenderList({
+  rows,
+}: {
+  rows: Array<{
+    domain: string;
+    event_count: number;
+    trust_index: number | null;
+    mutual_counterparties: number | null;
+  }>;
+}) {
+  return (
+    <div>
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
+        senders
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-2 py-2">no senders yet</p>
+      ) : (
+        <ul className="divide-y divide-border text-xs">
+          {rows.map((r) => (
+            <li
+              key={r.domain}
+              className="flex justify-between items-baseline py-1.5 gap-3"
+            >
+              <span className="truncate text-txt">{r.domain}</span>
+              <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
+                <span className="text-muted">{r.event_count.toLocaleString()}</span>
+                {r.trust_index !== null && (
+                  <span className="text-[0.7rem] text-accent">
+                    t{r.trust_index}
+                  </span>
+                )}
+                {r.mutual_counterparties !== null &&
+                  r.mutual_counterparties > 0 && (
+                    <span className="text-[0.7rem] text-muted-2">
+                      m{r.mutual_counterparties}
+                    </span>
+                  )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

@@ -19,6 +19,7 @@ export interface Domain {
   first_seen: string;
   event_count: number;
   tier: string;
+  grandfathered_verified: boolean;
   updated_at: string;
 }
 
@@ -44,7 +45,10 @@ export async function upsertDomain(domain: string): Promise<Domain> {
   return rows[0];
 }
 
-// Record one witnessed email event.
+// Record one witnessed email event. The domain_scores row for this
+// sender is marked stale in the same round-trip so the next seal-page
+// render recomputes the quality-adjusted view. Failure to mark stale
+// is non-fatal — the score will still refresh at TTL.
 export async function insertEvent(
   domainId: number,
   receiverDomain: string,
@@ -54,6 +58,15 @@ export async function insertEvent(
     INSERT INTO events (domain_id, receiver_domain, dkim_hash, witnessed_at)
     VALUES (${domainId}, ${receiverDomain}, ${dkimHash}, NOW())
   `;
+  try {
+    await sql`
+      INSERT INTO domain_scores (domain_id, stale, computed_at)
+      VALUES (${domainId}, TRUE, NOW())
+      ON CONFLICT (domain_id) DO UPDATE SET stale = TRUE
+    `;
+  } catch (err) {
+    console.error("[db] insertEvent mark-stale failed", { domainId, err });
+  }
 }
 
 // Fetch a domain record by name. Returns null if not found.
@@ -245,7 +258,13 @@ export interface OpsStats {
   newDomains30d: number;
   denylistTotal: number;
   denylistByReason: Array<{ reason: string; count: number }>;
-  topSenders: Array<{ domain: string; event_count: number; first_seen: string }>;
+  topSenders: Array<{
+    domain: string;
+    event_count: number;
+    first_seen: string;
+    trust_index: number | null;
+    mutual_counterparties: number | null;
+  }>;
   topReceivers: Array<{ receiver_domain: string; count: number }>;
   eventsByDay: Array<{ day: string; count: number }>;
   newDomainsByDay: Array<{ day: string; count: number }>;
@@ -272,6 +291,85 @@ async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
       return fallback;
     }
     throw err;
+  }
+}
+
+// Count of verified domains under the Layer-2 rule (composite trust
+// index + mutuality floor), OR grandfathered from the pre-Layer-2
+// rule. Falls back to the legacy count when the new tables/column
+// haven't been migrated yet.
+async function verifiedCount(): Promise<{ n: number }[]> {
+  try {
+    return (await sql`
+      SELECT COUNT(DISTINCT d.id)::int AS n
+      FROM domains d
+      LEFT JOIN domain_scores s ON s.domain_id = d.id
+      WHERE d.grandfathered_verified = TRUE
+         OR (s.trust_index >= 65 AND s.mutual_counterparties >= 3)
+    `) as unknown as { n: number }[];
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const msg = (err as Error).message ?? "";
+    if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
+    return (await sql`
+      SELECT COUNT(*)::int AS n
+      FROM domains d
+      WHERE d.event_count >= 10
+        AND d.first_seen <= NOW() - INTERVAL '90 days'
+    `) as unknown as { n: number }[];
+  }
+}
+
+// Top senders, ranked by trust_index first and event_count as a
+// tie-breaker. Falls back to a bare query when domain_scores hasn't
+// been migrated in yet — keeps the ops page working on first deploy
+// before the schema update is run.
+async function topSendersWithScores(): Promise<
+  Array<{
+    domain: string;
+    event_count: number;
+    first_seen: string;
+    trust_index: number | null;
+    mutual_counterparties: number | null;
+  }>
+> {
+  try {
+    return (await sql`
+      SELECT d.domain, d.event_count, d.first_seen,
+             s.trust_index AS trust_index,
+             s.mutual_counterparties AS mutual_counterparties
+      FROM domains d
+      LEFT JOIN domain_scores s ON s.domain_id = d.id
+      ORDER BY
+        COALESCE(s.trust_index, 0) DESC,
+        d.event_count DESC,
+        d.first_seen ASC
+      LIMIT 15
+    `) as unknown as Array<{
+      domain: string;
+      event_count: number;
+      first_seen: string;
+      trust_index: number | null;
+      mutual_counterparties: number | null;
+    }>;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const msg = (err as Error).message ?? "";
+    if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
+    return (await sql`
+      SELECT domain, event_count, first_seen,
+             NULL::int AS trust_index,
+             NULL::int AS mutual_counterparties
+      FROM domains
+      ORDER BY event_count DESC, first_seen ASC
+      LIMIT 15
+    `) as unknown as Array<{
+      domain: string;
+      event_count: number;
+      first_seen: string;
+      trust_index: number | null;
+      mutual_counterparties: number | null;
+    }>;
   }
 }
 
@@ -332,14 +430,7 @@ export async function getOpsStats(): Promise<OpsStats> {
       ` as unknown as Promise<{ reason: string; count: number }[]>,
       [] as { reason: string; count: number }[],
     ),
-    sql`
-      SELECT domain, event_count, first_seen
-      FROM domains
-      ORDER BY event_count DESC, first_seen ASC
-      LIMIT 15
-    ` as unknown as Promise<
-      { domain: string; event_count: number; first_seen: string }[]
-    >,
+    topSendersWithScores(),
     sql`
       SELECT receiver_domain, COUNT(*)::int AS count
       FROM events
@@ -361,12 +452,7 @@ export async function getOpsStats(): Promise<OpsStats> {
       WHERE first_seen >= NOW() - INTERVAL '30 days'
       GROUP BY 1 ORDER BY 1 ASC
     ` as unknown as Promise<{ day: string; count: number }[]>,
-    sql`
-      SELECT COUNT(*)::int AS n
-      FROM domains d
-      WHERE d.event_count >= 10
-        AND d.first_seen <= NOW() - INTERVAL '90 days'
-    ` as unknown as Promise<{ n: number }[]>,
+    verifiedCount(),
     safe(
       sql`
         SELECT pg_size_pretty(pg_database_size(current_database())) AS size

@@ -38,18 +38,49 @@ If you're about to surface receiver domains, historical receiver lists, or per-e
 
 ---
 
-## Anti-abuse invariants (read before touching `/api/inbound` or `lib/reputation.ts`)
+## Anti-abuse invariants (read before touching `/api/inbound`, `lib/reputation.ts`, or `lib/scores.ts`)
 
-DKIM proves "a mail server holding $domain's private key signed this message." It does not prove the receiver exists, nor that the sender is running real commerce. Without these checks, an attacker with a valid DKIM key can manufacture a pristine record by blasting `seal@` with emails addressed to nonexistent receivers.
+DKIM proves "a mail server holding $domain's private key signed this message." It does not prove the receiver exists, that the receiver is a real counterparty, or that the sender is running real commerce. Without these checks, an attacker with a valid DKIM key can manufacture a pristine-looking record by blasting `seal@` with emails addressed to nonexistent, sinkholed, or simply low-value receivers.
 
-The inbound pipeline refuses to count any event that fails a structural check. Throttled events are written to `events_throttled` for forensics and **never** affect the sender's public `event_count`.
+The defense is layered:
 
-**Layer 0 (shipped):**
+**Layer 0 (shipped) — cheap structural gates at ingest.**
 
-1. **MX existence.** The primary receiver domain must have at least one MX record. Cached 7d positive / 1d negative in `domain_reputation_cache`. Lookup failures that can't be classified fail-open so transient DNS issues don't drop legitimate mail.
-2. **Per-sender rate limit.** 500 events/hour or 5000 events/day trips the throttle. Both accepted and previously-throttled events count toward the window — an attacker can't burn through by blasting past their own limit. Enterprise senders brushing the ceiling should become paid-tier conversations, not silent drops.
+The inbound pipeline refuses to count any event that fails a structural check. Throttled events are written to `events_throttled` for forensics and **never** affect the sender's public `event_count` or `domain_scores`.
 
-Every throttle decision is recorded in `events_throttled (sender_domain, receiver_domain, dkim_hash, reason)` so ops can review patterns and so any false-positive is auditable. The ops dashboard shows 24h / 7d throttle counts and the top offenders when there's anything to see; it stays silent on clean days.
+1. **MX existence.** The primary receiver domain must have at least one MX record. Cached 7d positive / 1d negative in `domain_reputation_cache`.
+2. **Spamhaus DBL.** The receiver domain must not be on Spamhaus DBL. Cached 24h. Listed receivers go to `events_throttled` with reason `receiver_blocklist`.
+3. **Per-sender rate limit.** 500 events/hour or 5000 events/day trips the throttle. Both accepted and previously-throttled events count toward the window.
+
+All three lookups fail-open on unclassified errors so transient DNS issues don't drop legitimate mail.
+
+**Layer 1 (shipped) — quality-adjusted scoring.**
+
+Raw `domains.event_count` is kept as the ingest counter, but the metric the product **exposes** is now the composite `trust_index` stored in `domain_scores`. The table is refreshed lazily: `insertEvent()` flips `stale = TRUE`, and `getDomainScore()` recomputes on read when stale or TTL-expired (24h). Five signals feed the index:
+
+- `verified_event_count` — events toward non-free-mail receivers. Free-mail accounts (`gmail.com`, `outlook.com`, etc.) still produce `events` rows but never count toward this number. List lives in `lib/scores.ts#FREE_MAIL_DOMAINS`.
+- `counterparty_count` — distinct receiver domains, all-time.
+- `mutual_counterparties` — receivers that are **themselves** senders who CC'd this domain back. The strongest anti-fake signal because it requires the counterparty to have its own DKIM-signing MTA and its own incentive to CC `seal@`. Computed via a self-join on `events ⋈ domains`.
+- `diversity` — `1 − Gini(events per receiver)`. Prevents "pump one friendly receiver 500 times."
+- `tenure_days` — `max(now − first_seen, now − first_cert_at)`. `first_cert_at` comes from Certificate Transparency logs via `crt.sh` and is cached forever once resolved. CT lookup is **cache-only** on the sync path (`cachedFirstCertAt`); network-backed `fetchFirstCertAt` is for deferred / admin backfill.
+
+Weights are encoded in `lib/scores.ts#computeTrustIndex`: 35% activity (log-scaled), 25% mutuality, 20% tenure, 20% diversity. See the file for the math.
+
+**Layer 2 (shipped) — trust index is the public metric + verified gating.**
+
+- The `/b/[domain]` seal page displays the composite `trust_index` as the headline metric with a 0–100 bar tick-marked at the verified threshold. The three supporting stats are `verified_event_count`, `tenure`, and `mutual_counterparties`.
+- Verified gating: `trust_index ≥ 65 AND mutual_counterparties ≥ 3` OR `domains.grandfathered_verified = TRUE`. The grandfather flag was set one-time for domains that met the pre-Layer-2 rule (90d + 10 events) so no user loses a badge when the metric changes. Operators can clear the flag per-domain for proven abusers.
+- The badge (`/badge/[slug]`) uses the same gating via `trustTierFromScore()`. ETag cache key is `v6` post-switch.
+- The landing-page mock mirrors the new layout so what users see on the homepage matches what they see when they click through.
+- Ops ranks top senders by `trust_index` and displays both `t<index>` and `m<mutuals>` inline next to raw event counts.
+
+**Layer 3 (not built, not planned).** Real-time domain-reputation partners and human review are deliberately out of scope — Layers 0–2 cover the realistic attacker economics at current and near-term scale.
+
+---
+
+### Ops-only tables
+
+`events_throttled`, `domain_reputation_cache`, and `domain_scores` are operational / forensic state. They are never joined to the public seal page, badge, or landing-page stats. `domain_scores` is the sole exception: its derived fields (trust_index, mutual_counterparties, diversity, verified_event_count) ARE surfaced — but only as aggregates, never as joins that expose receiver identities.
 
 ---
 
@@ -85,9 +116,9 @@ Two tables, four query types. An ORM adds bundle size, code generation steps, an
 
 Freemium with no payment infrastructure. Pro features (badge embed, custom seal page) are visually present but locked with "coming soon." The `domains` table has a `tier` column (default: `free`) ready for when Stripe is added — it's a one-column flip, not a migration.
 
-### No WHOIS scoring at MVP
+### Certificate Transparency, not WHOIS, for tenure
 
-WHOIS is a signal that makes history *stronger* but isn't required for history to *exist*. Dropped for MVP because: rate limits, unreliable data across TLDs, adds async job complexity. Add in Phase 2 when there's real data to validate the scoring model against.
+Domain age *is* a signal — but WHOIS is a poor way to get it: rate-limited, inconsistent across TLDs, often privacy-masked. The Layer-1 scoring path uses Certificate Transparency logs (free via crt.sh) instead. Earliest observed cert gives us a lower bound on "this domain has been public-facing since …" that is more reliable than WHOIS and stored forever once resolved. WHOIS is no longer on the roadmap.
 
 ### No search at MVP
 
@@ -114,10 +145,14 @@ Routing is handled by `next-intl` (`i18n/`, `proxy.ts`, `messages/`). `localePre
 - `GET /badge/[slug]` — dynamic SVG/PNG badge for email signatures (`?theme=light` for light mode)
 - `POST /api/inbound` — receives raw email, verifies DKIM, writes to DB
 
-**DB schema** (run `schema.sql` once in Vercel Postgres dashboard):
+**DB schema** (run `schema.sql` — it is idempotent, safe to re-run for migrations):
 ```sql
-domains (id, domain, first_seen, event_count, tier, updated_at)
-events  (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
+domains                   (id, domain, first_seen, event_count, tier, grandfathered_verified, updated_at)
+events                    (id, domain_id, receiver_domain, dkim_hash, witnessed_at)
+domain_denylist           (domain, reason, created_at)                                  -- GDPR
+domain_reputation_cache   (domain, mx_*, dbl_*, first_cert_*, updated_at)               -- anti-abuse
+events_throttled          (id, sender_domain, receiver_domain, dkim_hash, reason, ...)  -- anti-abuse
+domain_scores             (domain_id, verified_event_count, mutual_counterparties, diversity, tenure_days, trust_index, stale, computed_at)
 ```
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`

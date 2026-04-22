@@ -59,20 +59,24 @@ It's a live, shareable record. Put it in your email signature, your Linktree,
 your invoice footer. Anyone can visit and see, in three seconds, whether this
 business is real.
 
-### After 90 days — Verified status
+### Verified status — the trust index
 
-Consistent CC activity for 90 days (with at least 10 witnessed emails) earns
-a **Verified** badge — a live image you embed anywhere that updates
-automatically as your history grows.
+Every sender domain has a public **trust index** on a 0–100 scale, computed
+from five signals a legitimate business naturally accumulates: quality-adjusted
+activity, tenure, mutual counterparties (domains that CC each other —
+bidirectional edges are the strongest anti-fake signal), counterparty
+diversity, and corroborating Certificate Transparency history.
 
-> `acme.com`  —  **VERIFIED · 847**
+A domain earns the **Verified** badge when the trust index crosses 65 *and*
+it has at least 3 mutual counterparties. The composite is what the badge
+reads; the badge renders at `/badge/[domain]` in SVG or PNG, in dark or
+light theme (`?theme=light`).
+
+> `acme.com`  —  **VERIFIED · t72**
 > witnessed.cc
 
-The badge renders at `/badge/[domain]` in SVG or PNG, in dark or light theme
-(`?theme=light`). The live event count ships inside the pill, so the badge
-in an email signature grows along with the record — no manual swap needed.
 A scammer can copy the image. They can't copy the history. One click reveals
-the real record.
+the real record — trust index, verified events, tenure, mutual counterparties.
 
 You send a cold proposal to a procurement manager at a company you've never
 worked with. They see the badge in your email footer, click it, and see years
@@ -81,10 +85,16 @@ reference call. The history speaks for itself.
 
 ### The anti-fraud gate
 
-90 days of consistent activity before any badge is the cost of entry. A fraud
-operation willing to maintain real email behavior for three months to earn a
-basic seal faces real economic cost. Most won't bother. The ones that try are
-detectable by the quality of their counterparties.
+Mutuality is the cost-of-entry. An attacker with a DKIM key can pump activity,
+but cannot cheaply manufacture bidirectional edges with other DKIM-signing
+domains running real commerce. The trust index grows slowly on merit and
+quickly on mutuality — so the shape of a faked history is visible in the
+shape of the score, not just the raw count.
+
+The inbound pipeline also drops receivers with no MX record and receivers
+listed on Spamhaus DBL before they ever reach the counter, and rate-limits
+senders past 500/hour or 5000/day into a forensic-only throttled queue. See
+`CONTEXT.md → Anti-abuse invariants` for the full layered defense.
 
 ---
 
@@ -276,7 +286,8 @@ the subset that wants the badge in their email signature.
 
 Seals circulate in email signatures. Recipients discover Signet by seeing the
 CC. The domain search creates pull for receiver domains who see themselves
-mentioned but unclaimed. First Verified badges at 90 days create visible
+mentioned but unclaimed. First Verified badges (trust index ≥ 65 with ≥ 3
+mutual counterparties) create visible
 social proof. Target: 2,000 domains. Begin outreach to 3–5 B2B marketplaces
 and procurement platforms for early API partnership conversations.
 

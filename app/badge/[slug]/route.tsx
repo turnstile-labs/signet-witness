@@ -1,4 +1,5 @@
 import { getDomain } from "@/lib/db";
+import { getDomainScore, computeVerified, trustTierFromScore } from "@/lib/scores";
 import { ImageResponse } from "next/og";
 import {
   BADGE_HEIGHT,
@@ -10,10 +11,6 @@ import {
   PAD_R,
   sizeBadge,
 } from "@/lib/badge-dimensions";
-
-// Verified thresholds — mirrors the seal page.
-const VERIFIED_DAYS = 90;
-const VERIFIED_EMAILS = 10;
 
 // Badge canvas — width adapts to the domain, height stays fixed so
 // the badge stays signature-compatible.
@@ -306,18 +303,18 @@ interface Snapshot {
   count: number;
 }
 
+// Mirrors the seal page's verified gating exactly — composite trust
+// index + mutuality floor, with a grandfather escape for domains that
+// met the pre-Layer-2 rule. Keeps the badge consistent with the page
+// it links to.
 async function resolveSnapshot(domain: string): Promise<Snapshot> {
   try {
     const record = await getDomain(domain);
     if (!record) return { state: "pending", count: 0 };
-    const days = Math.floor(
-      (Date.now() - new Date(record.first_seen).getTime()) / 86_400_000
-    );
-    const state: State =
-      days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS
-        ? "verified"
-        : "onRecord";
-    return { state, count: record.event_count };
+    const score = await getDomainScore(record.id, record.domain);
+    const verified = computeVerified(score, record.grandfathered_verified);
+    const tier = trustTierFromScore(score, verified);
+    return { state: tier, count: record.event_count };
   } catch {
     return { state: "pending", count: 0 };
   }
@@ -342,9 +339,9 @@ function cacheHeaders(
 ): Record<string, string> {
   // Cache key omits the live count (the badge doesn't render it) and
   // the width (derived from the URL path's domain, which is already
-  // the primary cache key). Bumped to v5 — mark returned to the left
-  // and domain type scaled up to 13px.
-  const etag = `W/"${snapshot.state}-${theme}-${format}-v5"`;
+  // the primary cache key). Bumped to v6 — verified gating switched
+  // from raw event_count + days to composite trust_index + mutuality.
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v6"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

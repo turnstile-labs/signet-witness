@@ -153,11 +153,38 @@ export default async function Home({
               </div>
             </div>
 
+            {/* Trust-index hero in the mock — mirrors the real seal
+                page. Bar fills to 72/100 with a tick at the verified
+                threshold (65), so the shape alone reads as "verified." */}
+            <div className="px-4 sm:px-6 pt-5 sm:pt-6">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-3xl sm:text-4xl font-bold text-txt font-mono leading-none tabular-nums">
+                  72<span className="text-lg sm:text-xl text-muted-2 ml-1">/ 100</span>
+                </p>
+                <p className="text-[0.55rem] sm:text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
+                  {t("mock.trustIndexScale")}
+                </p>
+              </div>
+              <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1">
+                {t("mock.trustIndexLabel")}
+              </p>
+              <div className="relative mt-2 h-1 rounded-full bg-bg border border-border overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-verified"
+                  style={{ width: "72%" }}
+                />
+                <div
+                  className="absolute top-0 h-full w-px bg-verified/60"
+                  style={{ left: "65%" }}
+                />
+              </div>
+            </div>
+
             <div className="px-2 sm:px-6 py-5 sm:py-6 grid grid-cols-3 gap-1 sm:gap-4">
               {[
                 { value: "847",   label: t("mock.statsVerifiedEmails"), sub: t("mock.statsVerifiedEmailsSub") },
                 { value: "14 mo", label: t("mock.statsActiveHistory"),  sub: t("mock.statsActiveHistorySub") },
-                { value: "23",    label: t("mock.statsCounterparties"), sub: t("mock.statsCounterpartiesSub") },
+                { value: "7",     label: t("mock.statsMutuals"),        sub: t("mock.statsMutualsSub") },
               ].map((stat) => (
                 <div key={stat.label} className="text-center px-1">
                   <p className="text-xl sm:text-2xl font-bold text-txt font-mono leading-none">{stat.value}</p>

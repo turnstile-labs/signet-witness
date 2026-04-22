@@ -5,6 +5,7 @@ import {
   getReceiverCount,
   getDailyActivity,
 } from "@/lib/db";
+import { getDomainScore, computeVerified, VERIFIED_INDEX } from "@/lib/scores";
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import NavBar from "@/app/components/NavBar";
@@ -47,10 +48,6 @@ function formatFirstSeen(firstSeen: string, locale: string): string {
     year: "numeric",
   }).format(new Date(firstSeen));
 }
-
-// ── Constants ─────────────────────────────────────────────────
-const VERIFIED_DAYS = 90;
-const VERIFIED_EMAILS = 10;
 
 // ── Small primitives ──────────────────────────────────────────
 function EyebrowLabel({ children }: { children: React.ReactNode }) {
@@ -122,6 +119,68 @@ function Stat({
   );
 }
 
+// Trust-index hero: big numeric, a quiet 0–100 bar with a tick at the
+// verified threshold. Reads well without the number (bar shape) and
+// without the bar (number alone). Editorial contract: one focal
+// artifact, one quiet supporting line.
+function TrustIndexHero({
+  score,
+  threshold,
+  verified,
+  label,
+  scaleLabel,
+  dim = false,
+}: {
+  score: number;
+  threshold: number;
+  verified: boolean;
+  label: string;
+  scaleLabel: string;
+  dim?: boolean;
+}) {
+  const pct = Math.max(0, Math.min(100, score));
+  const barColor = dim
+    ? "bg-muted-2"
+    : verified
+      ? "bg-verified"
+      : "bg-accent";
+  return (
+    <div className="mt-8">
+      <div className="flex items-baseline justify-between gap-3">
+        <div>
+          <p
+            className={`text-5xl sm:text-6xl font-bold font-mono leading-none tabular-nums ${
+              dim ? "text-muted-2" : "text-txt"
+            }`}
+          >
+            {score}
+            <span className="text-2xl sm:text-3xl text-muted-2 ml-1">
+              / 100
+            </span>
+          </p>
+          <p className="text-xs sm:text-sm font-semibold text-txt mt-2">
+            {label}
+          </p>
+        </div>
+        <p className="text-[0.6rem] font-mono uppercase tracking-widest text-muted-2 shrink-0">
+          {scaleLabel}
+        </p>
+      </div>
+      <div className="relative mt-3 h-1.5 rounded-full bg-surface border border-border overflow-hidden">
+        <div
+          className={`absolute left-0 top-0 h-full ${barColor} transition-all`}
+          style={{ width: `${pct}%` }}
+        />
+        {/* Verified-threshold tick */}
+        <div
+          className="absolute top-0 h-full w-px bg-verified/60"
+          style={{ left: `${threshold}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Seal page ─────────────────────────────────────────────────
 export default async function SealPage({ params }: Props) {
   const { locale, domain } = await params;
@@ -137,18 +196,29 @@ export default async function SealPage({ params }: Props) {
     return <UnclaimedPage domain={decoded} receiverCount={receiverCount} />;
   }
 
-  const [{ uniqueReceivers }, daily] = await Promise.all([
+  // Score, aggregates, and 30-day activity fetched in parallel. Score
+  // is lazy-refreshed on stale/TTL-expired — a handful of SQL aggregates,
+  // sub-50ms at current scale.
+  const [score, { uniqueReceivers }, daily] = await Promise.all([
+    getDomainScore(record.id, record.domain),
     getSealAggregates(record.id),
     getDailyActivity(record.id, 30),
   ]);
 
   const days = daysActive(record.first_seen);
-  const isVerified =
-    days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS;
-  const state: PillState = isVerified ? "verified" : "onRecord";
+  const verified = computeVerified(score, record.grandfathered_verified);
+  const state: PillState = verified.isVerified ? "verified" : "onRecord";
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
-  const pillLabel = isVerified ? t("verifiedActive") : t("onRecord");
+  const pillLabel = verified.isVerified ? t("verifiedActive") : t("onRecord");
   const firstSeenLabel = formatFirstSeen(record.first_seen, locale);
+
+  // Display fallbacks when the score row hasn't materialised yet (cold
+  // start, or a rare refresh failure). The page still renders; the
+  // secondary line below acknowledges that quality data is warming.
+  const trustIndex = score?.trust_index ?? 0;
+  const verifiedEvents = score?.verified_event_count ?? record.event_count;
+  const mutuals = score?.mutual_counterparties ?? 0;
+  const diversity = score?.diversity ?? 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
@@ -171,9 +241,21 @@ export default async function SealPage({ params }: Props) {
             <StatusPill state={state} label={pillLabel} />
           </div>
 
+          {/* Trust index — the headline signal. Quality-adjusted, 0–100.
+              A filled bar shows where the domain sits relative to the
+              verified threshold, so even without the number the reader
+              gets a shape. */}
+          <TrustIndexHero
+            score={trustIndex}
+            threshold={VERIFIED_INDEX}
+            verified={verified.isVerified}
+            label={t("trustIndexLabel")}
+            scaleLabel={t("trustIndexScale")}
+          />
+
           <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10">
             <Stat
-              value={record.event_count.toString()}
+              value={verifiedEvents.toLocaleString()}
               label={t("statVerifiedEmails")}
               sub={t("statVerifiedEmailsSub")}
             />
@@ -183,11 +265,18 @@ export default async function SealPage({ params }: Props) {
               sub={t("statActiveHistorySub")}
             />
             <Stat
-              value={uniqueReceivers.toString()}
-              label={t("statCounterparties")}
-              sub={t("statCounterpartiesSub")}
+              value={mutuals.toString()}
+              label={t("statMutuals")}
+              sub={t("statMutualsSub")}
             />
           </div>
+
+          <p className="mt-6 text-[0.7rem] text-muted-2 leading-relaxed max-w-xl">
+            {t("scoreBasis", {
+              receivers: uniqueReceivers,
+              diversity: (diversity * 100).toFixed(0),
+            })}
+          </p>
 
           <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
             {t("trustLine")}
@@ -261,6 +350,17 @@ async function UnclaimedPage({
             <StatusPill state="pending" label={t("noRecordPill")} />
           </div>
 
+          <div className="opacity-60 select-none">
+            <TrustIndexHero
+              score={0}
+              threshold={VERIFIED_INDEX}
+              verified={false}
+              label={t("trustIndexLabel")}
+              scaleLabel={t("trustIndexScale")}
+              dim
+            />
+          </div>
+
           <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10 opacity-60 select-none">
             <Stat
               value="—"
@@ -276,8 +376,8 @@ async function UnclaimedPage({
             />
             <Stat
               value="—"
-              label={t("statCounterparties")}
-              sub={t("statCounterpartiesSub")}
+              label={t("statMutuals")}
+              sub={t("statMutualsSub")}
               dim
             />
           </div>

@@ -32,13 +32,15 @@ Expand from one badge to three, earned through consistent activity:
 
 | Badge | Requirement | What It Signals |
 |---|---|---|
-| **Verified** | 90 days + 10 emails | Real domain, active business |
-| **Established** | 365 days | One year of verified communications |
-| **Senior** | 3 years | Long-standing institutional presence |
+| **Verified** | trust index ≥ 65, mutuality ≥ 3 | Real domain, real counterparties |
+| **Established** | trust index ≥ 80, ≥ 365 days tenure | A year of quality-adjusted history |
+| **Senior** | trust index ≥ 90, ≥ 3 years tenure | Long-standing institutional presence |
 
 Each tier is a visible upgrade on the seal page and the embedded badge. Tiers
 create aspiration — "Established" is something you work toward — and a reason
-to keep CCing long after the initial 90-day gate.
+to keep CCing long after the initial verified threshold. Today only **Verified**
+ships; the higher tiers activate when there are enough domains in the registry
+for them to read as scarce rather than arbitrary.
 
 ### Verified business directory
 
@@ -55,16 +57,17 @@ the directory has enough depth to be worth featuring in.
 
 ### Priority verification ($99 one-time)
 
-For domains that need a credential faster than 90 days — entering a
-marketplace, responding to an enterprise procurement RFP, onboarding with a
-financial institution — an accelerated path.
+For domains that need a credential faster than the organic trust-index
+ramp — entering a marketplace, responding to an enterprise procurement RFP,
+onboarding with a financial institution — an accelerated path.
 
-Signet cross-references the domain's WHOIS registration date, DNS history
-(MX, SPF, DKIM record consistency), and TLS certificate transparency logs. If
-external signals are strong enough (e.g. domain registered 5+ years ago with
-stable DNS), a provisional Verified badge is issued immediately. The 90-day CC
-requirement is supplemented, not bypassed — the badge upgrades to full Verified
-after 90 days of CC activity.
+Signet cross-references the domain's Certificate Transparency history (already
+fed into Layer 1 tenure), DNS consistency (MX / SPF / DKIM record stability),
+and a manual attestation. If external signals are strong enough (e.g. domain
+with 5+ years of CT history and stable DNS), a provisional Verified badge is
+issued immediately. The mutuality requirement is supplemented, not bypassed —
+the badge upgrades to full Verified once organic mutuality crosses the
+threshold.
 
 ### Tamper-proof history
 

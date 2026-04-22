@@ -205,6 +205,210 @@ export async function isRateLimited(senderDomain: string): Promise<boolean> {
   }
 }
 
+// ── Spamhaus DBL (domain block list) ─────────────────────────
+//
+// DBL is a free-to-query DNSBL that lists domains caught in active
+// spam / phishing / malware campaigns. Query is a reverse DNS lookup:
+// `example.com.dbl.spamhaus.org` → A record means listed.
+//
+// Semantics (https://www.spamhaus.org/dbl/):
+//   127.0.1.x — spam domain     (treat as listed)
+//   127.0.1.255 — rate-limited  (treat as unknown, fail-open)
+//   NXDOMAIN / no record        — not listed
+//
+// Cached 24h. Listings come and go; we want to re-check daily so
+// cleaned-up domains aren't punished forever.
+
+const DBL_TTL_MS = 24 * 60 * 60 * 1000;
+
+type DblRow = {
+  dbl_listed: boolean | null;
+  dbl_checked_at: string | null;
+};
+
+async function readDblCache(domain: string): Promise<DblRow | null> {
+  try {
+    const rows = (await sql`
+      SELECT dbl_listed, dbl_checked_at
+      FROM domain_reputation_cache
+      WHERE domain = ${domain}
+      LIMIT 1
+    `) as unknown as DblRow[];
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("[reputation] readDblCache failed", { domain, err });
+    return null;
+  }
+}
+
+async function writeDblCache(domain: string, listed: boolean): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO domain_reputation_cache (domain, dbl_listed, dbl_checked_at, updated_at)
+      VALUES (${domain}, ${listed}, NOW(), NOW())
+      ON CONFLICT (domain) DO UPDATE SET
+        dbl_listed     = EXCLUDED.dbl_listed,
+        dbl_checked_at = NOW(),
+        updated_at     = NOW()
+    `;
+  } catch (err) {
+    console.error("[reputation] writeDblCache failed", { domain, err });
+  }
+}
+
+async function dblLookupLive(domain: string): Promise<boolean> {
+  try {
+    const addrs = await withTimeout(
+      dns.resolve4(`${domain}.dbl.spamhaus.org`),
+      DNS_TIMEOUT_MS,
+    );
+    // 127.0.1.255 signals rate-limit / query refused, not a real listing.
+    const real = addrs.some((a) => a !== "127.0.1.255");
+    return real;
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "ENOTFOUND" || code === "ENODATA" || code === "NXDOMAIN") {
+      return false;
+    }
+    throw err;
+  }
+}
+
+/**
+ * True if `domain` is listed on Spamhaus DBL. Cached 24h. Fail-open
+ * on unclassified errors so a flaky DNSBL resolver doesn't drop
+ * legitimate senders.
+ */
+export async function isOnDbl(domain: string): Promise<boolean> {
+  if (!domain || domain === "unknown") return false;
+  const cached = await readDblCache(domain);
+  if (cached && cached.dbl_listed !== null && cached.dbl_checked_at) {
+    const age = Date.now() - new Date(cached.dbl_checked_at).getTime();
+    if (age < DBL_TTL_MS) return cached.dbl_listed;
+  }
+  try {
+    const listed = await dblLookupLive(domain);
+    await writeDblCache(domain, listed);
+    return listed;
+  } catch (err) {
+    console.error("[reputation] dblLookup unclassified error", { domain, err });
+    return false;
+  }
+}
+
+// ── Certificate Transparency log — domain age without WHOIS ──
+//
+// CT logs are append-only public records of every TLS cert issued
+// by a CA that participates in CT (effectively all of them since
+// ~2018). The earliest cert ever issued for a domain is a strong
+// lower-bound proxy for domain age — much more reliable than WHOIS
+// (which is rate-limited, inconsistent across TLDs, and often
+// privacy-masked) and 100% free via crt.sh.
+//
+// Cached forever after a successful lookup: a domain's first-ever
+// certificate does not change. Failed lookups are not cached so we
+// retry later.
+
+const CT_LOOKUP_TIMEOUT_MS = 8000;
+
+type CertRow = {
+  first_cert_at: string | null;
+  cert_checked_at: string | null;
+};
+
+async function readCertCache(domain: string): Promise<CertRow | null> {
+  try {
+    const rows = (await sql`
+      SELECT first_cert_at, cert_checked_at
+      FROM domain_reputation_cache
+      WHERE domain = ${domain}
+      LIMIT 1
+    `) as unknown as CertRow[];
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("[reputation] readCertCache failed", { domain, err });
+    return null;
+  }
+}
+
+async function writeCertCache(
+  domain: string,
+  firstCertAt: Date | null,
+): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO domain_reputation_cache (domain, first_cert_at, cert_checked_at, updated_at)
+      VALUES (${domain}, ${firstCertAt?.toISOString() ?? null}, NOW(), NOW())
+      ON CONFLICT (domain) DO UPDATE SET
+        first_cert_at    = EXCLUDED.first_cert_at,
+        cert_checked_at  = NOW(),
+        updated_at       = NOW()
+    `;
+  } catch (err) {
+    console.error("[reputation] writeCertCache failed", { domain, err });
+  }
+}
+
+/**
+ * Cache-only CT-log age read. Returns the stored earliest-cert date
+ * without issuing any network call — safe to use on sync render
+ * paths (seal page, scoring refresh). Returns null if we've never
+ * looked up this domain or if the cached entry recorded a miss.
+ */
+export async function cachedFirstCertAt(domain: string): Promise<Date | null> {
+  if (!domain || domain === "unknown") return null;
+  const cached = await readCertCache(domain);
+  if (cached && cached.first_cert_at) return new Date(cached.first_cert_at);
+  return null;
+}
+
+/**
+ * Network-backed CT-log lookup via crt.sh. Populates the cache so
+ * future `cachedFirstCertAt()` reads are instant.
+ *
+ * NOTE: crt.sh is rate-limited and occasionally slow (seconds).
+ * Call this from deferred / admin paths only — never from the
+ * synchronous inbound or seal-page render paths. Cached forever on
+ * a positive result; previously-checked misses are retried every
+ * 30 days in case the domain finally provisioned a cert.
+ */
+export async function fetchFirstCertAt(domain: string): Promise<Date | null> {
+  if (!domain || domain === "unknown") return null;
+  const cached = await readCertCache(domain);
+  if (cached && cached.cert_checked_at) {
+    if (cached.first_cert_at) return new Date(cached.first_cert_at);
+    const age = Date.now() - new Date(cached.cert_checked_at).getTime();
+    if (age < 30 * 24 * 60 * 60 * 1000) return null;
+  }
+  try {
+    const res = await withTimeout(
+      fetch(
+        `https://crt.sh/?q=${encodeURIComponent(domain)}&output=json&exclude=expired`,
+        { headers: { Accept: "application/json" } },
+      ),
+      CT_LOOKUP_TIMEOUT_MS,
+    );
+    if (!res.ok) throw new Error(`crt.sh ${res.status}`);
+    const rows = (await res.json()) as Array<{ not_before?: string }>;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      await writeCertCache(domain, null);
+      return null;
+    }
+    let min: Date | null = null;
+    for (const r of rows) {
+      if (!r.not_before) continue;
+      const d = new Date(r.not_before);
+      if (Number.isNaN(d.getTime())) continue;
+      if (!min || d < min) min = d;
+    }
+    await writeCertCache(domain, min);
+    return min;
+  } catch (err) {
+    console.error("[reputation] fetchFirstCertAt failed", { domain, err });
+    return null;
+  }
+}
+
 // ── Throttle writer ──────────────────────────────────────────
 
 export type ThrottleReason =
