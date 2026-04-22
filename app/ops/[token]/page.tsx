@@ -5,6 +5,7 @@ import { getOpsStats, type OpsStats } from "@/lib/db";
 
 // Internal ops dashboard. Secret URL: /ops/<STATS_TOKEN>.
 // Not linked from anywhere. Not locale-aware. Temporary.
+// Editorial rhythm: each section has one focal point + quiet context.
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -54,83 +55,228 @@ export default async function OpsPage({
   const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
   const now = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
 
+  const avg7d = stats.events7d > 0 ? Math.round(stats.events7d / 7) : 0;
+  const vs7dAvg =
+    avg7d > 0 ? Math.round(((stats.events24h - avg7d) / avg7d) * 100) : null;
+  const claimedReceivers = Math.max(
+    0,
+    stats.distinctReceivers - stats.unclaimedReceivers,
+  );
+
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
-      {/* Header */}
-      <div className="flex items-baseline justify-between pb-6 mb-8 border-b border-border">
-        <h1 className="text-base font-bold">witnessed · ops</h1>
-        <div className="text-[0.65rem] text-muted-2 text-right">
-          {now} · {env} · {commit}
-          {stats.dbSize && ` · ${stats.dbSize}`}
+      {/* Identity + heartbeat */}
+      <div className="flex items-baseline justify-between pb-5 mb-10 border-b border-border">
+        <h1 className="text-base font-bold tracking-tight">witnessed · ops</h1>
+        <div className="text-[0.6rem] text-muted-2 text-right leading-relaxed">
+          <div>{now}</div>
+          <div>
+            {env} · {commit}
+            {stats.dbSize ? ` · ${stats.dbSize}` : ""}
+          </div>
         </div>
       </div>
 
-      {/* Headline — the four numbers that matter */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-5 mb-10">
-        <Num label="domains" value={stats.domains} />
-        <Num label="events" value={stats.events} />
-        <Num label="events · 24h" value={stats.events24h} accent />
-        <Num label="verified" value={stats.verifiedDomains} />
-      </div>
-
-      {/* Chart */}
-      <Chart data={stats.eventsByDay} days={30} />
-
-      {/* Top senders */}
-      <div className="mt-10">
-        <p className="text-[0.65rem] uppercase tracking-widest text-muted-2 mb-3">
-          top senders
-        </p>
-        {stats.topSenders.length === 0 ? (
-          <p className="text-xs text-muted-2 py-4">no data yet</p>
-        ) : (
-          <ul className="divide-y divide-border text-xs">
-            {stats.topSenders.slice(0, 10).map((s) => (
-              <li
-                key={s.domain}
-                className="flex justify-between items-baseline py-2"
+      {/* ACTIVITY — the hero. one number, live. */}
+      <Section label="activity">
+        <div className="flex items-baseline gap-4 mb-1">
+          <p className="text-5xl font-bold tabular-nums leading-none text-accent">
+            {stats.events24h.toLocaleString()}
+          </p>
+          <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
+            events · 24h
+            {vs7dAvg !== null && (
+              <div
+                className={`mt-1 normal-case tracking-normal text-[0.7rem] ${
+                  vs7dAvg > 0
+                    ? "text-verified"
+                    : vs7dAvg < 0
+                      ? "text-muted"
+                      : "text-muted-2"
+                }`}
               >
-                <span className="truncate">{s.domain}</span>
-                <span className="text-muted tabular-nums ml-4">
-                  {s.event_count}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                {vs7dAvg > 0 ? "+" : ""}
+                {vs7dAvg}% vs 7d avg ({avg7d}/day)
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-6 text-xs text-muted tabular-nums mb-5">
+          <span>
+            <span className="text-txt">{stats.events7d.toLocaleString()}</span>{" "}
+            · 7d
+          </span>
+          <span>
+            <span className="text-txt">{stats.events30d.toLocaleString()}</span>{" "}
+            · 30d
+          </span>
+          <span className="text-muted-2">
+            {stats.events.toLocaleString()} total
+          </span>
+        </div>
+        <Chart data={stats.eventsByDay} days={30} />
+      </Section>
 
-      {/* Quiet footer */}
-      <p className="mt-12 pt-6 border-t border-border text-[0.6rem] text-muted-2 leading-relaxed">
-        rotate STATS_TOKEN to revoke. no caching · fresh query per load.
-        {stats.denylistTotal > 0 &&
-          ` · ${stats.denylistTotal} domain${stats.denylistTotal === 1 ? "" : "s"} on denylist`}
-      </p>
+      {/* SUPPLY — domains on record + growth */}
+      <Section label="supply">
+        <StatRow
+          items={[
+            { label: "domains", value: stats.domains },
+            { label: "verified", value: stats.verifiedDomains },
+            { label: "new · 7d", value: stats.newDomains7d },
+            { label: "new · 30d", value: stats.newDomains30d },
+          ]}
+        />
+      </Section>
+
+      {/* REACH — distinct receivers + unclaimed (viral funnel) */}
+      <Section label="reach">
+        <StatRow
+          items={[
+            { label: "recipient domains", value: stats.distinctReceivers },
+            { label: "claimed", value: claimedReceivers },
+            {
+              label: "unclaimed",
+              value: stats.unclaimedReceivers,
+              accent: stats.unclaimedReceivers > 0,
+            },
+          ]}
+        />
+        {stats.unclaimedReceivers > 0 && (
+          <p className="text-[0.7rem] text-muted-2 mt-3 leading-relaxed">
+            {stats.unclaimedReceivers} domain
+            {stats.unclaimedReceivers === 1 ? " has" : "s have"} been a
+            recipient but hasn&apos;t claimed its own page — organic funnel.
+          </p>
+        )}
+      </Section>
+
+      {/* TOP LISTS — senders + receivers side by side */}
+      <Section label="top domains">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <TopList
+            title="senders"
+            rows={stats.topSenders.slice(0, 8).map((s) => ({
+              label: s.domain,
+              value: s.event_count,
+            }))}
+            emptyLabel="no senders yet"
+          />
+          <TopList
+            title="receivers"
+            rows={stats.topReceivers.slice(0, 8).map((r) => ({
+              label: r.receiver_domain,
+              value: r.count,
+            }))}
+            emptyLabel="no receivers yet"
+          />
+        </div>
+      </Section>
+
+      {/* HYGIENE — denylist + quiet meta */}
+      <div className="mt-12 pt-6 border-t border-border space-y-2">
+        {stats.denylistTotal > 0 ? (
+          <p className="text-[0.7rem] text-muted">
+            <span className="text-muted-2">denylist · </span>
+            {stats.denylistTotal} domain
+            {stats.denylistTotal === 1 ? "" : "s"}
+            {stats.denylistByReason.length > 0 && (
+              <>
+                {" · "}
+                {stats.denylistByReason
+                  .map((r) => `${r.reason} ${r.count}`)
+                  .join(", ")}
+              </>
+            )}
+          </p>
+        ) : (
+          <p className="text-[0.7rem] text-muted-2">denylist · empty</p>
+        )}
+        <p className="text-[0.6rem] text-muted-2 leading-relaxed">
+          rotate STATS_TOKEN to revoke. no caching · fresh query per load.
+        </p>
+      </div>
     </main>
   );
 }
 
-function Num({
+// ──────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────
+
+function Section({
   label,
-  value,
-  accent,
+  children,
 }: {
   label: string;
-  value: number;
-  accent?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mb-10">
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-3">
+        {label}
+      </p>
+      {children}
+    </section>
+  );
+}
+
+function StatRow({
+  items,
+}: {
+  items: Array<{ label: string; value: number; accent?: boolean }>;
+}) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
+      {items.map((it) => (
+        <div key={it.label}>
+          <p
+            className={`text-2xl font-bold tabular-nums leading-none ${
+              it.accent ? "text-accent" : ""
+            }`}
+          >
+            {it.value.toLocaleString()}
+          </p>
+          <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mt-1">
+            {it.label}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TopList({
+  title,
+  rows,
+  emptyLabel,
+}: {
+  title: string;
+  rows: Array<{ label: string; value: number }>;
+  emptyLabel: string;
 }) {
   return (
     <div>
-      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1">
-        {label}
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
+        {title}
       </p>
-      <p
-        className={`text-3xl font-bold tabular-nums leading-none ${
-          accent ? "text-accent" : ""
-        }`}
-      >
-        {value.toLocaleString()}
-      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-2 py-2">{emptyLabel}</p>
+      ) : (
+        <ul className="divide-y divide-border text-xs">
+          {rows.map((r) => (
+            <li
+              key={r.label}
+              className="flex justify-between items-baseline py-1.5 gap-3"
+            >
+              <span className="truncate text-txt">{r.label}</span>
+              <span className="text-muted tabular-nums shrink-0">
+                {r.value.toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -152,35 +298,30 @@ function Chart({
     buckets.push({ day: key, count: byDay.get(key) ?? 0 });
   }
   const max = Math.max(1, ...buckets.map((b) => b.count));
-  const total = buckets.reduce((s, b) => s + b.count, 0);
 
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-3">
-        <p className="text-[0.65rem] uppercase tracking-widest text-muted-2">
-          events · 30d
-        </p>
-        <p className="text-xs text-muted tabular-nums">{total.toLocaleString()}</p>
-      </div>
-      <div className="flex items-end gap-[3px] h-20">
+      <div className="flex items-end gap-[3px] h-20 border-b border-border pb-0.5">
         {buckets.map((b) => {
-          const h = b.count === 0 ? 2 : Math.max(4, Math.round((b.count / max) * 80));
+          // Zero-count days get a 1px baseline tick instead of a visible tile —
+          // keeps the chart quiet and lets real activity breathe.
+          const h =
+            b.count === 0 ? 1 : Math.max(4, Math.round((b.count / max) * 76));
           return (
             <div
               key={b.day}
               title={`${b.day} · ${b.count}`}
-              className={`flex-1 rounded-sm transition-colors ${
-                b.count === 0
-                  ? "bg-border"
-                  : "bg-accent/70 hover:bg-accent"
+              className={`flex-1 rounded-sm ${
+                b.count === 0 ? "bg-border" : "bg-accent/70 hover:bg-accent"
               }`}
               style={{ height: `${h}px` }}
             />
           );
         })}
       </div>
-      <div className="flex justify-between mt-2 text-[0.6rem] text-muted-2">
+      <div className="flex justify-between mt-2 text-[0.6rem] text-muted-2 tabular-nums">
         <span>{buckets[0]?.day.slice(5) ?? ""}</span>
+        <span>peak {max.toLocaleString()}/day</span>
         <span>{buckets[buckets.length - 1]?.day.slice(5) ?? ""}</span>
       </div>
     </div>
