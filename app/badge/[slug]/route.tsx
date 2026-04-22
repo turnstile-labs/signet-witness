@@ -1,21 +1,31 @@
 import { getDomain } from "@/lib/db";
 import { ImageResponse } from "next/og";
+import {
+  BADGE_HEIGHT,
+  BRAND_TEXT,
+  BRAND_WIDTH,
+  GAP_BRAND_MARK,
+  MARK_D,
+  PAD_L,
+  PAD_R,
+  sizeBadge,
+} from "@/lib/badge-dimensions";
 
 // Verified thresholds — mirrors the seal page.
 const VERIFIED_DAYS = 90;
 const VERIFIED_EMAILS = 10;
 
-// Badge canvas — compact signature-ready object. Sized for email
-// signatures: tall enough to feel like a deliberate object (not a
-// stretched label), narrow enough to sit beside a name + role block
-// without dominating. Aspect ratio ~6.9:1 reads as a "badge", not a
-// "pill". PNG is rendered at 2× for retina crispness; the HTML
-// snippet still displays it at W × H logical pixels.
-const W = 220;
-const H = 32;
+// Badge canvas — width adapts to the domain, height stays fixed so
+// the badge stays signature-compatible.
+//
+// Layout:   [ domain ]     [ witnessed.cc ]     [ ✓ ]
+//            left, bold     middle, muted        right, color-coded
+//
+// The brand sits "almost hidden" in the middle — enough to attribute
+// provenance (this is a Witnessed badge), but muted so the domain
+// keeps focal priority. The checkmark at the end reads as a sign-off.
+const H = BADGE_HEIGHT;
 const R = 8; // corner radius
-const MARK_D = 16; // mark diameter
-const MARK_CX = 16; // mark center x (padding 8 + radius 8)
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
 function parseSlug(slug: string): { domain: string; format: "svg" | "png" } {
@@ -47,19 +57,24 @@ type Theme = "dark" | "light";
 type State = "verified" | "onRecord" | "pending";
 
 interface Palette {
-  bgTop: string;     // gradient top — subtle depth
-  bgBot: string;     // gradient bottom
+  bgTop: string;         // gradient top — subtle depth
+  bgBot: string;         // gradient bottom
   border: string;
-  domain: string;    // hero text
+  domain: string;        // hero text
+  brand: string;         // "witnessed.cc" — muted attribution
   pendingStroke: string; // outline for the pending mark
 }
 
+// Brand color sits ~3 luminance steps above the background, so it's
+// legible on close inspection but recedes at a glance. Tuned against
+// each theme's actual bg gradient.
 const PALETTES: Record<Theme, Palette> = {
   dark: {
     bgTop: "#14141c",
     bgBot: "#08080d",
     border: "#2a2a38",
     domain: "#fafafe",
+    brand: "#5a5a6a",
     pendingStroke: "#6a6a7a",
   },
   light: {
@@ -67,15 +82,10 @@ const PALETTES: Record<Theme, Palette> = {
     bgBot: "#f4f4fa",
     border: "#d8d8e4",
     domain: "#0a0a14",
+    brand: "#9a9aa8",
     pendingStroke: "#a0a0b0",
   },
 };
-
-function truncateDomain(domain: string, maxChars: number): string {
-  return domain.length > maxChars
-    ? domain.slice(0, Math.max(1, maxChars - 1)) + "…"
-    : domain;
-}
 
 // State description for aria-label. The mark + color carry the signal
 // visually; this ensures screen readers still get the semantics.
@@ -91,34 +101,34 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
   const p = PALETTES[theme];
   const gradId = `bg-${theme}`;
 
-  // Typography metrics — SF Mono ~7.2px per char at 12px. Count is gone,
-  // so the domain gets the full canvas minus the mark area and side padding.
-  const domainStartX = 32; // mark_width(16) + padding_left(8) + gap(8)
-  const reservedRight = 12;
-  const availableDomainW = W - domainStartX - reservedRight;
-  const domainCharW = 7.2;
-  const maxDomainChars = Math.max(4, Math.floor(availableDomainW / domainCharW));
-  const displayDomain = truncateDomain(domain, maxDomainChars);
+  const { display, width: W } = sizeBadge(domain);
 
-  // Mark geometry — centered vertically in the 32px canvas.
+  // Positions — right-anchor the mark, then the brand just to its left,
+  // with the domain taking the remaining left-hand space.
+  const markCX = W - PAD_R - MARK_D / 2;
   const markCY = H / 2;
   const markR = MARK_D / 2;
-  // Checkmark path: enters bottom-left, dips, exits upper-right.
-  // Scaled to fit inside the 16px mark with comfortable margins.
-  const check = `M ${MARK_CX - 4} ${markCY} L ${MARK_CX - 1} ${markCY + 3} L ${MARK_CX + 4} ${markCY - 3}`;
+  const check = `M ${markCX - 4} ${markCY} L ${markCX - 1} ${markCY + 3} L ${markCX + 4} ${markCY - 3}`;
+
+  const brandRightEdge = W - PAD_R - MARK_D - GAP_BRAND_MARK;
+  const brandX = brandRightEdge - BRAND_WIDTH;
+
+  const domainX = PAD_L;
+  const domainBaselineY = H / 2 + 4;
+  const brandBaselineY = H / 2 + 3;
 
   let markEl = "";
   if (state === "verified") {
     markEl = `
-    <circle cx="${MARK_CX}" cy="${markCY}" r="${markR}" fill="#22c55e"/>
+    <circle cx="${markCX}" cy="${markCY}" r="${markR}" fill="#22c55e"/>
     <path d="${check}" stroke="${p.bgBot}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
   } else if (state === "onRecord") {
     markEl = `
-    <circle cx="${MARK_CX}" cy="${markCY}" r="${markR - 0.75}" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+    <circle cx="${markCX}" cy="${markCY}" r="${markR - 0.75}" fill="none" stroke="#16a34a" stroke-width="1.5"/>
     <path d="${check}" stroke="#16a34a" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
   } else {
     markEl = `
-    <circle cx="${MARK_CX}" cy="${markCY}" r="${markR - 0.75}" fill="none" stroke="${p.pendingStroke}" stroke-width="1.5"/>`;
+    <circle cx="${markCX}" cy="${markCY}" r="${markR - 0.75}" fill="none" stroke="${p.pendingStroke}" stroke-width="1.5"/>`;
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)})">
@@ -128,8 +138,9 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
       <stop offset="100%" stop-color="${p.bgBot}"/>
     </linearGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>${markEl}
-  <text x="${domainStartX}" y="${H / 2 + 4}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="12" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(displayDomain)}</text>
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>
+  <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="12" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(display)}</text>
+  <text x="${brandX}" y="${brandBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="9" font-weight="400" fill="${p.brand}" letter-spacing="0.02em">${BRAND_TEXT}</text>${markEl}
 </svg>`;
 }
 
@@ -142,7 +153,7 @@ function renderPng(
   cacheHeaders: Record<string, string>
 ) {
   const p = PALETTES[theme];
-  const displayDomain = truncateDomain(domain, 24);
+  const { display, width: W } = sizeBadge(domain);
 
   // Rendered at 2× for retina crispness.
   const PNG_W = W * 2;
@@ -232,13 +243,13 @@ function renderPng(
           borderRadius: R * 2,
           border: `2px solid ${p.border}`,
           alignItems: "center",
-          padding: "0 20px 0 16px",
-          fontFamily: "sans-serif",
+          justifyContent: "space-between",
+          padding: `0 ${PAD_R * 2}px 0 ${PAD_L * 2}px`,
+          fontFamily: "monospace",
           boxSizing: "border-box",
         }}
       >
-        {markNode}
-
+        {/* Domain — focal point, left-anchored */}
         <span
           style={{
             color: p.domain,
@@ -247,14 +258,36 @@ function renderPng(
             fontFamily: "monospace",
             lineHeight: 1,
             letterSpacing: -0.2,
-            marginLeft: 16,
-            flex: 1,
             overflow: "hidden",
             whiteSpace: "nowrap",
           }}
         >
-          {displayDomain}
+          {display}
         </span>
+
+        {/* Brand + mark cluster — right-anchored */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: GAP_BRAND_MARK * 2,
+          }}
+        >
+          <span
+            style={{
+              color: p.brand,
+              fontSize: 18,
+              fontWeight: 400,
+              fontFamily: "monospace",
+              lineHeight: 1,
+              letterSpacing: 0.4,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {BRAND_TEXT}
+          </span>
+          {markNode}
+        </div>
       </div>
     ),
     {
@@ -304,12 +337,10 @@ function cacheHeaders(
   theme: Theme,
   format: "svg" | "png"
 ): Record<string, string> {
-  // Count no longer appears on the badge — cache key omits it so edge
-  // and client caches stay stable across every-email updates. The
-  // state field already captures threshold transitions (pending →
-  // onRecord → verified), which is the only thing that changes the
-  // rendered output.
-  const etag = `W/"${snapshot.state}-${theme}-${format}-v3"`;
+  // Cache key omits the live count (the badge doesn't render it) and
+  // the width (derived from the URL path's domain, which is already
+  // the primary cache key). Bumped to v4 with the brand+mark redesign.
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v4"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

@@ -5,6 +5,7 @@ import CopyableEmail from "@/app/components/CopyableEmail";
 import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
 import DomainSearch from "@/app/components/DomainSearch";
+import { sizeBadge } from "@/lib/badge-dimensions";
 
 export const revalidate = 300;
 
@@ -17,6 +18,12 @@ export default async function Home({
   setRequestLocale(locale);
 
   const t = await getTranslations("home");
+
+  // Adapt the landing-page badge demo's <img> dimensions to whatever
+  // width the generator produces for "witnessed.cc". Keeps the SVG's
+  // intrinsic size and the <img> attribute in lockstep so layout doesn't
+  // shift between server render and image load.
+  const demoBadge = sizeBadge("witnessed.cc");
 
   return (
     <div className="flex flex-col min-h-screen bg-bg text-txt">
@@ -80,16 +87,16 @@ export default async function Home({
                     <img
                       src="/badge/witnessed.cc.svg"
                       alt="Witnessed · witnessed.cc"
-                      width={220}
-                      height={32}
+                      width={demoBadge.width}
+                      height={demoBadge.height}
                       className="border-0 inline-block align-middle light:hidden"
                     />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/badge/witnessed.cc.svg?theme=light"
                       alt="Witnessed · witnessed.cc"
-                      width={220}
-                      height={32}
+                      width={demoBadge.width}
+                      height={demoBadge.height}
                       className="border-0 hidden align-middle light:inline-block"
                     />
                   </Link>

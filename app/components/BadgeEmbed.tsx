@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { sizeBadge } from "@/lib/badge-dimensions";
 
 type Theme = "dark" | "light";
 
@@ -27,7 +28,10 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
   const sealUrl = `${origin}/b/${domain}`;
   const imageUrl = `${origin}/badge/${domain}.png${themeParam}`;
   const previewSrc = `/badge/${domain}.png${themeParam}`;
-  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="220" height="32" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
+  // Width adapts to the domain so the copied <img> advertises the same
+  // dimensions as the PNG we render. Height is fixed.
+  const { width: badgeW, height: badgeH } = sizeBadge(domain);
+  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="${badgeW}" height="${badgeH}" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
 
   async function handleCopy() {
     try {
@@ -88,8 +92,8 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
               <img
                 src={previewSrc}
                 alt={t("alt", { domain })}
-                width={220}
-                height={32}
+                width={badgeW}
+                height={badgeH}
                 className="max-w-full h-auto block"
               />
             </a>
