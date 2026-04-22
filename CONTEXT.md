@@ -32,8 +32,24 @@ These are non-negotiable. Changing any of them requires a DPA review, not a code
 3. **Inbound re-checks the denylist on every email.** `isDenylisted()` is the gate. It is checked in `app/api/inbound/route.ts` before any write. A denylisted domain never enters the cache as sender *or* receiver.
 4. **Erasure is a hard delete.** `eraseDomain()` purges rows across `domains` and `events` and decrements affected sender counts. No tombstones on the public surface.
 5. **Data minimisation at ingest.** Only the DKIM-verified sender domain, receiver domain, signature hash, and timestamp are written. Headers, body, subject, attachments are discarded before the DB insert.
+6. **The anti-abuse tables are ops-only.** `events_throttled` and `domain_reputation_cache` are forensic / operational state. They are never joined to the public seal page, badge, or landing-page stats. They surface only on `/ops/<token>`.
 
 If you're about to surface receiver domains, historical receiver lists, or per-email timelines on a public page, stop and re-read this section.
+
+---
+
+## Anti-abuse invariants (read before touching `/api/inbound` or `lib/reputation.ts`)
+
+DKIM proves "a mail server holding $domain's private key signed this message." It does not prove the receiver exists, nor that the sender is running real commerce. Without these checks, an attacker with a valid DKIM key can manufacture a pristine record by blasting `seal@` with emails addressed to nonexistent receivers.
+
+The inbound pipeline refuses to count any event that fails a structural check. Throttled events are written to `events_throttled` for forensics and **never** affect the sender's public `event_count`.
+
+**Layer 0 (shipped):**
+
+1. **MX existence.** The primary receiver domain must have at least one MX record. Cached 7d positive / 1d negative in `domain_reputation_cache`. Lookup failures that can't be classified fail-open so transient DNS issues don't drop legitimate mail.
+2. **Per-sender rate limit.** 500 events/hour or 5000 events/day trips the throttle. Both accepted and previously-throttled events count toward the window — an attacker can't burn through by blasting past their own limit. Enterprise senders brushing the ceiling should become paid-tier conversations, not silent drops.
+
+Every throttle decision is recorded in `events_throttled (sender_domain, receiver_domain, dkim_hash, reason)` so ops can review patterns and so any false-positive is auditable. The ops dashboard shows 24h / 7d throttle counts and the top offenders when there's anything to see; it stays silent on clean days.
 
 ---
 

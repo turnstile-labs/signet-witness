@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticate } from "mailauth";
 import { createHash } from "crypto";
 import { upsertDomain, insertEvent, isDenylisted } from "@/lib/db";
+import {
+  receiverHasMx,
+  isRateLimited,
+  recordThrottled,
+} from "@/lib/reputation";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
 const WITNESS_DOMAIN = "witnessed.cc";
@@ -81,11 +86,48 @@ export async function POST(req: NextRequest) {
   }
 
   // 8. Hash the DKIM signature for storage (proof without raw sig data).
+  // Computed before the anti-abuse gates so throttled events carry the
+  // same forensic hash as accepted ones.
   const dkimHash = createHash("sha256")
     .update(passing.signature ?? rawEmail.slice(0, 512))
     .digest("hex");
 
-  // 9. Write to DB.
+  // 9. Anti-abuse · Layer 0 — receiver must have an MX record. A
+  // DKIM-valid email addressed to a domain with no mail exchange is
+  // either a typo, a sinkhole, or (most commonly) a deliberately
+  // chosen spoof target the attacker picked because nobody will
+  // bounce the email back. We record it in events_throttled for ops
+  // forensics but never count it toward the sender's public record.
+  if (primaryReceiver !== "unknown") {
+    const hasMx = await receiverHasMx(primaryReceiver);
+    if (!hasMx) {
+      await recordThrottled(
+        senderDomain,
+        primaryReceiver,
+        dkimHash,
+        "receiver_no_mx",
+      );
+      return NextResponse.json({ ok: true, dropped: "receiver_no_mx" });
+    }
+  }
+
+  // 10. Anti-abuse · Layer 0 — per-sender rate limit. A domain pushing
+  // extraordinary volume (500/hour or 5000/day) trips the throttle;
+  // subsequent events within the window are recorded for forensics
+  // but not counted publicly. Enterprise-scale legitimate senders
+  // brushing the ceiling become paid-tier conversations, not silent
+  // drops.
+  if (await isRateLimited(senderDomain)) {
+    await recordThrottled(
+      senderDomain,
+      primaryReceiver,
+      dkimHash,
+      "rate_limit",
+    );
+    return NextResponse.json({ ok: true, dropped: "rate_limit" });
+  }
+
+  // 11. Write to DB.
   try {
     const domain = await upsertDomain(senderDomain);
     await insertEvent(domain.id, primaryReceiver, dkimHash);

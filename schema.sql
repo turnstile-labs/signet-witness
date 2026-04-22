@@ -50,3 +50,50 @@ CREATE TABLE IF NOT EXISTS domain_denylist (
   reason     TEXT NOT NULL,            -- 'erasure' | 'opt_out'
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ────────────────────────────────────────────────────────────────
+-- Anti-abuse (Layer 0+). Never public.
+--
+-- Background: the witness cache is DKIM-authenticated, but DKIM only
+-- proves "a mail server using $domain's key signed this." It does
+-- not prove the receiver is real, nor that the traffic is genuine.
+-- Without counter-measures, a spammer with a valid DKIM key can
+-- manufacture a pristine-looking history by blasting seal@ with
+-- DKIM-signed emails addressed to nonexistent receivers.
+--
+-- The tables below are the substrate for the full anti-abuse stack
+-- (MX checks, rate limits, reputation scoring, trust index). They are
+-- additive and never surfaced on public render paths.
+-- ────────────────────────────────────────────────────────────────
+
+-- Cached DNS / reputation lookups per domain. Populated lazily by the
+-- inbound route and by Layer 1+ background refreshes. Used to avoid
+-- hammering DNS / external services on high-frequency senders.
+CREATE TABLE IF NOT EXISTS domain_reputation_cache (
+  domain          TEXT PRIMARY KEY,
+  mx_exists       BOOLEAN,
+  mx_checked_at   TIMESTAMPTZ,
+  dbl_listed      BOOLEAN,
+  dbl_checked_at  TIMESTAMPTZ,
+  first_cert_at   TIMESTAMPTZ,
+  cert_checked_at TIMESTAMPTZ,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Events we refused to count toward a sender's public record. Retained
+-- for forensics and ops review; never joined to public render paths.
+-- Reasons (Layer 0): 'receiver_no_mx', 'rate_limit'.
+-- Reasons (Layer 1+): 'receiver_blocklist', 'concentration'.
+CREATE TABLE IF NOT EXISTS events_throttled (
+  id               SERIAL PRIMARY KEY,
+  sender_domain    TEXT NOT NULL,
+  receiver_domain  TEXT NOT NULL,
+  dkim_hash        TEXT NOT NULL,
+  reason           TEXT NOT NULL,
+  witnessed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS events_throttled_sender_idx
+  ON events_throttled(sender_domain, witnessed_at DESC);
+CREATE INDEX IF NOT EXISTS events_throttled_witnessed_idx
+  ON events_throttled(witnessed_at DESC);

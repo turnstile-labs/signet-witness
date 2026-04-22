@@ -161,6 +161,42 @@ export default async function OpsPage({
         </div>
       </Section>
 
+      {/* ANTI-ABUSE — only renders when there's something to see.
+          Stays silent at zero so clean days don't add visual noise. */}
+      {stats.throttled7d > 0 && (
+        <Section label="anti-abuse">
+          <div className="flex items-baseline gap-4 mb-3">
+            <p className="text-3xl font-bold tabular-nums leading-none text-txt">
+              {stats.throttled24h.toLocaleString()}
+            </p>
+            <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
+              throttled · 24h
+              <div className="mt-1 normal-case tracking-normal text-[0.7rem] text-muted">
+                {stats.throttled7d.toLocaleString()} · 7d
+              </div>
+            </div>
+          </div>
+          {stats.throttledByReason.length > 0 && (
+            <p className="text-[0.7rem] text-muted tabular-nums mb-4">
+              <span className="text-muted-2">by reason · </span>
+              {stats.throttledByReason
+                .map((r) => `${r.reason} ${r.count}`)
+                .join(" · ")}
+            </p>
+          )}
+          {stats.throttledTopSenders.length > 0 && (
+            <TopList
+              title="review queue · 7d"
+              rows={stats.throttledTopSenders.map((s) => ({
+                label: s.sender_domain,
+                value: s.count,
+              }))}
+              emptyLabel=""
+            />
+          )}
+        </Section>
+      )}
+
       {/* HYGIENE — denylist + quiet meta */}
       <div className="mt-12 pt-6 border-t border-border space-y-2">
         {stats.denylistTotal > 0 ? (
@@ -179,6 +215,9 @@ export default async function OpsPage({
           </p>
         ) : (
           <p className="text-[0.7rem] text-muted-2">denylist · empty</p>
+        )}
+        {stats.throttled7d === 0 && (
+          <p className="text-[0.7rem] text-muted-2">anti-abuse · quiet</p>
         )}
         <p className="text-[0.6rem] text-muted-2 leading-relaxed">
           rotate STATS_TOKEN to revoke. no caching · fresh query per load.

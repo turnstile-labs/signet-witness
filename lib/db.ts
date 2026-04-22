@@ -251,6 +251,12 @@ export interface OpsStats {
   newDomainsByDay: Array<{ day: string; count: number }>;
   verifiedDomains: number;
   dbSize: string | null;
+  // Anti-abuse visibility (Layer 0). Counts of events we refused to
+  // surface publicly, broken down by reason and by top offender.
+  throttled24h: number;
+  throttled7d: number;
+  throttledByReason: Array<{ reason: string; count: number }>;
+  throttledTopSenders: Array<{ sender_domain: string; count: number }>;
 }
 
 // Swallow "relation does not exist" (42P01) so the ops page keeps
@@ -369,6 +375,43 @@ export async function getOpsStats(): Promise<OpsStats> {
     ),
   ]);
 
+  // Anti-abuse visibility — fetched separately so the legacy totals
+  // block above stays a single cacheable query shape. `safe` swallows
+  // "relation does not exist" until the migration is run in prod.
+  const [throttledWindowed, throttledByReason, throttledTopSenders] =
+    await Promise.all([
+      safe(
+        sql`
+          SELECT
+            COALESCE(SUM(CASE WHEN witnessed_at >= NOW() - INTERVAL '24 hours' THEN 1 ELSE 0 END), 0)::int AS d1,
+            COALESCE(SUM(CASE WHEN witnessed_at >= NOW() - INTERVAL '7 days'   THEN 1 ELSE 0 END), 0)::int AS d7
+          FROM events_throttled
+        ` as unknown as Promise<{ d1: number; d7: number }[]>,
+        [{ d1: 0, d7: 0 }] as { d1: number; d7: number }[],
+      ),
+      safe(
+        sql`
+          SELECT reason, COUNT(*)::int AS count
+          FROM events_throttled
+          WHERE witnessed_at >= NOW() - INTERVAL '7 days'
+          GROUP BY reason
+          ORDER BY count DESC
+        ` as unknown as Promise<{ reason: string; count: number }[]>,
+        [] as { reason: string; count: number }[],
+      ),
+      safe(
+        sql`
+          SELECT sender_domain, COUNT(*)::int AS count
+          FROM events_throttled
+          WHERE witnessed_at >= NOW() - INTERVAL '7 days'
+          GROUP BY sender_domain
+          ORDER BY count DESC
+          LIMIT 8
+        ` as unknown as Promise<{ sender_domain: string; count: number }[]>,
+        [] as { sender_domain: string; count: number }[],
+      ),
+    ]);
+
   const t = totals[0] ?? {
     domains: 0,
     events: 0,
@@ -395,6 +438,10 @@ export async function getOpsStats(): Promise<OpsStats> {
     newDomainsByDay,
     verifiedDomains: verified[0]?.n ?? 0,
     dbSize: dbSize[0]?.size ?? null,
+    throttled24h: throttledWindowed[0]?.d1 ?? 0,
+    throttled7d: throttledWindowed[0]?.d7 ?? 0,
+    throttledByReason,
+    throttledTopSenders,
   };
 }
 
