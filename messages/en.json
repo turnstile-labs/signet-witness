@@ -208,7 +208,7 @@
     "eyebrow": "Proof setup",
     "title": "Set it up once.",
     "intro": "Witnessed only sees the emails you CC it on. This page turns that CC from a thing you remember into a thing that happens automatically — directly inside the mail provider your domain already uses.",
-    "addressLabel": "CC address",
+    "copyCaption": "Copy this — paste it into the recipe below",
     "bestFor": "Best for",
     "workspace": {
       "eyebrow": "Google Workspace · admin",
@@ -251,12 +251,9 @@
     },
     "everyoneElse": {
       "eyebrow": "Gmail personal, Apple Mail, Proton, others",
-      "body": "These providers don't yet support \"always-BCC\" rules natively. A one-click browser extension is on the way. In the meantime, the manual path works reliably — drop this address in CC on any business email and it joins your record automatically.",
+      "body": "These providers don't yet support \"always-BCC\" rules natively. A one-click browser extension is on the way. In the meantime, the manual path works reliably — drop the address above in CC on any business email and it joins your record automatically.",
       "outcome": "Paste seal@witnessed.cc into CC the first time; mail clients remember it for next time. You can add more as you send."
-    },
-    "afterTitle": "What happens next",
-    "afterBody": "The first witnessed email appears on <u>witnessed.cc/b/yourdomain</u> within seconds. The page only grows forward — the record cannot be backdated, and you can pause or erase it any time.",
-    "rightsLink": "Manage your rights →"
+    }
   },
   "rightsPage": {
     "metaTitle": "Your rights — Witnessed",

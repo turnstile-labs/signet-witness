@@ -208,7 +208,7 @@
     "eyebrow": "Configuración",
     "title": "Configúralo una vez.",
     "intro": "Witnessed solo ve los emails en los que lo pones en copia. Esta página convierte esa copia — de algo que tienes que recordar — en algo que ocurre solo, directamente dentro del proveedor de correo que ya usas.",
-    "addressLabel": "Dirección para CC",
+    "copyCaption": "Cópiala — pégala en la receta de abajo",
     "bestFor": "Ideal para",
     "workspace": {
       "eyebrow": "Google Workspace · admin",
@@ -251,12 +251,9 @@
     },
     "everyoneElse": {
       "eyebrow": "Gmail personal, Apple Mail, Proton y otros",
-      "body": "Estos proveedores todavía no permiten reglas de «copia oculta siempre» de forma nativa. Estamos trabajando en una extensión de navegador de un solo clic. Mientras tanto, la ruta manual funciona igual de bien: pon esta dirección en copia en cualquier email de trabajo y queda registrado automáticamente.",
+      "body": "Estos proveedores todavía no permiten reglas de «copia oculta siempre» de forma nativa. Estamos trabajando en una extensión de navegador de un solo clic. Mientras tanto, la ruta manual funciona igual de bien: pon la dirección de arriba en copia en cualquier email de trabajo y queda registrado automáticamente.",
       "outcome": "Pega seal@witnessed.cc en CC la primera vez; los clientes de correo lo recuerdan para la siguiente. Puedes añadir más a medida que envías."
-    },
-    "afterTitle": "Qué pasa después",
-    "afterBody": "El primer email verificado aparece en <u>witnessed.cc/b/tudominio</u> en segundos. La página solo crece hacia adelante — el registro no se puede retroceder y puedes pausarlo o borrarlo cuando quieras.",
-    "rightsLink": "Gestiona tus derechos →"
+    }
   },
   "rightsPage": {
     "metaTitle": "Tus derechos — Witnessed",

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
 import CopyableEmail from "@/app/components/CopyableEmail";
@@ -12,9 +11,11 @@ import CopyableEmail from "@/app/components/CopyableEmail";
 // self-serve — the user copies an address and a few settings into
 // their own mail provider. No account, no extension, no partnership.
 //
-// Editorial rhythm matches the rest of the site: eyebrow → artifact →
-// one plain sentence. Each provider gets its own section separated by
-// a thin divider. No accordions, no tabs — users scroll to theirs.
+// Hero mirrors the landing page (centered title + CopyableEmail
+// hero button) so the primary visual — the accent-filled copy
+// action — is consistent across the site. Below the hero, recipe
+// content switches to the left-aligned editorial rhythm shared with
+// the seal / privacy / terms / rights pages.
 
 export async function generateMetadata({
   params,
@@ -47,84 +48,67 @@ export default async function SetupPage({
     <div className="flex flex-col min-h-screen bg-bg">
       <NavBar />
 
-      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
-        {/* ── Hero ─────────────────────────────────────────────── */}
-        <section>
-          <EyebrowLabel>{t("eyebrow")}</EyebrowLabel>
-          <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-txt tracking-tight leading-[1.05]">
+      <main className="flex-1">
+        {/* ── Hero — centered, landing-page aesthetic ─────────────
+             The address is the actual action on this page: every
+             recipe below asks the user to paste it into some form.
+             Giving it the same accent-filled hero button the landing
+             uses keeps the visual language consistent and puts the
+             copy action one reach from the moment they arrive. */}
+        <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-10 sm:pb-12 text-center">
+          <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-4">
+            {t("eyebrow")}
+          </p>
+          <h1 className="text-[2.25rem] sm:text-5xl font-bold tracking-tight text-txt leading-[1.05] mb-5">
             {t("title")}
           </h1>
-          <p className="mt-4 text-base text-muted leading-relaxed max-w-xl">
+          <p className="text-base sm:text-lg text-muted max-w-xl mx-auto leading-relaxed mb-10">
             {t("intro")}
           </p>
 
-          <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface/50 text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
-            {t("addressLabel")}
-            <code className="ml-1 normal-case tracking-normal text-txt">
-              seal@witnessed.cc
-            </code>
-          </div>
+          <CopyableEmail variant="hero" caption={t("copyCaption")} />
         </section>
 
-        {/* ── Google Workspace admin ───────────────────────────── */}
-        <Recipe
-          eyebrow={t("workspace.eyebrow")}
-          tag={t("bestFor")}
-          tagBody={t("workspace.bestFor")}
-          steps={workspaceSteps}
-          outcome={t("workspace.outcome")}
-        />
+        {/* ── Recipes — editorial, left-aligned ─────────────────── */}
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+          {/* ── Google Workspace admin ─────────────────────────── */}
+          <Recipe
+            eyebrow={t("workspace.eyebrow")}
+            tag={t("bestFor")}
+            tagBody={t("workspace.bestFor")}
+            steps={workspaceSteps}
+            outcome={t("workspace.outcome")}
+          />
 
-        {/* ── Microsoft 365 admin ──────────────────────────────── */}
-        <Recipe
-          eyebrow={t("m365.eyebrow")}
-          tag={t("bestFor")}
-          tagBody={t("m365.bestFor")}
-          steps={m365Steps}
-          outcome={t("m365.outcome")}
-        />
+          {/* ── Microsoft 365 admin ────────────────────────────── */}
+          <Recipe
+            eyebrow={t("m365.eyebrow")}
+            tag={t("bestFor")}
+            tagBody={t("m365.bestFor")}
+            steps={m365Steps}
+            outcome={t("m365.outcome")}
+          />
 
-        {/* ── Outlook desktop (individual) ─────────────────────── */}
-        <Recipe
-          eyebrow={t("outlook.eyebrow")}
-          tag={t("bestFor")}
-          tagBody={t("outlook.bestFor")}
-          steps={outlookSteps}
-          outcome={t("outlook.outcome")}
-        />
+          {/* ── Outlook desktop (individual) ───────────────────── */}
+          <Recipe
+            eyebrow={t("outlook.eyebrow")}
+            tag={t("bestFor")}
+            tagBody={t("outlook.bestFor")}
+            steps={outlookSteps}
+            outcome={t("outlook.outcome")}
+          />
 
-        {/* ── Everyone else — manual fallback ──────────────────── */}
-        <section className="mt-12 pt-10 border-t border-border">
-          <EyebrowLabel>{t("everyoneElse.eyebrow")}</EyebrowLabel>
-          <p className="mt-3 text-sm text-muted leading-relaxed max-w-xl">
-            {t("everyoneElse.body")}
-          </p>
-          <div className="mt-6">
-            <CopyableEmail variant="compact" />
-          </div>
-          <p className="mt-6 text-[0.7rem] text-muted-2 leading-relaxed max-w-xl">
-            {t("everyoneElse.outcome")}
-          </p>
-        </section>
-
-        {/* ── What happens next ────────────────────────────────── */}
-        <section className="mt-12 pt-10 border-t border-border">
-          <EyebrowLabel>{t("afterTitle")}</EyebrowLabel>
-          <p className="mt-3 text-sm text-muted leading-relaxed max-w-xl">
-            {t.rich("afterBody", {
-              u: (chunks) => (
-                <span className="font-mono text-txt">{chunks}</span>
-              ),
-            })}
-          </p>
-          <Link
-            href="/rights"
-            className="mt-5 inline-block text-xs font-semibold text-accent hover:text-accent-2 transition-colors"
-          >
-            {t("rightsLink")}
-          </Link>
-        </section>
+          {/* ── Everyone else — manual fallback ────────────────── */}
+          <section className="mt-12 pt-10 border-t border-border">
+            <EyebrowLabel>{t("everyoneElse.eyebrow")}</EyebrowLabel>
+            <p className="mt-3 text-sm text-muted leading-relaxed max-w-xl">
+              {t("everyoneElse.body")}
+            </p>
+            <p className="mt-4 text-[0.7rem] text-muted-2 leading-relaxed max-w-xl">
+              {t("everyoneElse.outcome")}
+            </p>
+          </section>
+        </div>
       </main>
 
       <Footer />
@@ -159,7 +143,7 @@ function Recipe({
   outcome: string;
 }) {
   return (
-    <section className="mt-12 pt-10 border-t border-border">
+    <section className="mt-12 pt-10 border-t border-border first:mt-0 first:pt-0 first:border-t-0">
       <EyebrowLabel>{eyebrow}</EyebrowLabel>
       <p className="mt-3 text-sm text-muted leading-relaxed max-w-xl">
         <span className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mr-2">
