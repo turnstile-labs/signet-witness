@@ -39,7 +39,7 @@ function esc(s: string): string {
 }
 
 type Theme = "dark" | "light";
-type State = "verified" | "building" | "pending";
+type State = "verified" | "onRecord" | "pending";
 
 interface Palette {
   bg: string;
@@ -78,13 +78,15 @@ function stateStyle(state: State): StatusStyle {
         stroke: "#16a34a4d",
         label: "VERIFIED",
       };
-    case "building":
+    case "onRecord":
+      // Same green family as verified, softened — "live, ongoing" without
+      // the amber warning read the old building palette carried.
       return {
-        dot: "#f59e0b",
-        text: "#b45309",
-        fill: "#f59e0b1a",
-        stroke: "#f59e0b4d",
-        label: "BUILDING",
+        dot: "#16a34a",
+        text: "#16a34acc",
+        fill: "#16a34a0d",
+        stroke: "#16a34a33",
+        label: "ON RECORD",
       };
     case "pending":
       return {
@@ -104,7 +106,7 @@ function truncateDomain(domain: string, maxChars: number): string {
 }
 
 // Status label shown inside the pill — append the live event count for
-// building/verified states so the badge reflects the current record.
+// recorded/verified states so the badge reflects the current record.
 function statusLabel(state: State, count: number, s: StatusStyle): string {
   return state === "pending" ? s.label : `${s.label} · ${count}`;
 }
@@ -249,7 +251,7 @@ async function resolveSnapshot(domain: string): Promise<Snapshot> {
     const state: State =
       days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS
         ? "verified"
-        : "building";
+        : "onRecord";
     return { state, count: record.event_count };
   } catch {
     return { state: "pending", count: 0 };

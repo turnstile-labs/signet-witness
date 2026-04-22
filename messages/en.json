@@ -98,7 +98,7 @@
   "seal": {
     "eyebrow": "Proof of business",
     "verifiedActive": "Verified Active",
-    "building": "Building",
+    "onRecord": "On record",
     "pending": "Pending",
     "noRecordPill": "No record yet",
     "statVerifiedEmails": "Verified emails",
@@ -113,9 +113,6 @@
     "sparklineAria": "{count} verified emails in the last {days} days",
     "activitySummary": "{count, plural, =0 {No verified emails in the last 30 days.} =1 {# verified email in the last 30 days.} other {# verified emails in the last 30 days.}}",
     "onRecordSince": "On record since {date}.",
-    "buildingHintBoth": "Verified Active unlocks in {days, plural, =1 {1 day} other {# days}} and {count, plural, =1 {1 more verified email} other {# more verified emails}}.",
-    "buildingHintDays": "Verified Active unlocks in {days, plural, =1 {1 day} other {# days}}.",
-    "buildingHintEmails": "Verified Active unlocks after {count, plural, =1 {1 more verified email} other {# more verified emails}}.",
     "shareEyebrow": "Share this proof",
     "shareTitle": "Paste it into your email signature. Travels with every email you send.",
     "shareSub": "Each click opens this page.",

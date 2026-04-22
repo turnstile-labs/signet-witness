@@ -61,7 +61,13 @@ function EyebrowLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-type PillState = "verified" | "building" | "pending";
+// Three visual tiers, each self-interpreting at a glance:
+//   verified → pulsing green, "Verified" — earned via time + volume
+//   onRecord → dim green, solid dot, "On record" — live, ongoing, factual
+//   pending  → muted grey, "No record yet" — unclaimed
+// We deliberately avoid amber/warning tones for "onRecord": the domain
+// IS being recorded, which is a positive, not a pending problem.
+type PillState = "verified" | "onRecord" | "pending";
 
 function StatusPill({ state, label }: { state: PillState; label: string }) {
   if (state === "verified") {
@@ -72,10 +78,10 @@ function StatusPill({ state, label }: { state: PillState; label: string }) {
       </span>
     );
   }
-  if (state === "building") {
+  if (state === "onRecord") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-500 text-xs font-semibold shrink-0 self-start">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/20 bg-verified/5 text-verified/80 text-xs font-semibold shrink-0 self-start">
+        <span className="w-1.5 h-1.5 rounded-full bg-verified/70 inline-block" />
         {label}
       </span>
     );
@@ -139,30 +145,10 @@ export default async function SealPage({ params }: Props) {
   const days = daysActive(record.first_seen);
   const isVerified =
     days >= VERIFIED_DAYS && record.event_count >= VERIFIED_EMAILS;
-  const state: PillState = isVerified ? "verified" : "building";
+  const state: PillState = isVerified ? "verified" : "onRecord";
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
-  const pillLabel = isVerified ? t("verifiedActive") : t("building");
+  const pillLabel = isVerified ? t("verifiedActive") : t("onRecord");
   const firstSeenLabel = formatFirstSeen(record.first_seen, locale);
-
-  // Context-aware one-liner shown under the trust line when the
-  // domain hasn't yet cleared the Verified Active thresholds. The
-  // previous dashboard-style bars duplicated hero stats and gamified
-  // a wait that isn't actionable for the owner.
-  const daysRemaining = Math.max(0, VERIFIED_DAYS - days);
-  const emailsRemaining = Math.max(0, VERIFIED_EMAILS - record.event_count);
-  let buildingHint: string | null = null;
-  if (!isVerified) {
-    if (daysRemaining > 0 && emailsRemaining > 0) {
-      buildingHint = t("buildingHintBoth", {
-        days: daysRemaining,
-        count: emailsRemaining,
-      });
-    } else if (daysRemaining > 0) {
-      buildingHint = t("buildingHintDays", { days: daysRemaining });
-    } else if (emailsRemaining > 0) {
-      buildingHint = t("buildingHintEmails", { count: emailsRemaining });
-    }
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-bg">
@@ -206,12 +192,6 @@ export default async function SealPage({ params }: Props) {
           <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
             {t("trustLine")}
           </p>
-
-          {buildingHint && (
-            <p className="mt-4 text-xs text-muted-2 leading-relaxed max-w-xl">
-              {buildingHint}
-            </p>
-          )}
         </section>
 
         {/* ── Activity ─────────────────────────────────────────── */}

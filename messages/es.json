@@ -98,7 +98,7 @@
   "seal": {
     "eyebrow": "Prueba de negocio",
     "verifiedActive": "Activo verificado",
-    "building": "En construcción",
+    "onRecord": "En el registro",
     "pending": "Pendiente",
     "noRecordPill": "Sin registro",
     "statVerifiedEmails": "Emails verificados",
@@ -113,9 +113,6 @@
     "sparklineAria": "{count} emails verificados en los últimos {days} días",
     "activitySummary": "{count, plural, =0 {Ningún email verificado en los últimos 30 días.} =1 {# email verificado en los últimos 30 días.} other {# emails verificados en los últimos 30 días.}}",
     "onRecordSince": "En el registro desde {date}.",
-    "buildingHintBoth": "El estado Verificado se desbloquea en {days, plural, =1 {1 día} other {# días}} y {count, plural, =1 {1 email verificado más} other {# emails verificados más}}.",
-    "buildingHintDays": "El estado Verificado se desbloquea en {days, plural, =1 {1 día} other {# días}}.",
-    "buildingHintEmails": "El estado Verificado se desbloquea tras {count, plural, =1 {1 email verificado más} other {# emails verificados más}}.",
     "shareEyebrow": "Comparte esta prueba",
     "shareTitle": "Pégala en tu firma de email. Viaja con cada email que envías.",
     "shareSub": "Cada clic abre esta página.",

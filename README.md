@@ -24,7 +24,7 @@ No auth. No payments. No setup required from users. The CC is the product.
 
 ## What's live
 
-- **Seal pages** at `/b/[domain]` — verified/building/pending state, 30-day sparkline, stats, recent activity feed
+- **Seal pages** at `/b/[domain]` — verified/on-record/pending state, 30-day sparkline, stats, recent activity feed
 - **Unclaimed seal pages** for domains that appear only as receivers — shows inbound witnessed count and an on-ramp to start their own record
 - **Dynamic badge endpoint** at `/badge/[domain]` — SVG or PNG (`?theme=light` variant, `ETag`-cached, reflects live event count)
 - **Owner tools** on each seal page — copy the badge as image URL, HTML snippet, or Markdown
