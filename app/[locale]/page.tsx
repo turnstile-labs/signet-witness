@@ -45,128 +45,128 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── Live seal page mock ─────────────────────────────── */}
+        {/* ── Badge: the primary product surface ──────────────── */}
         <section className="border-y border-border bg-surface py-14 sm:py-16">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-10">
               <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-3">
-                {t("mock.eyebrow")}
+                {t("badge.eyebrow")}
               </p>
               <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
-                {t("mock.title")}
+                {t("badge.title")}
               </h2>
               <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
-                {t("mock.sub")}
+                {t("badge.sub")}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-bg overflow-hidden shadow-sm">
-              <div className="border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[0.7rem] sm:text-xs font-mono text-muted shrink-0">
-                    AC
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm sm:text-base font-semibold text-txt truncate">acmecorp.com</p>
-                    <p className="text-[0.7rem] sm:text-xs text-muted font-mono truncate">witnessed.cc/b/acmecorp.com</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/30 bg-verified/10 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-verified inline-block" />
-                  <span className="text-[0.7rem] sm:text-xs font-semibold text-verified">{t("mock.verifiedActive")}</span>
-                </div>
+            <div className="max-w-md mx-auto rounded-xl border border-border bg-bg overflow-hidden shadow-sm">
+              <div className="px-5 py-2.5 border-b border-border text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
+                {t("badge.mockLabel")}
               </div>
-
-              <div className="px-2 sm:px-6 py-5 sm:py-6 grid grid-cols-3 gap-1 sm:gap-4">
-                {[
-                  { value: "847",   label: t("mock.statsVerifiedEmails"), sub: t("mock.statsVerifiedEmailsSub") },
-                  { value: "14 mo", label: t("mock.statsActiveHistory"),  sub: t("mock.statsActiveHistorySub") },
-                  { value: "23",    label: t("mock.statsCounterparties"), sub: t("mock.statsCounterpartiesSub") },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-center px-1">
-                    <p className="text-xl sm:text-2xl font-bold text-txt font-mono leading-none">{stat.value}</p>
-                    <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1">{stat.label}</p>
-                    <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-2 mt-0.5 leading-tight">{stat.sub}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-border px-4 sm:px-6 py-3">
-                <p className="text-[0.7rem] sm:text-xs text-muted text-center leading-relaxed">
-                  <span className="text-accent font-semibold">{t("mock.disclaimerStrong")}</span>{" "}
-                  {t("mock.disclaimerRest")}
+              <div className="px-5 py-5">
+                <p className="text-sm font-semibold text-txt leading-tight">
+                  {t("badge.signatureName")}
                 </p>
+                <p className="text-xs text-muted mt-0.5">
+                  {t("badge.signatureRole")}
+                </p>
+                <p className="text-[0.7rem] text-muted-2 mt-1 font-mono">
+                  {t("badge.signatureContact")}
+                </p>
+                <div className="mt-4">
+                  <Link href="/b/witnessed.cc" className="inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/badge/witnessed.cc.svg"
+                      alt="Witnessed · witnessed.cc"
+                      width={260}
+                      height={26}
+                      className="border-0 inline-block align-middle"
+                    />
+                  </Link>
+                </div>
               </div>
             </div>
 
-            <div className="mt-10 sm:mt-12">
-              <p className="text-center text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-3">
-                {t("mock.lookupLabel")}
-              </p>
-              <DomainSearch
-                placeholder={t("mock.lookupPlaceholder")}
-                submitLabel={t("mock.lookupSubmit")}
-                ariaLabel={t("mock.lookupAria")}
-              />
-              <p className="text-center text-xs text-muted-2 mt-4">
-                {t("mock.realOne")}{" "}
-                <Link
-                  href="/b/witnessed.cc"
-                  className="text-accent hover:underline font-mono whitespace-nowrap"
-                >
-                  witnessed.cc →
-                </Link>
-              </p>
-            </div>
+            <p className="mt-6 text-center text-xs text-muted-2 leading-relaxed max-w-md mx-auto">
+              {t("badge.footnote")}
+            </p>
           </div>
         </section>
 
-        {/* ── Badge in email signature ─────────────────────────── */}
+        {/* ── Click destination: the full public page ─────────── */}
         <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
           <div className="text-center mb-10">
             <p className="text-xs font-mono text-muted-2 uppercase tracking-widest mb-3">
-              {t("badge.eyebrow")}
+              {t("mock.eyebrow")}
             </p>
             <h2 className="text-2xl sm:text-3xl font-bold text-txt mb-3">
-              {t("badge.title")}
+              {t("mock.title")}
             </h2>
             <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
-              {t("badge.sub")}
+              {t("mock.sub")}
             </p>
           </div>
 
-          <div className="max-w-md mx-auto rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
-            <div className="px-5 py-2.5 border-b border-border text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
-              {t("badge.mockLabel")}
-            </div>
-            <div className="px-5 py-5">
-              <p className="text-sm font-semibold text-txt leading-tight">
-                {t("badge.signatureName")}
-              </p>
-              <p className="text-xs text-muted mt-0.5">
-                {t("badge.signatureRole")}
-              </p>
-              <p className="text-[0.7rem] text-muted-2 mt-1 font-mono">
-                {t("badge.signatureContact")}
-              </p>
-              <div className="mt-4">
-                <Link href="/b/witnessed.cc" className="inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/badge/witnessed.cc.svg"
-                    alt="Witnessed · witnessed.cc"
-                    width={260}
-                    height={26}
-                    className="border-0 inline-block align-middle"
-                  />
-                </Link>
+          <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
+            <div className="border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[0.7rem] sm:text-xs font-mono text-muted shrink-0">
+                  AC
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-semibold text-txt truncate">acmecorp.com</p>
+                  <p className="text-[0.7rem] sm:text-xs text-muted font-mono truncate">witnessed.cc/b/acmecorp.com</p>
+                </div>
               </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/30 bg-verified/10 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-verified inline-block" />
+                <span className="text-[0.7rem] sm:text-xs font-semibold text-verified">{t("mock.verifiedActive")}</span>
+              </div>
+            </div>
+
+            <div className="px-2 sm:px-6 py-5 sm:py-6 grid grid-cols-3 gap-1 sm:gap-4">
+              {[
+                { value: "847",   label: t("mock.statsVerifiedEmails"), sub: t("mock.statsVerifiedEmailsSub") },
+                { value: "14 mo", label: t("mock.statsActiveHistory"),  sub: t("mock.statsActiveHistorySub") },
+                { value: "23",    label: t("mock.statsCounterparties"), sub: t("mock.statsCounterpartiesSub") },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center px-1">
+                  <p className="text-xl sm:text-2xl font-bold text-txt font-mono leading-none">{stat.value}</p>
+                  <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1">{stat.label}</p>
+                  <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-2 mt-0.5 leading-tight">{stat.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-border px-4 sm:px-6 py-3">
+              <p className="text-[0.7rem] sm:text-xs text-muted text-center leading-relaxed">
+                <span className="text-accent font-semibold">{t("mock.disclaimerStrong")}</span>{" "}
+                {t("mock.disclaimerRest")}
+              </p>
             </div>
           </div>
 
-          <p className="mt-6 text-center text-xs text-muted-2 leading-relaxed max-w-md mx-auto">
-            {t("badge.footnote")}
-          </p>
+          <div className="mt-10 sm:mt-12">
+            <p className="text-center text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-3">
+              {t("mock.lookupLabel")}
+            </p>
+            <DomainSearch
+              placeholder={t("mock.lookupPlaceholder")}
+              submitLabel={t("mock.lookupSubmit")}
+              ariaLabel={t("mock.lookupAria")}
+            />
+            <p className="text-center text-xs text-muted-2 mt-4">
+              {t("mock.realOne")}{" "}
+              <Link
+                href="/b/witnessed.cc"
+                className="text-accent hover:underline font-mono whitespace-nowrap"
+              >
+                witnessed.cc →
+              </Link>
+            </p>
+          </div>
         </section>
 
         {/* ── Why this matters ─────────────────────────────────── */}

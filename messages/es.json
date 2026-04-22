@@ -25,9 +25,9 @@
     "headline2": "Excepto el ayer.",
     "subhead": "Un registro verificable de cada email de trabajo que envías — creado de forma pasiva, imposible de falsificar con fecha anterior.",
     "mock": {
-      "eyebrow": "Tu prueba de negocio",
-      "title": "Tu página en vivo, creciendo con cada email que envías.",
-      "sub": "Comparte witnessed.cc/b/tudominio allí donde alguien vaya a comprobarte. Remitente real, fechas reales, volumen real — verificable por cualquiera que haga clic.",
+      "eyebrow": "Detrás de cada clic",
+      "title": "Tu página pública completa.",
+      "sub": "Cada clic en la insignia abre aquí. Remitente real, fechas reales, volumen real — compartible allí donde alguien vaya a comprobarte.",
       "verifiedActive": "Activo verificado",
       "statsVerifiedEmails": "Emails verificados",
       "statsVerifiedEmailsSub": "confirmados de forma independiente",
@@ -44,14 +44,14 @@
       "realOne": "o mira la página de un dominio real:"
     },
     "badge": {
-      "eyebrow": "La misma página, tamaño firma",
-      "title": "Una insignia en vivo para tu firma de email.",
-      "sub": "La página de arriba, compactada en una imagen que cabe en cualquier firma de email. Pégala una vez — lee del mismo registro y se actualiza sola.",
+      "eyebrow": "Tu prueba de negocio",
+      "title": "Pégala una vez. Viaja en cada email que envías.",
+      "sub": "Una pequeña imagen en vivo que pegas en tu firma de email. Se actualiza sola a medida que crece tu historial. Un clic abre tu página pública completa.",
       "mockLabel": "Tu firma de email",
       "signatureName": "Jane Doe",
       "signatureRole": "Fundadora · Acme Studio",
       "signatureContact": "+34 612 345 678 · acme.studio",
-      "footnote": "Enlaza con tu página pública. Funciona en Gmail, Outlook, Apple Mail y cualquier otra herramienta que admita firmas HTML."
+      "footnote": "Funciona en Gmail, Outlook, Apple Mail y cualquier otra herramienta que admita firmas HTML."
     },
     "why": {
       "title": "Confianza, sin teatro.",

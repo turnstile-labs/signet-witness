@@ -25,9 +25,9 @@
     "headline2": "Except yesterday.",
     "subhead": "A verifiable record of every business email you send — built passively, impossible to backdate.",
     "mock": {
-      "eyebrow": "Your proof of business",
-      "title": "Your live page, growing with every email you send.",
-      "sub": "Share witnessed.cc/b/yourdomain anywhere a counterparty might look. Real sender, real timestamps, real volume — verifiable by anyone who clicks.",
+      "eyebrow": "Behind every click",
+      "title": "Your full public page.",
+      "sub": "Every badge click opens here. Real sender, real timestamps, real volume — shareable anywhere a counterparty might look.",
       "verifiedActive": "Verified Active",
       "statsVerifiedEmails": "Verified emails",
       "statsVerifiedEmailsSub": "independently confirmed",
@@ -44,14 +44,14 @@
       "realOne": "or see a real domain's page:"
     },
     "badge": {
-      "eyebrow": "Same page, signature size",
-      "title": "A live badge for your email signature.",
-      "sub": "The page above, compacted into an image that fits any email signature. Paste once — it reads from the same record, updating in place.",
+      "eyebrow": "Your proof of business",
+      "title": "Paste once. Lives in every email you send.",
+      "sub": "A small live image you drop into your email signature. It updates automatically as your history grows. One click opens your full public page.",
       "mockLabel": "Your email signature",
       "signatureName": "Jane Doe",
       "signatureRole": "Founder · Acme Studio",
       "signatureContact": "+1 (415) 555-0134 · acme.studio",
-      "footnote": "Links back to your public page. Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
+      "footnote": "Works in Gmail, Outlook, Apple Mail, and anywhere else HTML signatures work."
     },
     "why": {
       "title": "Trust, without the theater.",
