@@ -51,6 +51,16 @@ export default async function Home({
 
             <CopyableEmail variant="hero" />
 
+            <p className="mt-5 text-xs text-muted-2">
+              {t("orAutoLabel")}{" "}
+              <Link
+                href="/setup"
+                className="font-semibold text-accent hover:text-accent-2 transition-colors"
+              >
+                {t("orAutoLink")}
+              </Link>
+            </p>
+
           </div>
         </section>
 
@@ -243,6 +253,15 @@ export default async function Home({
             <CopyableEmail variant="hero" />
             <p className="mt-4 text-xs text-muted-2 font-mono">
               {t("cta.sub")}
+            </p>
+            <p className="mt-3 text-xs text-muted-2">
+              {t("orAutoLabel")}{" "}
+              <Link
+                href="/setup"
+                className="font-semibold text-accent hover:text-accent-2 transition-colors"
+              >
+                {t("orAutoLink")}
+              </Link>
             </p>
           </div>
         </section>

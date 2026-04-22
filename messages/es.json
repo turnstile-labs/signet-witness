@@ -4,6 +4,7 @@
     "themeToggle": "Cambiar tema"
   },
   "footer": {
+    "setup": "Configuración",
     "privacy": "Privacidad",
     "terms": "Términos",
     "rights": "Tus derechos"
@@ -71,7 +72,9 @@
     "cta": {
       "built": "Hecho para freelancers, agencias y startups — cualquiera que necesite probar que ha estado ahí.",
       "sub": "Gratis para siempre. Sin necesidad de cuenta."
-    }
+    },
+    "orAutoLabel": "O sáltate el copiar y pegar —",
+    "orAutoLink": "configúralo una vez, en automático →"
   },
   "seal": {
     "eyebrow": "Prueba de negocio",

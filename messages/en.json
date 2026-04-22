@@ -4,6 +4,7 @@
     "themeToggle": "Toggle theme"
   },
   "footer": {
+    "setup": "Setup",
     "privacy": "Privacy",
     "terms": "Terms",
     "rights": "Your rights"
@@ -71,7 +72,9 @@
     "cta": {
       "built": "Built for freelancers, agencies, startups — anyone who needs to prove they've been here.",
       "sub": "Free forever. No account needed."
-    }
+    },
+    "orAutoLabel": "Or skip the copy-paste —",
+    "orAutoLink": "set it up once, automatically →"
   },
   "seal": {
     "eyebrow": "Proof of business",
