@@ -5,7 +5,13 @@ import { getOpsStats, type OpsStats } from "@/lib/db";
 
 // Internal ops dashboard. Secret URL: /ops/<STATS_TOKEN>.
 // Not linked from anywhere. Not locale-aware. Temporary.
-// Editorial rhythm: each section has one focal point + quiet context.
+//
+// Layout rhythm, top to bottom:
+//   1. Pulse tiles  — six KPIs, one glance tells you the state of the box.
+//   2. Activity     — 30-day events bar chart + totals footer.
+//   3. Domains      — top senders (by trust) + top receivers side by side.
+//   4. Anti-abuse   — always visible; when quiet, declares itself quiet.
+//   5. Hygiene      — denylist breakdown + meta footer.
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,7 +48,7 @@ export default async function OpsPage({
     stats = await getOpsStats();
   } catch (err) {
     return (
-      <main className="max-w-2xl mx-auto px-6 py-16 font-mono text-sm">
+      <main className="max-w-3xl mx-auto px-6 py-16 font-mono text-sm">
         <h1 className="text-base font-bold mb-3">ops · error</h1>
         <pre className="text-red-400 whitespace-pre-wrap text-xs">
           {(err as Error).message}
@@ -59,92 +65,127 @@ export default async function OpsPage({
   const vs7dAvg =
     avg7d > 0 ? Math.round(((stats.events24h - avg7d) / avg7d) * 100) : null;
 
-  // Compact registry meta. Shows only the parts that actually carry
-  // signal at current scale; skips verified/unclaimed when they'd read
-  // as zero noise. One line, one read.
-  const registryBits: string[] = [
-    `${stats.domains.toLocaleString()} domain${stats.domains === 1 ? "" : "s"}`,
-  ];
-  if (stats.verifiedDomains > 0) {
-    registryBits.push(`${stats.verifiedDomains} verified`);
-  }
-  if (stats.newDomains7d > 0) {
-    registryBits.push(`+${stats.newDomains7d} · 7d`);
-  }
-  if (stats.unclaimedReceivers > 0) {
-    registryBits.push(
-      `${stats.unclaimedReceivers} unclaimed receiver${
-        stats.unclaimedReceivers === 1 ? "" : "s"
-      }`,
-    );
-  }
-
   return (
-    <main className="max-w-2xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
-      {/* Identity + heartbeat */}
-      <div className="flex items-baseline justify-between pb-5 mb-10 border-b border-border">
+    <main className="max-w-3xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
+      {/* Identity + heartbeat. Right-aligned meta block is small but
+          carries env + commit so a screenshot is self-describing. */}
+      <header className="flex items-baseline justify-between pb-5 mb-8 border-b border-border">
         <h1 className="text-base font-bold tracking-tight">witnessed · ops</h1>
-        <div className="text-[0.6rem] text-muted-2 text-right leading-relaxed">
+        <div className="text-[0.6rem] text-muted-2 text-right leading-relaxed tabular-nums">
           <div>{now}</div>
           <div>
             {env} · {commit}
             {stats.dbSize ? ` · ${stats.dbSize}` : ""}
           </div>
         </div>
+      </header>
+
+      {/* PULSE — six tiles, one look. Everything at-a-glance a sleepy
+          on-call wants before reading prose. */}
+      <SectionLabel>pulse</SectionLabel>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-10">
+        <Tile
+          label="events · 24h"
+          value={stats.events24h.toLocaleString()}
+          hint={
+            vs7dAvg !== null
+              ? `${vs7dAvg > 0 ? "+" : ""}${vs7dAvg}% vs 7d avg`
+              : undefined
+          }
+          hintTone={
+            vs7dAvg === null
+              ? "muted"
+              : vs7dAvg > 0
+                ? "good"
+                : vs7dAvg < 0
+                  ? "warn"
+                  : "muted"
+          }
+          tone="accent"
+        />
+        <Tile
+          label="events · 7d"
+          value={stats.events7d.toLocaleString()}
+          hint={avg7d > 0 ? `${avg7d.toLocaleString()}/day avg` : undefined}
+        />
+        <Tile
+          label="new domains · 7d"
+          value={`+${stats.newDomains7d}`}
+          hint={
+            stats.newDomains30d > 0
+              ? `+${stats.newDomains30d} · 30d`
+              : undefined
+          }
+          tone={stats.newDomains7d === 0 ? "muted" : "default"}
+        />
+        <Tile
+          label="verified"
+          value={stats.verifiedDomains.toLocaleString()}
+          hint={
+            stats.domains > 0
+              ? `of ${stats.domains.toLocaleString()} registered`
+              : undefined
+          }
+        />
+        <Tile
+          label="throttled · 24h"
+          value={stats.throttled24h.toLocaleString()}
+          hint={
+            stats.throttled7d > 0
+              ? `${stats.throttled7d.toLocaleString()} · 7d`
+              : "7d clean"
+          }
+          tone={stats.throttled24h === 0 ? "muted" : "warn"}
+        />
+        <Tile
+          label="denylist"
+          value={stats.denylistTotal.toLocaleString()}
+          hint={
+            stats.denylistTotal > 0
+              ? stats.denylistByReason
+                  .map((r) => `${r.reason} ${r.count}`)
+                  .join(" · ")
+              : "empty"
+          }
+          tone={stats.denylistTotal === 0 ? "muted" : "default"}
+        />
       </div>
 
-      {/* ACTIVITY — the hero. one number, live. */}
-      <Section label="activity">
-        <div className="flex items-baseline gap-4 mb-1">
-          <p className="text-5xl font-bold tabular-nums leading-none text-accent">
-            {stats.events24h.toLocaleString()}
-          </p>
-          <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
-            events · 24h
-            {vs7dAvg !== null && (
-              <div
-                className={`mt-1 normal-case tracking-normal text-[0.7rem] ${
-                  vs7dAvg > 0
-                    ? "text-verified"
-                    : vs7dAvg < 0
-                      ? "text-muted"
-                      : "text-muted-2"
-                }`}
-              >
-                {vs7dAvg > 0 ? "+" : ""}
-                {vs7dAvg}% vs 7d avg ({avg7d}/day)
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex gap-6 text-xs text-muted tabular-nums mb-5">
-          <span>
-            <span className="text-txt">{stats.events7d.toLocaleString()}</span>{" "}
-            · 7d
-          </span>
-          <span>
-            <span className="text-txt">{stats.events30d.toLocaleString()}</span>{" "}
-            · 30d
-          </span>
-          <span className="text-muted-2">
-            {stats.events.toLocaleString()} total
-          </span>
-        </div>
+      {/* ACTIVITY — the shape of the last 30 days. Hover a bar for the
+          per-day count; the footer gives absolute totals so the chart's
+          relative scale doesn't mislead. */}
+      <Section label="activity · 30d">
         <Chart data={stats.eventsByDay} days={30} />
-
-        {/* Registry meta — one line, skips zeros, sits quietly. */}
-        <p className="mt-5 text-[0.7rem] text-muted tabular-nums">
+        <p className="mt-4 text-[0.7rem] text-muted tabular-nums">
+          <span className="text-muted-2">window · </span>
+          {stats.events30d.toLocaleString()} events ·{" "}
+          {stats.distinctReceivers.toLocaleString()} distinct receiver
+          {stats.distinctReceivers === 1 ? "" : "s"}
+          {stats.unclaimedReceivers > 0 && (
+            <>
+              {" ("}
+              <span className="text-muted-2">
+                {stats.unclaimedReceivers.toLocaleString()} unclaimed
+              </span>
+              {")"}
+            </>
+          )}
+        </p>
+        <p className="mt-1 text-[0.7rem] text-muted-2 tabular-nums">
           <span className="text-muted-2">registry · </span>
-          {registryBits.join(" · ")}
+          {stats.events.toLocaleString()} events lifetime ·{" "}
+          {stats.domains.toLocaleString()} domain
+          {stats.domains === 1 ? "" : "s"}
         </p>
       </Section>
 
-      {/* TOP LISTS — senders (ranked by trust) + receivers */}
-      <Section label="top domains">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+      {/* DOMAINS — top of the leaderboard on both sides of the wire.
+          Senders carry trust/mutuals/age inline; receivers are volume-only. */}
+      <Section label="domains">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
           <SenderList rows={stats.topSenders.slice(0, 8)} />
           <TopList
-            title="receivers"
+            title="receivers · by volume"
             rows={stats.topReceivers.slice(0, 8).map((r) => ({
               label: r.receiver_domain,
               value: r.count,
@@ -154,66 +195,65 @@ export default async function OpsPage({
         </div>
       </Section>
 
-      {/* ANTI-ABUSE — only renders when there's something to see.
-          Stays silent at zero so clean days don't add visual noise. */}
-      {stats.throttled7d > 0 && (
-        <Section label="anti-abuse">
-          <div className="flex items-baseline gap-4 mb-3">
-            <p className="text-3xl font-bold tabular-nums leading-none text-txt">
-              {stats.throttled24h.toLocaleString()}
-            </p>
-            <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
-              throttled · 24h
-              <div className="mt-1 normal-case tracking-normal text-[0.7rem] text-muted">
-                {stats.throttled7d.toLocaleString()} · 7d
-              </div>
-            </div>
-          </div>
-          {stats.throttledByReason.length > 0 && (
-            <p className="text-[0.7rem] text-muted tabular-nums mb-4">
-              <span className="text-muted-2">by reason · </span>
-              {stats.throttledByReason
-                .map((r) => `${r.reason} ${r.count}`)
-                .join(" · ")}
-            </p>
-          )}
-          {stats.throttledTopSenders.length > 0 && (
-            <TopList
-              title="review queue · 7d"
-              rows={stats.throttledTopSenders.map((s) => ({
-                label: s.sender_domain,
-                value: s.count,
-              }))}
-              emptyLabel=""
-            />
-          )}
-        </Section>
-      )}
-
-      {/* HYGIENE — denylist + quiet meta */}
-      <div className="mt-12 pt-6 border-t border-border space-y-2">
-        {stats.denylistTotal > 0 ? (
-          <p className="text-[0.7rem] text-muted">
-            <span className="text-muted-2">denylist · </span>
-            {stats.denylistTotal} domain
-            {stats.denylistTotal === 1 ? "" : "s"}
-            {stats.denylistByReason.length > 0 && (
-              <>
-                {" · "}
-                {stats.denylistByReason
-                  .map((r) => `${r.reason} ${r.count}`)
-                  .join(", ")}
-              </>
-            )}
+      {/* ANTI-ABUSE — always visible. On clean days it says so loudly;
+          on active days, reason breakdown + the domains driving it. */}
+      <Section label="anti-abuse · 7d">
+        {stats.throttled7d === 0 ? (
+          <p className="text-xs text-muted-2">
+            quiet — 0 events throttled in the last 7 days.
           </p>
         ) : (
-          <p className="text-[0.7rem] text-muted-2">denylist · empty</p>
+          <>
+            <div className="flex items-baseline gap-4 mb-3">
+              <p className="text-3xl font-bold tabular-nums leading-none text-amber">
+                {stats.throttled24h.toLocaleString()}
+              </p>
+              <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
+                throttled · 24h
+                <div className="mt-1 normal-case tracking-normal text-[0.7rem] text-muted">
+                  {stats.throttled7d.toLocaleString()} over 7d
+                </div>
+              </div>
+            </div>
+            {stats.throttledByReason.length > 0 && (
+              <div className="mb-5">
+                <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1.5">
+                  by reason
+                </p>
+                <ul className="text-xs space-y-0.5">
+                  {stats.throttledByReason.map((r) => (
+                    <li
+                      key={r.reason}
+                      className="flex justify-between tabular-nums"
+                    >
+                      <span className="text-txt">{r.reason}</span>
+                      <span className="text-muted">
+                        {r.count.toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {stats.throttledTopSenders.length > 0 && (
+              <TopList
+                title="review queue · 7d"
+                rows={stats.throttledTopSenders.map((s) => ({
+                  label: s.sender_domain,
+                  value: s.count,
+                }))}
+                emptyLabel=""
+              />
+            )}
+          </>
         )}
-        {stats.throttled7d === 0 && (
-          <p className="text-[0.7rem] text-muted-2">anti-abuse · quiet</p>
-        )}
+      </Section>
+
+      {/* FOOTER — rotate affordance + what the page guarantees. Small,
+          quiet, intentional. */}
+      <div className="mt-14 pt-5 border-t border-border">
         <p className="text-[0.6rem] text-muted-2 leading-relaxed">
-          rotate STATS_TOKEN to revoke. no caching · fresh query per load.
+          rotate STATS_TOKEN to revoke · no caching · fresh query per load
         </p>
       </div>
     </main>
@@ -221,8 +261,16 @@ export default async function OpsPage({
 }
 
 // ──────────────────────────────────────────────────────────────
-// Helpers
+// Primitives
 // ──────────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-3">
+      {children}
+    </p>
+  );
+}
 
 function Section({
   label,
@@ -233,24 +281,84 @@ function Section({
 }) {
   return (
     <section className="mb-10">
-      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-3">
-        {label}
-      </p>
+      <SectionLabel>{label}</SectionLabel>
       {children}
     </section>
   );
 }
 
-// Senders list carries an extra column — the trust index — so the
-// ranking visible in the UI matches the ranking the list was built
-// on. Mutuality is shown inline when present as a tiny "· m7" tag;
-// silent otherwise to avoid a column of zeroes.
+// KPI tile. Three lines: label → value → one-line hint. `tone` colors
+// the value; `hintTone` colors the hint independently (green delta
+// against a default-tone value, for instance).
+function Tile({
+  label,
+  value,
+  hint,
+  tone = "default",
+  hintTone = "muted",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "default" | "muted" | "accent" | "warn";
+  hintTone?: "muted" | "good" | "warn";
+}) {
+  const valueClass =
+    tone === "muted"
+      ? "text-muted-2"
+      : tone === "accent"
+        ? "text-accent"
+        : tone === "warn"
+          ? "text-amber"
+          : "text-txt";
+  const hintClass =
+    hintTone === "good"
+      ? "text-verified"
+      : hintTone === "warn"
+        ? "text-amber"
+        : "text-muted";
+  return (
+    <div className="rounded-md border border-border bg-surface/40 px-3.5 py-3">
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+        {label}
+      </p>
+      <p
+        className={`text-2xl font-bold tabular-nums mt-1 leading-none ${valueClass}`}
+      >
+        {value}
+      </p>
+      {hint && (
+        <p className={`text-[0.65rem] mt-1.5 tabular-nums truncate ${hintClass}`}>
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Human-friendly "days since first_seen". 0-29d → "Nd", 30-364d → "Nmo",
+// 365+d → "Ny". No fractional months; one token, always.
+function formatAge(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const ts = Date.parse(iso);
+  if (!Number.isFinite(ts)) return null;
+  const days = Math.max(0, Math.floor((Date.now() - ts) / 86_400_000));
+  if (days < 30) return `${days}d`;
+  if (days < 365) return `${Math.floor(days / 30)}mo`;
+  return `${Math.floor(days / 365)}y`;
+}
+
+// Senders list carries three inline tags after the event count:
+//   · tNN   trust index (always when known)
+//   · mNN   mutual counterparties (only when > 0 — zero is noisy)
+//   · age   days/months/years since first seen (contextual tenure cue)
 function SenderList({
   rows,
 }: {
   rows: Array<{
     domain: string;
     event_count: number;
+    first_seen: string;
     trust_index: number | null;
     mutual_counterparties: number | null;
   }>;
@@ -258,34 +366,42 @@ function SenderList({
   return (
     <div>
       <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
-        senders
+        senders · by trust
       </p>
       {rows.length === 0 ? (
         <p className="text-xs text-muted-2 py-2">no senders yet</p>
       ) : (
         <ul className="divide-y divide-border text-xs">
-          {rows.map((r) => (
-            <li
-              key={r.domain}
-              className="flex justify-between items-baseline py-1.5 gap-3"
-            >
-              <span className="truncate text-txt">{r.domain}</span>
-              <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
-                <span className="text-muted">{r.event_count.toLocaleString()}</span>
-                {r.trust_index !== null && (
-                  <span className="text-[0.7rem] text-accent">
-                    t{r.trust_index}
+          {rows.map((r) => {
+            const age = formatAge(r.first_seen);
+            return (
+              <li
+                key={r.domain}
+                className="flex justify-between items-baseline py-2 gap-3"
+              >
+                <span className="truncate text-txt">{r.domain}</span>
+                <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
+                  <span className="text-muted">
+                    {r.event_count.toLocaleString()}
                   </span>
-                )}
-                {r.mutual_counterparties !== null &&
-                  r.mutual_counterparties > 0 && (
-                    <span className="text-[0.7rem] text-muted-2">
-                      m{r.mutual_counterparties}
+                  {r.trust_index !== null && (
+                    <span className="text-[0.7rem] text-accent">
+                      t{r.trust_index}
                     </span>
                   )}
-              </span>
-            </li>
-          ))}
+                  {r.mutual_counterparties !== null &&
+                    r.mutual_counterparties > 0 && (
+                      <span className="text-[0.7rem] text-muted">
+                        m{r.mutual_counterparties}
+                      </span>
+                    )}
+                  {age && (
+                    <span className="text-[0.7rem] text-muted-2">{age}</span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -313,7 +429,7 @@ function TopList({
           {rows.map((r) => (
             <li
               key={r.label}
-              className="flex justify-between items-baseline py-1.5 gap-3"
+              className="flex justify-between items-baseline py-2 gap-3"
             >
               <span className="truncate text-txt">{r.label}</span>
               <span className="text-muted tabular-nums shrink-0">
@@ -347,12 +463,12 @@ function Chart({
 
   return (
     <div>
-      <div className="flex items-end gap-[3px] h-20 border-b border-border pb-0.5">
+      <div className="flex items-end gap-[3px] h-24 border-b border-border pb-0.5">
         {buckets.map((b) => {
           // Zero-count days get a 1px baseline tick instead of a visible tile —
           // keeps the chart quiet and lets real activity breathe.
           const h =
-            b.count === 0 ? 1 : Math.max(4, Math.round((b.count / max) * 76));
+            b.count === 0 ? 1 : Math.max(4, Math.round((b.count / max) * 92));
           return (
             <div
               key={b.day}
