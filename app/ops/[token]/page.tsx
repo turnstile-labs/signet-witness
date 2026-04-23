@@ -402,15 +402,31 @@ function TierDot({ tier }: { tier: SenderTier }) {
   );
 }
 
+// Shared column grids. Fixed-width numeric cells so header labels
+// line up pixel-perfect with the values below them. Domain occupies
+// the first, flexible column and truncates on overflow.
+const SENDER_COLS =
+  "grid grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.25rem_1.75rem_2rem] items-baseline gap-x-2";
+const RECEIVER_COLS =
+  "grid grid-cols-[minmax(0,1fr)_2.5rem_2.75rem] items-baseline gap-x-2";
+
+function ColHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-right text-[0.55rem] uppercase tracking-widest text-muted-2">
+      {children}
+    </span>
+  );
+}
+
 // Senders list — one row per sender, each row carrying:
 //   · tier dot   verified / on-record / pending, colour-coded
 //   · events     raw event_count
-//   · →N         distinct counterparties reached (reach)
-//   · tNN        trust index when scored
-//   · mN         mutual counterparties (only when > 0)
+//   · reach      distinct counterparties reached (domain_scores.counterparty_count)
+//   · trust      composite trust_index (0-100)
+//   · mut        mutual counterparties (blank when zero)
 //   · age        days/months/years since first seen
-// The column header carries the population split so the head of the
-// list isn't confused for the whole.
+// Column header carries both the labels and the population split so
+// the head of the list isn't confused for the whole.
 function SenderList({
   rows,
   tiers,
@@ -445,51 +461,59 @@ function SenderList({
       {rows.length === 0 ? (
         <p className="text-xs text-muted-2 py-2">no senders yet</p>
       ) : (
-        <ul className="divide-y divide-border text-xs">
-          {rows.map((r) => {
-            const age = formatAge(r.first_seen);
-            const tier = tierFor(r);
-            return (
-              <li
-                key={r.domain}
-                className="flex justify-between items-baseline py-2 gap-3"
-              >
-                <span className="truncate text-txt flex items-center gap-2 min-w-0">
-                  <TierDot tier={tier} />
-                  <span className="truncate">{r.domain}</span>
-                </span>
-                <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
-                  <span className="text-muted">
+        <>
+          <div className={`${SENDER_COLS} pb-1.5 border-b border-border`}>
+            <span className="text-[0.55rem] uppercase tracking-widest text-muted-2">
+              domain
+            </span>
+            <ColHeader>events</ColHeader>
+            <ColHeader>reach</ColHeader>
+            <ColHeader>trust</ColHeader>
+            <ColHeader>mut</ColHeader>
+            <ColHeader>age</ColHeader>
+          </div>
+          <ul className="divide-y divide-border text-xs">
+            {rows.map((r) => {
+              const age = formatAge(r.first_seen);
+              const tier = tierFor(r);
+              const hasMut =
+                r.mutual_counterparties !== null &&
+                r.mutual_counterparties > 0;
+              const hasReach =
+                r.counterparty_count !== null && r.counterparty_count > 0;
+              return (
+                <li key={r.domain} className={`${SENDER_COLS} py-2`}>
+                  <span className="text-txt flex items-center gap-2 min-w-0">
+                    <TierDot tier={tier} />
+                    <span className="truncate">{r.domain}</span>
+                  </span>
+                  <span className="text-right text-muted tabular-nums">
                     {r.event_count.toLocaleString()}
                   </span>
-                  {r.counterparty_count !== null &&
-                    r.counterparty_count > 0 && (
-                      <span
-                        title={`${r.counterparty_count} distinct counterparties`}
-                        className="text-[0.7rem] text-muted-2"
-                      >
-                        →{r.counterparty_count}
-                      </span>
-                    )}
-                  {r.trust_index !== null && (
-                    <span className="text-[0.7rem] text-accent">
-                      t{r.trust_index}
-                    </span>
-                  )}
-                  {r.mutual_counterparties !== null &&
-                    r.mutual_counterparties > 0 && (
-                      <span className="text-[0.7rem] text-muted">
-                        m{r.mutual_counterparties}
-                      </span>
-                    )}
-                  {age && (
-                    <span className="text-[0.7rem] text-muted-2">{age}</span>
-                  )}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+                  <span
+                    title={
+                      hasReach
+                        ? `${r.counterparty_count} distinct counterparties`
+                        : undefined
+                    }
+                    className="text-right text-[0.7rem] text-muted-2 tabular-nums"
+                  >
+                    {hasReach ? r.counterparty_count : ""}
+                  </span>
+                  <span className="text-right text-[0.7rem] text-accent tabular-nums">
+                    {r.trust_index !== null ? r.trust_index : ""}
+                  </span>
+                  <span className="text-right text-[0.7rem] text-muted tabular-nums">
+                    {hasMut ? r.mutual_counterparties : ""}
+                  </span>
+                  <span className="text-right text-[0.7rem] text-muted-2 tabular-nums">
+                    {age ?? ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -498,7 +522,7 @@ function SenderList({
 // Receivers list — one row per distinct receiver_domain, each row:
 //   · claimed dot   filled = also a registered sender, hollow = unclaimed
 //   · events        total volume (the ranking key)
-//   · from N        distinct senders who sealed to it (reach, inbound)
+//   · senders       distinct senders who sealed to it (inbound reach)
 // Header carries the claimed/unclaimed split across all receivers.
 function ReceiverList({
   rows,
@@ -530,40 +554,46 @@ function ReceiverList({
       {rows.length === 0 ? (
         <p className="text-xs text-muted-2 py-2">no receivers yet</p>
       ) : (
-        <ul className="divide-y divide-border text-xs">
-          {rows.map((r) => (
-            <li
-              key={r.receiver_domain}
-              className="flex justify-between items-baseline py-2 gap-3"
-            >
-              <span className="truncate text-txt flex items-center gap-2 min-w-0">
-                <span
-                  title={r.claimed ? "registered sender" : "unclaimed"}
-                  aria-label={r.claimed ? "registered sender" : "unclaimed"}
-                  className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
-                    r.claimed
-                      ? "bg-txt"
-                      : "border border-muted-2 bg-transparent"
-                  }`}
-                />
-                <span className="truncate">{r.receiver_domain}</span>
-              </span>
-              <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
-                <span className="text-muted">
+        <>
+          <div className={`${RECEIVER_COLS} pb-1.5 border-b border-border`}>
+            <span className="text-[0.55rem] uppercase tracking-widest text-muted-2">
+              domain
+            </span>
+            <ColHeader>events</ColHeader>
+            <ColHeader>senders</ColHeader>
+          </div>
+          <ul className="divide-y divide-border text-xs">
+            {rows.map((r) => (
+              <li key={r.receiver_domain} className={`${RECEIVER_COLS} py-2`}>
+                <span className="text-txt flex items-center gap-2 min-w-0">
+                  <span
+                    title={r.claimed ? "registered sender" : "unclaimed"}
+                    aria-label={r.claimed ? "registered sender" : "unclaimed"}
+                    className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                      r.claimed
+                        ? "bg-txt"
+                        : "border border-muted-2 bg-transparent"
+                    }`}
+                  />
+                  <span className="truncate">{r.receiver_domain}</span>
+                </span>
+                <span className="text-right text-muted tabular-nums">
                   {r.count.toLocaleString()}
                 </span>
-                {r.distinct_senders > 0 && (
-                  <span
-                    title={`${r.distinct_senders} distinct senders`}
-                    className="text-[0.7rem] text-muted-2"
-                  >
-                    from {r.distinct_senders}
-                  </span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span
+                  title={
+                    r.distinct_senders > 0
+                      ? `${r.distinct_senders} distinct senders`
+                      : undefined
+                  }
+                  className="text-right text-[0.7rem] text-muted-2 tabular-nums"
+                >
+                  {r.distinct_senders > 0 ? r.distinct_senders : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -572,6 +602,9 @@ function ReceiverList({
 // Mutual pairs — reciprocal edges (A↔B where each sealed to the other).
 // The strongest trust signal in the graph; both sides are already in
 // `domains`, so surfacing them here doesn't expose a private receiver.
+const PAIR_COLS =
+  "grid grid-cols-[minmax(0,1fr)_3rem] items-baseline gap-x-2";
+
 function MutualPairs({
   rows,
   total,
@@ -584,18 +617,21 @@ function MutualPairs({
       <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
         mutual pairs · {total.toLocaleString()}
       </p>
+      <div className={`${PAIR_COLS} pb-1.5 border-b border-border`}>
+        <span className="text-[0.55rem] uppercase tracking-widest text-muted-2">
+          pair
+        </span>
+        <ColHeader>events</ColHeader>
+      </div>
       <ul className="divide-y divide-border text-xs">
         {rows.map((r) => (
-          <li
-            key={`${r.a}~${r.b}`}
-            className="flex justify-between items-baseline py-2 gap-3"
-          >
-            <span className="truncate text-txt">
+          <li key={`${r.a}~${r.b}`} className={`${PAIR_COLS} py-2`}>
+            <span className="text-txt truncate min-w-0">
               <span className="truncate">{r.a}</span>
               <span className="text-muted-2 px-1.5">↔</span>
               <span className="truncate">{r.b}</span>
             </span>
-            <span className="shrink-0 text-muted tabular-nums">
+            <span className="text-right text-muted tabular-nums">
               {r.events.toLocaleString()}
             </span>
           </li>
