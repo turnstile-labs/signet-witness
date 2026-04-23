@@ -190,70 +190,77 @@ function renderPng(
   const PNG_W = W * 2;
   const PNG_H = H * 2;
 
-  // Mark SVG inline — Satori supports basic SVG shapes and paths.
-  // All mark dimensions doubled to match the 2× render space.
+  // All mark + ring dimensions doubled to match the 2× render space.
   const markSize = MARK_D * 2;
-  const markCheckPath = `M ${markSize / 2 - 8} ${markSize / 2} L ${markSize / 2 - 2} ${markSize / 2 + 6} L ${markSize / 2 + 8} ${markSize / 2 - 6}`;
+  const markR = markSize / 2;
 
-  // Ring at 2× — same geometry as SVG, just doubled. Renders in a
-  // larger viewBox that accommodates the mark plus the outside ring.
+  // Ring geometry — same concept as the SVG path, but expressed as a
+  // full circle with stroke-dasharray. Satori's SVG subset handles
+  // <circle> + stroke-dasharray + transform reliably; it does NOT
+  // reliably handle <path> arc commands (`A`), so the progress arc
+  // has to be built from a dashed full circle rotated to start at
+  // 12 o'clock.
   const ringR2x = (MARK_D / 2 + RING_GAP + RING_STROKE / 2) * 2;
-  const ringBoxSize = Math.ceil(ringR2x * 2 + RING_STROKE * 2 + 4);
+  const ringStroke2x = RING_STROKE * 2;
+  const ringBoxSize = Math.ceil(ringR2x * 2 + ringStroke2x * 2 + 4);
   const ringCenter = ringBoxSize / 2;
-  const ringArc = ringArcPath(ringCenter, ringCenter, ringR2x, ringFraction(trustIndex));
+  const ringCircumference = 2 * Math.PI * ringR2x;
+  const fraction = ringFraction(trustIndex);
+  const filledLen = fraction * ringCircumference;
   const ringColor = state === "pending" ? p.pendingStroke : "#22c55e";
+  const checkPath = `M ${ringCenter - 8} ${ringCenter} L ${ringCenter - 2} ${ringCenter + 6} L ${ringCenter + 8} ${ringCenter - 6}`;
 
-  // The mark itself is drawn inside the same SVG box as the ring so
-  // both stay perfectly concentric regardless of flex rounding.
-  const markOffset = (ringBoxSize - markSize) / 2;
-
-  let markGlyph: React.ReactNode;
+  // Mark layers — drawn as siblings of the ring inside a single
+  // <svg>. No React Fragments: Satori's SVG children pipeline is
+  // fussier than the browser's.
+  let markInner: React.ReactNode = null;
+  let markOuter: React.ReactNode = null;
   if (state === "verified") {
-    markGlyph = (
-      <>
-        <circle
-          cx={ringCenter}
-          cy={ringCenter}
-          r={markSize / 2}
-          fill="#22c55e"
-        />
-        <path
-          d={`M ${ringCenter - 8} ${ringCenter} L ${ringCenter - 2} ${ringCenter + 6} L ${ringCenter + 8} ${ringCenter - 6}`}
-          stroke={p.bgBot}
-          strokeWidth="4"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </>
-    );
-  } else if (state === "onRecord") {
-    markGlyph = (
-      <>
-        <circle
-          cx={ringCenter}
-          cy={ringCenter}
-          r={markSize / 2 - 1.5}
-          fill="none"
-          stroke="#16a34a"
-          strokeWidth="3"
-        />
-        <path
-          d={`M ${ringCenter - 8} ${ringCenter} L ${ringCenter - 2} ${ringCenter + 6} L ${ringCenter + 8} ${ringCenter - 6}`}
-          stroke="#16a34a"
-          strokeWidth="3.6"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </>
-    );
-  } else {
-    markGlyph = (
+    markOuter = (
       <circle
         cx={ringCenter}
         cy={ringCenter}
-        r={markSize / 2 - 1.5}
+        r={markR}
+        fill="#22c55e"
+      />
+    );
+    markInner = (
+      <path
+        d={checkPath}
+        stroke={p.bgBot}
+        strokeWidth="4"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
+  } else if (state === "onRecord") {
+    markOuter = (
+      <circle
+        cx={ringCenter}
+        cy={ringCenter}
+        r={markR - 1.5}
+        fill="none"
+        stroke="#16a34a"
+        strokeWidth="3"
+      />
+    );
+    markInner = (
+      <path
+        d={checkPath}
+        stroke="#16a34a"
+        strokeWidth="3.6"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
+  } else {
+    markOuter = (
+      <circle
+        cx={ringCenter}
+        cy={ringCenter}
+        r={markR - 1.5}
         fill="none"
         stroke={p.pendingStroke}
         strokeWidth="3"
@@ -261,35 +268,37 @@ function renderPng(
     );
   }
 
-  // Silence unused-var warnings from the prior-layout constants while
-  // keeping them in scope for potential future use.
-  void markCheckPath;
-  void markOffset;
-
   const markNode: React.ReactNode = (
     <svg
       width={ringBoxSize}
       height={ringBoxSize}
       viewBox={`0 0 ${ringBoxSize} ${ringBoxSize}`}
     >
+      {/* Track — full, muted circle */}
       <circle
         cx={ringCenter}
         cy={ringCenter}
         r={ringR2x}
         fill="none"
         stroke={p.ringTrack}
-        strokeWidth={RING_STROKE * 2}
+        strokeWidth={ringStroke2x}
       />
-      {ringArc && (
-        <path
-          d={ringArc}
+      {/* Progress — dash-array slice rotated to start at 12 o'clock */}
+      {fraction > 0.005 && (
+        <circle
+          cx={ringCenter}
+          cy={ringCenter}
+          r={ringR2x}
           fill="none"
           stroke={ringColor}
-          strokeWidth={RING_STROKE * 2}
+          strokeWidth={ringStroke2x}
           strokeLinecap="round"
+          strokeDasharray={`${filledLen} ${ringCircumference}`}
+          transform={`rotate(-90 ${ringCenter} ${ringCenter})`}
         />
       )}
-      {markGlyph}
+      {markOuter}
+      {markInner}
     </svg>
   );
 
