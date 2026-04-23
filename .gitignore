@@ -17,6 +17,9 @@ out/
 # vercel
 .vercel
 
+# tests
+coverage/
+
 # misc
 .DS_Store
 *.pem

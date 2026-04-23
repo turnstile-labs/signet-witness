@@ -107,7 +107,11 @@ function renderBody(senderDomain: string, receiverEmail: string): {
   html: string;
 } {
   void receiverEmail;
-  const sealUrl = `https://witnessed.cc/b/${senderDomain}`;
+  // Sender domain goes into a URL path segment. Real domains never
+  // contain characters that need encoding, but this function is
+  // general-purpose — percent-encode so a malformed domain cannot
+  // smuggle structure into the href even in a pathological caller.
+  const sealUrl = `https://witnessed.cc/b/${encodeURIComponent(senderDomain)}`;
   // /rights is the single GDPR control surface (opt-out / erasure /
   // subject access). We deliberately don't deep-link with the address
   // in the URL — the user is authenticated via DNS-TXT proof on that
@@ -138,7 +142,7 @@ function renderBody(senderDomain: string, receiverEmail: string): {
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0f172a;line-height:1.55;max-width:560px;margin:0 auto;padding:24px">
   <p><strong>${escapeHtml(senderDomain)}</strong> just produced a cryptographically sealed record of emailing you.</p>
   <p>It lives on their public page:</p>
-  <p><a href="${sealUrl}" style="color:#2563eb;text-decoration:none">${escapeHtml(sealUrl)}</a></p>
+  <p><a href="${escapeHtml(sealUrl)}" style="color:#2563eb;text-decoration:none">${escapeHtml(sealUrl)}</a></p>
   <p style="color:#475569">Witnessed doesn't publish your identity — only the sender's outbound record. Your address is never shown, sold, or listed.</p>
   <p>If you'd like your domain to build the same verifiable history, CC <strong>sealed@witnessed.cc</strong> on any future outbound email.</p>
   <p style="color:#94a3b8;font-size:13px;margin-top:32px">
