@@ -166,54 +166,46 @@ export default async function Home({
             </p>
           </div>
 
-          {/* Mock seal-page card — a 1:1 replica of the real
-              /b/<domain> hero section, wrapped in a rounded surface
-              so visitors read it as "here's what you'll see when
-              someone clicks your badge." Every piece of copy inside
-              the card comes from the seal.* namespace directly, so
-              the mock can't drift from the real page's wording. */}
-          <div className="rounded-xl border border-border bg-surface px-6 sm:px-10 py-8 sm:py-10 shadow-sm">
-            {/* Eyebrow */}
-            <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
+          {/* Mock seal-page card — structurally identical to the real
+              /b/<domain> hero (same elements, same copy pulled verbatim
+              from seal.*, same rhythm), but typography scaled ~one
+              step down across the board and capped at max-w-xl so it
+              reads as a preview card sitting alongside the landing's
+              other surfaces, not a full-page hero. The real seal page
+              stays at its own native scale — this is the "what your
+              visitor will see" preview, deliberately smaller. */}
+          <div className="max-w-xl mx-auto rounded-xl border border-border bg-surface px-5 sm:px-7 py-6 sm:py-8 shadow-sm">
+            <p className="text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
               {tSeal("eyebrow")}
             </p>
 
-            {/* Domain + permalink — matches seal page's H1 / perma
-                treatment (smaller sizes than the real seal's 3xl/5xl
-                since the mock sits inside a card rather than as the
-                whole page, but same proportional rhythm). */}
-            <div className="mt-3">
-              <h3 className="text-2xl sm:text-4xl font-bold text-txt tracking-tight break-all leading-[1.05]">
+            <div className="mt-2.5">
+              <h3 className="text-xl sm:text-2xl font-bold text-txt tracking-tight break-all leading-[1.1]">
                 {MOCK_DOMAIN}
               </h3>
-              <p className="text-xs sm:text-sm text-muted-2 font-mono mt-2 break-all">
+              <p className="text-[0.7rem] sm:text-xs text-muted-2 font-mono mt-1.5 break-all">
                 witnessed.cc/b/{MOCK_DOMAIN}
               </p>
             </div>
 
-            {/* Trust-index hero — same composition as seal.tsx's
-                TrustIndexHero: big number left, uppercase scale right,
-                label under the number, bar with a tick at the verified
-                threshold. Sized one notch smaller than the real seal
-                so it fits the card's narrower column comfortably. */}
-            <div className="mt-8">
+            <div className="mt-6">
               <div className="flex items-baseline justify-between gap-3">
                 <div>
-                  <p className="text-4xl sm:text-5xl font-bold font-mono leading-none tabular-nums text-txt">
+                  <p className="text-3xl sm:text-4xl font-bold font-mono leading-none tabular-nums text-txt">
                     {MOCK_TRUST}
-                    <span className="text-xl sm:text-2xl text-muted-2 ml-1">
+                    <span className="text-base sm:text-lg text-muted-2 ml-1">
                       / 100
                     </span>
                   </p>
-                  <p className="text-xs sm:text-sm font-semibold text-txt mt-2">
+                  <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-2">
                     {tSeal("trustIndexLabel")}
                   </p>
                 </div>
-                <p className="text-[0.6rem] font-mono uppercase tracking-widest text-muted-2 shrink-0">
+                <p className="text-[0.55rem] font-mono uppercase tracking-widest text-muted-2 shrink-0">
                   {tSeal("trustIndexScale")}
                 </p>
               </div>
-              <div className="relative mt-3 h-1.5 rounded-full bg-bg border border-border overflow-hidden">
+              <div className="relative mt-2.5 h-1 rounded-full bg-bg border border-border overflow-hidden">
                 <div
                   className="absolute left-0 top-0 h-full bg-verified"
                   style={{ width: `${MOCK_TRUST}%` }}
@@ -225,38 +217,30 @@ export default async function Home({
               </div>
             </div>
 
-            {/* Stats — three values matching the seal page's Stat
-                component: 3xl/4xl value, xs/sm label, 0.65rem/xs sub. */}
-            <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10">
+            <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-6">
               {[
                 { value: MOCK_EVENTS.toLocaleString(), label: tSeal("statVerifiedEmails"), sub: tSeal("statVerifiedEmailsSub") },
                 { value: MOCK_HISTORY,                 label: tSeal("statActiveHistory"),  sub: tSeal("statActiveHistorySub")  },
                 { value: MOCK_MUTUALS.toString(),      label: tSeal("statMutuals"),        sub: tSeal("statMutualsSub")        },
               ].map((stat) => (
                 <div key={stat.label}>
-                  <p className="text-3xl sm:text-4xl font-bold font-mono leading-none text-txt">
+                  <p className="text-xl sm:text-2xl font-bold font-mono leading-none text-txt">
                     {stat.value}
                   </p>
-                  <p className="text-xs sm:text-sm font-semibold text-txt mt-2">{stat.label}</p>
-                  <p className="text-[0.65rem] sm:text-xs text-muted-2 mt-0.5 leading-tight">{stat.sub}</p>
+                  <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1.5">{stat.label}</p>
+                  <p className="text-[0.6rem] sm:text-[0.7rem] text-muted-2 mt-0.5 leading-tight">{stat.sub}</p>
                 </div>
               ))}
             </div>
 
-            {/* scoreBasis meta line — quiet, 0.7rem, explains what the
-                trust number is built on. Same rendering as seal.tsx. */}
-            <p className="mt-6 text-[0.7rem] text-muted-2 leading-relaxed max-w-xl">
+            <p className="mt-5 text-[0.65rem] text-muted-2 leading-relaxed">
               {tSeal("scoreBasis", {
                 receivers: MOCK_RECEIVERS,
                 diversity: MOCK_DIVERSITY_PCT,
               })}
             </p>
 
-            {/* trustLine — the same one-liner the real seal page
-                closes its hero with. Sits at the emotional bottom of
-                the preview: "this is a forward-only record, each
-                entry verified at the moment of sending." */}
-            <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
+            <p className="mt-6 text-[0.8rem] text-muted leading-relaxed">
               {tSeal("trustLine")}
             </p>
           </div>
