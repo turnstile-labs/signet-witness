@@ -1,8 +1,6 @@
 import { ImageResponse } from "next/og";
 import {
   BADGE_HEIGHT,
-  BRAND_TEXT,
-  BRAND_WIDTH,
   GAP_MARK_DOMAIN,
   MARK_D,
   PAD_L,
@@ -23,16 +21,25 @@ import {
 // Badge canvas — width adapts to the domain, height stays fixed so
 // the badge stays signature-compatible.
 //
-// Layout:   [ ✓ ]     [ domain ]     [ witnessed.cc ]
-//            left      center-left    right, muted
+// Layout:   [ ring+✓ ]     [ domain ]     [ 27/100 ]
+//            left           center-left    right, muted
 //
 // Mark leads as the state glyph (color-coded: verified fill / on-record
 // outline / pending ring). The domain follows at 13px semibold — the
-// focal point. The brand sits right-aligned, 9px and muted ("almost
-// hidden" on a glance, legible on close inspection) so Witnessed is
-// attributed without competing with the domain.
+// focal point. The trust score sits right-aligned at 11px — large
+// enough that any audience reads "27 out of 100" at a glance, muted
+// enough that it doesn't compete with the domain. The ring around the
+// mark fills to the same fraction, so the signal is both graphical
+// (ring) and numeric (score), reinforcing each other.
 const H = BADGE_HEIGHT;
 const R = 8; // corner radius
+
+// Score text helpers. Always "N/100" — numeric, locale-neutral, and
+// universally understood (school grades, percent-of, review scores).
+function scoreText(trustIndex: number): string {
+  const n = Math.max(0, Math.min(100, Math.round(trustIndex)));
+  return `${n}/100`;
+}
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
 function parseSlug(slug: string): { domain: string; format: "svg" | "png" } {
@@ -68,21 +75,21 @@ interface Palette {
   bgBot: string;         // gradient bottom
   border: string;
   domain: string;        // hero text
-  brand: string;         // "witnessed.cc" — muted attribution
+  score: string;         // "27/100" — muted-but-legible trust readout
   pendingStroke: string; // outline for the pending mark
   ringTrack: string;     // unfilled portion of the progress ring
 }
 
-// Brand color sits ~3 luminance steps above the background, so it's
-// legible on close inspection but recedes at a glance. Tuned against
-// each theme's actual bg gradient.
+// Score color sits about halfway between domain and background — light
+// enough to recede next to the domain, dark enough that the number
+// reads at a glance. Tuned against each theme's actual bg gradient.
 const PALETTES: Record<Theme, Palette> = {
   dark: {
     bgTop: "#14141c",
     bgBot: "#08080d",
     border: "#2a2a38",
     domain: "#fafafe",
-    brand: "#5a5a6a",
+    score: "#a0a0b4",
     pendingStroke: "#6a6a7a",
     ringTrack: "#2a2a38",
   },
@@ -91,7 +98,7 @@ const PALETTES: Record<Theme, Palette> = {
     bgBot: "#f4f4fa",
     border: "#d8d8e4",
     domain: "#0a0a14",
-    brand: "#9a9aa8",
+    score: "#5a5a68",
     pendingStroke: "#a0a0b0",
     ringTrack: "#e4e4ee",
   },
@@ -117,21 +124,25 @@ function renderSvg(
   const gradId = `bg-${theme}`;
 
   const { display, width: W } = sizeBadge(domain);
+  const score = scoreText(trustIndex);
 
-  // Positions — mark on the left, domain follows, brand right-anchored.
+  // Positions — mark on the left, domain follows, score right-anchored.
   const markCX = PAD_L + MARK_D / 2;
   const markCY = H / 2;
   const markR = MARK_D / 2;
   const check = `M ${markCX - 4} ${markCY} L ${markCX - 1} ${markCY + 3} L ${markCX + 4} ${markCY - 3}`;
 
   const domainX = PAD_L + MARK_D + GAP_MARK_DOMAIN;
-  const brandX = W - PAD_R - BRAND_WIDTH;
+  // Score uses text-anchor="end" so the right edge is pinned to
+  // (W - PAD_R) regardless of digit count — a 2-digit score ("27/100")
+  // and a 3-digit one ("100/100") both sit flush with the canvas edge.
+  const scoreX = W - PAD_R;
 
   // Baselines — 13px domain needs slightly more drop to sit centered
-  // in the 32px canvas; 9px brand rides a touch higher but shares a
+  // in the 32px canvas; 11px score rides a touch higher but shares a
   // visual baseline with the domain.
   const domainBaselineY = H / 2 + 5;
-  const brandBaselineY = H / 2 + 4;
+  const scoreBaselineY = H / 2 + 4;
 
   let markEl = "";
   if (state === "verified") {
@@ -170,7 +181,7 @@ function renderSvg(
   </defs>
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>${ringEl}${markEl}
   <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(display)}</text>
-  <text x="${brandX}" y="${brandBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="9" font-weight="400" fill="${p.brand}" letter-spacing="0.02em">${BRAND_TEXT}</text>
+  <text x="${scoreX}" y="${scoreBaselineY}" text-anchor="end" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="11" font-weight="500" fill="${p.score}" letter-spacing="0.01em">${score}</text>
 </svg>`;
 }
 
@@ -344,19 +355,21 @@ function renderPng(
           </span>
         </div>
 
-        {/* Brand — right-anchored, muted */}
+        {/* Trust score — right-anchored, muted-but-legible. 22px at
+            2× ≈ 11px on screen, matching the SVG. Font weight 500
+            keeps the number readable without out-shouting the domain. */}
         <span
           style={{
-            color: p.brand,
-            fontSize: 18,
-            fontWeight: 400,
+            color: p.score,
+            fontSize: 22,
+            fontWeight: 500,
             fontFamily: "monospace",
             lineHeight: 1,
-            letterSpacing: 0.4,
+            letterSpacing: 0.2,
             whiteSpace: "nowrap",
           }}
         >
-          {BRAND_TEXT}
+          {scoreText(trustIndex)}
         </span>
       </div>
     ),
@@ -391,10 +404,11 @@ export function cacheHeaders(
   // Without the bin, every recompute would bust the CDN even for a
   // 1-point drift; with it, transitions are coarse enough to keep
   // hit rates high while still picking up meaningful progress.
-  // Bumped to v7 — ring added, state alone no longer fully describes
-  // the rendered output.
+  // Bumped to v8 — witnessed.cc brand text replaced with "N/100"
+  // trust readout. Old v7 ETags would otherwise 304 into the stale
+  // layout.
   const bucket = trustBucket(snapshot.trustIndex);
-  const etag = `W/"${snapshot.state}-t${bucket}-${theme}-${format}-v7"`;
+  const etag = `W/"${snapshot.state}-t${bucket}-${theme}-${format}-v8"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

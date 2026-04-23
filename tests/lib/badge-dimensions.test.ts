@@ -3,8 +3,8 @@ import {
   BADGE_HEIGHT,
   BADGE_MIN_WIDTH,
   BADGE_MAX_WIDTH,
-  BRAND_TEXT,
-  BRAND_WIDTH,
+  SCORE_TEXT_MAX,
+  SCORE_TEXT_WIDTH,
   DOMAIN_MAX_CHARS,
   computeBadgeWidth,
   sizeBadge,
@@ -15,8 +15,11 @@ describe("badge-dimensions", () => {
   describe("constants", () => {
     it("exports stable layout primitives", () => {
       expect(BADGE_HEIGHT).toBe(32);
-      expect(BRAND_TEXT).toBe("witnessed.cc");
-      expect(BRAND_WIDTH).toBeGreaterThan(0);
+      // witnessed.cc is gone — the attribution slot is now the
+      // 0–100 trust readout. "100/100" is the widest possible value
+      // and defines the reserved slot width.
+      expect(SCORE_TEXT_MAX).toBe("100/100");
+      expect(SCORE_TEXT_WIDTH).toBeGreaterThan(0);
       expect(DOMAIN_MAX_CHARS).toBeGreaterThan(10);
     });
   });
