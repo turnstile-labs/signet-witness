@@ -27,21 +27,26 @@ export default async function Home({
   // automatically.
   const tSeal = await getTranslations("seal");
 
-  // Mock numbers for the acmecorp.com preview seal. Tuned so the mock
-  // reads as a "mature, verified, but not a suspicious 100" sender:
-  //   - trust 72  → above the 65 verified threshold with visible
-  //     headroom on the bar, bar color = verified green
-  //   - 847 events + 14mo history + 7 mutuals → plausible sustained
-  //     use without looking like a superpower
-  //   - 24 counterparties + 60 diversity → scoreBasis reads "Based
-  //     on 24 distinct counterparties · diversity 60 / 100"
+  // Mock numbers for the acmecorp.com preview seal. Tuned for the
+  // "on-record, building toward verified" state — which is what most
+  // first-time visitors will see on their own page for weeks or
+  // months, and what the real /b/<domain> hero renders for any score
+  // below 65. This reads as honest ("here's where you'll be after a
+  // few months"), not aspirational ("here's the finish line") — and
+  // it pairs with the signature-badge mock above (acme.studio @ 78,
+  // verified-green) to tell a two-persona story: one domain already
+  // verified and advertising it in signatures, another on-record and
+  // building. State-dependent bar color in TrustIndexHero means the
+  // mock matches the real page: below 65 → bg-accent (purple), above
+  // → bg-verified (green). Keep MOCK_TRUST < 65 or the whole thing
+  // repaints green and the narrative inverts.
   const MOCK_DOMAIN = "acmecorp.com";
-  const MOCK_TRUST = 72;
-  const MOCK_EVENTS = 847;
-  const MOCK_HISTORY = "14 mo";
-  const MOCK_MUTUALS = 7;
-  const MOCK_RECEIVERS = 24;
-  const MOCK_DIVERSITY_PCT = 60;
+  const MOCK_TRUST = 58;
+  const MOCK_EVENTS = 412;
+  const MOCK_HISTORY = "9 mo";
+  const MOCK_MUTUALS = 4;
+  const MOCK_RECEIVERS = 18;
+  const MOCK_DIVERSITY_PCT = 55;
 
   // Landing-page signature mock — Jane Doe @ Acme Studio. The badge
   // advertises acme.studio (matches the persona) and is rendered via
@@ -205,9 +210,16 @@ export default async function Home({
                   {tSeal("trustIndexScale")}
                 </p>
               </div>
+              {/* Bar color tracks state like the real TrustIndexHero:
+                  below the verified threshold → accent (purple),
+                  above → verified (green). MOCK_TRUST is intentionally
+                  below 65 here so this stays purple — see the MOCK_*
+                  comment above for the rationale. The verified tick
+                  stays green regardless, since its job is to mark the
+                  threshold independent of current state. */}
               <div className="relative mt-2.5 h-1 rounded-full bg-bg border border-border overflow-hidden">
                 <div
-                  className="absolute left-0 top-0 h-full bg-verified"
+                  className="absolute left-0 top-0 h-full bg-accent"
                   style={{ width: `${MOCK_TRUST}%` }}
                 />
                 <div
