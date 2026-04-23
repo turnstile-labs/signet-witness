@@ -4,9 +4,9 @@ import { defineConfig } from "vitest/config";
 //
 // Coverage intentionally excludes app/, components, and framework
 // glue. We target the logic an attacker can probe: reputation gates,
-// score math, viral filters, and the badge state resolver. Pushing
-// to 100% line coverage across Next.js surfaces would pay for tests
-// that tell us nothing about correctness.
+// score math, and the badge state resolver. Pushing to 100% line
+// coverage across Next.js surfaces would pay for tests that tell us
+// nothing about correctness.
 export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
@@ -20,7 +20,6 @@ export default defineConfig({
       include: [
         "lib/scores.ts",
         "lib/reputation.ts",
-        "lib/viral.ts",
         "lib/badge-state.ts",
         "lib/badge-dimensions.ts",
         "app/api/inbound/route.ts",

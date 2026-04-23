@@ -18,9 +18,6 @@ vi.mock("@/lib/reputation", () => ({
   recordThrottled: vi.fn(async () => {}),
   fetchFirstCertAt: vi.fn(async () => null),
 }));
-vi.mock("@/lib/viral", () => ({
-  enqueueViralInvites: vi.fn(async () => {}),
-}));
 
 // Next's `after()` runs post-response in prod. In tests we just
 // flush it synchronously so we can assert on its side effects.
@@ -52,7 +49,6 @@ import {
   recordThrottled,
   fetchFirstCertAt,
 } from "@/lib/reputation";
-import { enqueueViralInvites } from "@/lib/viral";
 import { POST } from "@/app/api/inbound/route";
 
 // Types from mailauth / the DB layer are strict in source but
@@ -73,7 +69,6 @@ const dblMock = vi.mocked(isOnDbl);
 const rateMock = vi.mocked(isRateLimited);
 const throttledMock = vi.mocked(recordThrottled);
 const ctMock = vi.mocked(fetchFirstCertAt);
-const viralMock = vi.mocked(enqueueViralInvites);
 
 function raw(overrides: Partial<{ from: string; to: string; body: string }> = {}): string {
   const from = overrides.from ?? "ceo@acme.com";
@@ -135,7 +130,6 @@ beforeEach(() => {
   rateMock.mockResolvedValue(false);
   throttledMock.mockResolvedValue();
   ctMock.mockResolvedValue(null);
-  viralMock.mockResolvedValue();
 });
 
 describe("/api/inbound — auth + parsing", () => {
@@ -307,25 +301,11 @@ describe("/api/inbound — anti-abuse decision tree", () => {
 });
 
 describe("/api/inbound — post-response work", () => {
-  it("schedules CT warm-up and viral invites via after()", async () => {
-    await POST(
-      makeReq(
-        raw({
-          from: "ceo@acme.com",
-          to: "partner@victim.example, cto@partner.com",
-        }),
-      ),
-    );
+  it("schedules CT warm-up via after()", async () => {
+    await POST(makeReq(raw()));
     // `after` handlers flush on the next microtask; wait a tick.
     await new Promise((r) => setTimeout(r, 0));
     expect(ctMock).toHaveBeenCalledWith("acme.com");
-    expect(viralMock).toHaveBeenCalledWith(
-      "acme.com",
-      expect.arrayContaining([
-        expect.objectContaining({ email: "partner@victim.example" }),
-        expect.objectContaining({ email: "cto@partner.com" }),
-      ]),
-    );
   });
 
   it("swallows CT warm-up failures in the after() handler", async () => {
@@ -333,18 +313,13 @@ describe("/api/inbound — post-response work", () => {
     const res = await POST(makeReq(raw()));
     expect(res.status).toBe(200);
     await new Promise((r) => setTimeout(r, 0));
-    // Didn't throw, viral still scheduled.
-    expect(viralMock).toHaveBeenCalled();
+    // Didn't throw — response still OK and event was written.
+    expect(insertMock).toHaveBeenCalled();
   });
 
-  it("swallows viral-invite failures in the after() handler", async () => {
-    viralMock.mockRejectedValue(new Error("resend 500"));
-    const res = await POST(makeReq(raw()));
-    expect(res.status).toBe(200);
-    await new Promise((r) => setTimeout(r, 0));
-  });
-
-  it("excludes sender's own domain and witnessed.cc from viral recipients", async () => {
+  it("excludes sender's own domain and witnessed.cc from the primary receiver", async () => {
+    // First parsed To/CC domain that isn't sender or witnessed.cc
+    // becomes primaryReceiver — here that's victim.example.
     await POST(
       makeReq(
         raw({
@@ -352,11 +327,6 @@ describe("/api/inbound — post-response work", () => {
         }),
       ),
     );
-    await new Promise((r) => setTimeout(r, 0));
-    const recipients = viralMock.mock.calls[0][1];
-    const domains = recipients.map((r) => r.domain);
-    expect(domains).not.toContain("acme.com");
-    expect(domains).not.toContain("witnessed.cc");
-    expect(domains).toContain("victim.example");
+    expect(insertMock).toHaveBeenCalledWith(1, "victim.example", expect.any(String));
   });
 });

@@ -8,7 +8,6 @@
 
 process.env.DATABASE_URL = "postgres://test:test@127.0.0.1/test";
 process.env.SPAMHAUS_DQS_KEY = "test-dqs";
-process.env.RESEND_API_KEY = "test-resend";
 process.env.INBOUND_SECRET = "test-inbound-secret";
 process.env.STATS_TOKEN = "test-stats";
 

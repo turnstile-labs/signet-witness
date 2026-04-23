@@ -180,18 +180,18 @@ domain_denylist           (domain, reason, created_at)                          
 domain_reputation_cache   (domain, mx_*, dbl_*, first_cert_*, updated_at)               -- anti-abuse
 events_throttled          (id, sender_domain, receiver_domain, dkim_hash, reason, ...)  -- anti-abuse
 domain_scores             (domain_id, verified_event_count, mutual_counterparties, diversity, tenure_days, trust_index, stale, computed_at)
-viral_invites             (sender_domain, receiver_email, receiver_domain, status, resend_id, invited_at)  -- viral loop
 ```
 
-**Post-response work in `/api/inbound`.** After the event is accepted and persisted, two jobs run inside Next's `after()` hook — they do not block the 200 going back to the Cloudflare Worker:
+**Post-response work in `/api/inbound`.** After the event is accepted and persisted, one job runs inside Next's `after()` hook — it does not block the 200 going back to the Cloudflare Worker:
 1. **CT-log warm-up.** `fetchFirstCertAt(senderDomain)` populates `domain_reputation_cache.first_cert_at`. Idempotent via its own 30-day-TTL cache. The next score recompute picks up real tenure instead of the system's `first_seen`.
-2. **Viral invites.** `enqueueViralInvites(sender, recipients)` fires one transactional "you were sealed" email via Resend for each recipient whose domain is not free-mail, not on the denylist, and not already registered — one email per `(sender_domain, receiver_email)` forever, tracked in `viral_invites`. Gated behind `RESEND_API_KEY`; when unset the whole layer is skipped.
+
+Note: there is no outbound email layer. Witnessed never initiates contact with a recipient — the record is built passively from the inbound CC stream only.
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 
 **Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?theme=light` toggles palette; `?preview=verified|onRecord|pending` short-circuits the DB lookup for marketing surfaces; `?t=0..100` overrides the ring fraction in preview mode. Bump the trailing `v8` layout fingerprint in `cacheHeaders()` whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
 
-**Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/viral.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `RESEND_API_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
+**Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
 
 ---
 

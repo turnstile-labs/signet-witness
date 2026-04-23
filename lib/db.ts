@@ -276,11 +276,6 @@ export interface OpsStats {
   throttled7d: number;
   throttledByReason: Array<{ reason: string; count: number }>;
   throttledTopSenders: Array<{ sender_domain: string; count: number }>;
-  // Viral invite layer. Zero when RESEND_API_KEY is unset or the
-  // viral_invites table hasn't been migrated in yet.
-  invites24h: number;
-  invites7d: number;
-  invitesByStatus: Array<{ status: string; count: number }>;
 }
 
 // Swallow "relation does not exist" (42P01) so the ops page keeps
@@ -466,16 +461,13 @@ export async function getOpsStats(): Promise<OpsStats> {
     ),
   ]);
 
-  // Anti-abuse + viral-invite visibility — fetched separately so the
-  // legacy totals block above stays a single cacheable query shape.
-  // `safe` swallows "relation does not exist" until the migrations
-  // are run in prod.
+  // Anti-abuse visibility — fetched separately so the legacy totals
+  // block above stays a single cacheable query shape. `safe` swallows
+  // "relation does not exist" until the migrations are run in prod.
   const [
     throttledWindowed,
     throttledByReason,
     throttledTopSenders,
-    invitesWindowed,
-    invitesByStatus,
   ] = await Promise.all([
       safe(
         sql`
@@ -506,25 +498,6 @@ export async function getOpsStats(): Promise<OpsStats> {
           LIMIT 8
         ` as unknown as Promise<{ sender_domain: string; count: number }[]>,
         [] as { sender_domain: string; count: number }[],
-      ),
-      safe(
-        sql`
-          SELECT
-            COALESCE(SUM(CASE WHEN invited_at >= NOW() - INTERVAL '24 hours' THEN 1 ELSE 0 END), 0)::int AS d1,
-            COALESCE(SUM(CASE WHEN invited_at >= NOW() - INTERVAL '7 days'   THEN 1 ELSE 0 END), 0)::int AS d7
-          FROM viral_invites
-        ` as unknown as Promise<{ d1: number; d7: number }[]>,
-        [{ d1: 0, d7: 0 }] as { d1: number; d7: number }[],
-      ),
-      safe(
-        sql`
-          SELECT status, COUNT(*)::int AS count
-          FROM viral_invites
-          WHERE invited_at >= NOW() - INTERVAL '30 days'
-          GROUP BY status
-          ORDER BY count DESC
-        ` as unknown as Promise<{ status: string; count: number }[]>,
-        [] as { status: string; count: number }[],
       ),
     ]);
 
@@ -558,9 +531,6 @@ export async function getOpsStats(): Promise<OpsStats> {
     throttled7d: throttledWindowed[0]?.d7 ?? 0,
     throttledByReason,
     throttledTopSenders,
-    invites24h: invitesWindowed[0]?.d1 ?? 0,
-    invites7d: invitesWindowed[0]?.d7 ?? 0,
-    invitesByStatus,
   };
 }
 

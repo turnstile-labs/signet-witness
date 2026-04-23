@@ -29,18 +29,17 @@ No auth. No payments. No setup required from users. The CC is the product.
 - **Dynamic badge** at `/badge/[domain]` — SVG or PNG, state-colored pill (`[ icon ][ domain ]`): solid green for Verified, solid amber for On record, outline gray for Pending. `ETag`-cached by state; `?preview=verified|onRecord|pending` for marketing surfaces
 - **Trust index** (`lib/scores.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
-- **Outbound viral loop** (`lib/viral.ts`) — after an inbound email is accepted, transactional "you were sealed" invites go out via Resend to unregistered / non-free-mail / non-denylisted recipients. Gated on `RESEND_API_KEY`
 - **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
 - **Inbound denylist gate** — any CC from or to an opted-out / erased domain is silently dropped
 - **Setup wizard** at `/setup` — one-time mail-flow rules for Google Workspace, Microsoft 365, and Outlook so "always CC seal@" becomes automatic
-- **Ops dashboard** at `/ops/<STATS_TOKEN>` — activity, top senders (ranked by trust), receivers, anti-abuse throttles, viral invite status, denylist
+- **Ops dashboard** at `/ops/<STATS_TOKEN>` — activity, top senders (ranked by trust), receivers, anti-abuse throttles, denylist
 - **Admin CT warm-up** at `/api/admin/warm-ct` (auth: `STATS_TOKEN`) — batch backfill `first_cert_at` for stale rows in `domain_reputation_cache`
 - **Domain lookup** on the landing page
 - **English + Spanish** — full i18n via `next-intl`. EN at the root, ES prefixed at `/es/*`
 - **Light + dark theme** — CSS-variable driven, persisted to `localStorage`
 - **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — ~30-line catch-all forwarder
-- **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/viral.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
+- **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
 
 ---
 
@@ -83,7 +82,7 @@ signet-witness/
 │   │       ├── opt-out/route.ts   # Art 21 — denylist only
 │   │       └── erasure/route.ts   # Art 17 — hard-delete + denylist
 │   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge — state-colored pill ([icon] [domain])
-│   ├── ops/[token]/page.tsx      # Internal dashboard — activity, top senders, anti-abuse, viral
+│   ├── ops/[token]/page.tsx      # Internal dashboard — activity, top senders, anti-abuse
 │   └── components/               # NavBar, Footer, CopyableEmail, BadgeEmbed, Sparkline, RightsForm, …
 ├── i18n/
 │   ├── routing.ts                # Locales + localePrefix config
@@ -97,7 +96,6 @@ signet-witness/
 │   ├── db.ts                     # Neon SQL client + typed queries + GDPR helpers + ops aggregates
 │   ├── scores.ts                 # Trust-index math + free-mail list + verified gating
 │   ├── reputation.ts             # MX / DBL / rate-limit gates + CT-log lookup cache
-│   ├── viral.ts                  # Outbound invite loop (Resend)
 │   ├── badge-state.ts            # Pure state resolver for the badge (DB-free, test-friendly)
 │   ├── badge-dimensions.ts       # Shared layout math for SVG/PNG + BadgeEmbed
 │   └── verify-domain.ts          # DNS-TXT owner-proof challenge/verify for /rights
@@ -157,8 +155,7 @@ Available scripts:
 # Push to GitHub, import in Vercel dashboard
 # Add Postgres store: Vercel dashboard → Storage → Connect → Postgres
 # Add env vars in project settings: INBOUND_SECRET (required), plus
-#   any of STATS_TOKEN / SPAMHAUS_DQS_KEY / RESEND_API_KEY you want
-#   to enable
+#   any of STATS_TOKEN / SPAMHAUS_DQS_KEY you want to enable
 # Run schema.sql via the Vercel Postgres query runner (idempotent —
 #   safe to re-run after pulling new migrations)
 ```
@@ -200,7 +197,6 @@ pick up migrations. Current tables:
 | `domain_reputation_cache` | Anti-abuse: MX status, DBL status, CT-log `first_cert_at`, per-signal TTLs |
 | `events_throttled` | Forensic-only log of dropped inbound events (never read by the seal page) |
 | `domain_scores` | Lazy-refreshed trust-index row per domain (the number users see) |
-| `viral_invites` | Idempotency + status log for the outbound "you were sealed" loop |
 
 ---
 
@@ -224,7 +220,6 @@ emails build history. History built this way cannot be backdated or forged.
 | `INBOUND_SECRET` | yes | Shared secret between the Cloudflare Worker and `/api/inbound` |
 | `STATS_TOKEN` | optional | Enables the internal `/ops/<token>` dashboard and the admin CT warm-up endpoint. Must be ≥ 16 chars. Rotate to revoke |
 | `SPAMHAUS_DQS_KEY` | optional | Spamhaus Data Query Service key. When unset, the DBL layer is skipped (the public zone refuses queries from serverless resolvers) |
-| `RESEND_API_KEY` | optional | Resend API key for the outbound viral-invite loop. When unset, the viral layer is skipped |
 | `RIGHTS_SECRET` | optional | HMAC key for `/api/rights/*` TXT challenges. Defaults to `INBOUND_SECRET`. Rotating it invalidates any in-flight challenges |
 
 See `.env.example` for a copy-pasteable template.
