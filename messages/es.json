@@ -29,7 +29,6 @@
       "eyebrow": "Detrás de cada clic",
       "title": "Tu página pública completa.",
       "sub": "Cada clic en la insignia abre aquí. Remitente real, fechas reales, contrapartes reales — compartible allí donde alguien vaya a comprobarte.",
-      "verifiedActive": "Activo verificado",
       "trustIndexLabel": "Índice de confianza",
       "trustIndexScale": "0 – 100",
       "statsVerifiedEmails": "Emails verificados",
@@ -80,9 +79,6 @@
   },
   "seal": {
     "eyebrow": "Prueba de negocio",
-    "verifiedActive": "Activo verificado",
-    "onRecord": "En el registro",
-    "pending": "Pendiente",
     "noRecordPill": "Sin registro",
     "trustIndexLabel": "Índice de confianza",
     "trustIndexScale": "0 – 100",

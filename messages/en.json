@@ -29,7 +29,6 @@
       "eyebrow": "Behind every click",
       "title": "Your full public page.",
       "sub": "Every badge click opens here. Real sender, real timestamps, real counterparties — shareable anywhere a counterparty might look.",
-      "verifiedActive": "Verified Active",
       "trustIndexLabel": "Trust index",
       "trustIndexScale": "0 – 100",
       "statsVerifiedEmails": "Verified emails",
@@ -80,9 +79,6 @@
   },
   "seal": {
     "eyebrow": "Proof of business",
-    "verifiedActive": "Verified Active",
-    "onRecord": "On record",
-    "pending": "Pending",
     "noRecordPill": "No record yet",
     "trustIndexLabel": "Trust index",
     "trustIndexScale": "0 – 100",
