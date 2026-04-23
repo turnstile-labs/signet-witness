@@ -30,16 +30,14 @@ export default async function Home({
   // Mock numbers for the acmecorp.com preview seal. Tuned for the
   // "on-record, building toward verified" state — which is what most
   // first-time visitors will see on their own page for weeks or
-  // months, and what the real /b/<domain> hero renders for any score
-  // below 65. This reads as honest ("here's where you'll be after a
-  // few months"), not aspirational ("here's the finish line") — and
-  // it pairs with the signature-badge mock above (acme.studio @ 78,
-  // verified-green) to tell a two-persona story: one domain already
-  // verified and advertising it in signatures, another on-record and
-  // building. State-dependent bar color in TrustIndexHero means the
-  // mock matches the real page: below 65 → bg-accent (purple), above
-  // → bg-verified (green). Keep MOCK_TRUST < 65 or the whole thing
-  // repaints green and the narrative inverts.
+  // months. Reads as honest ("here's where you'll be after a few
+  // months"), not aspirational ("here's the finish line"), and pairs
+  // with the signature-badge mock above (acme.studio @ 78) to tell a
+  // two-persona story: one domain already verified and advertising
+  // it in signatures, another on-record and building. The trust-bar
+  // fill is a single color across states (see TrustIndexHero), so
+  // MOCK_TRUST is free to sit on either side of 65 without the mock
+  // repainting — we keep it at 58 purely for narrative.
   const MOCK_DOMAIN = "acmecorp.com";
   const MOCK_TRUST = 58;
   const MOCK_EVENTS = 412;
@@ -210,13 +208,11 @@ export default async function Home({
                   {tSeal("trustIndexScale")}
                 </p>
               </div>
-              {/* Bar color tracks state like the real TrustIndexHero:
-                  below the verified threshold → accent (purple),
-                  above → verified (green). MOCK_TRUST is intentionally
-                  below 65 here so this stays purple — see the MOCK_*
-                  comment above for the rationale. The verified tick
-                  stays green regardless, since its job is to mark the
-                  threshold independent of current state. */}
+              {/* Single-color fill (accent) across all states —
+                  mirrors TrustIndexHero on the real seal page. The
+                  verified tick (green) marks the threshold; the
+                  number, fill width, and tick carry all the state
+                  signal without color-flip duplication. */}
               <div className="relative mt-2.5 h-1 rounded-full bg-bg border border-border overflow-hidden">
                 <div
                   className="absolute left-0 top-0 h-full bg-accent"

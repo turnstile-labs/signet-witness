@@ -109,27 +109,33 @@ function Stat({
 // verified threshold. Reads well without the number (bar shape) and
 // without the bar (number alone). Editorial contract: one focal
 // artifact, one quiet supporting line.
+// Trust-index hero. The bar uses a single fill color (accent) across
+// every score — verified or not. State is already encoded four other
+// ways: the number itself, the fill width, the verified tick at
+// `threshold`, and the PathToVerified callout that appears iff
+// below threshold. Making the fill also swap green/purple adds no
+// signal, forces mocks to pick a "representative" score to avoid
+// repainting, and makes 100/100 tautological (green bar says what
+// the big number already says). The tick stays green as the fixed
+// threshold marker. The `dim` variant is reserved for the Unclaimed
+// placeholder, where the whole hero reads as ghosted. The badge
+// keeps color-as-state because in a signature there's no number or
+// tick to carry the semantics — here on a full page, there is.
 function TrustIndexHero({
   score,
   threshold,
-  verified,
   label,
   scaleLabel,
   dim = false,
 }: {
   score: number;
   threshold: number;
-  verified: boolean;
   label: string;
   scaleLabel: string;
   dim?: boolean;
 }) {
   const pct = Math.max(0, Math.min(100, score));
-  const barColor = dim
-    ? "bg-muted-2"
-    : verified
-      ? "bg-verified"
-      : "bg-accent";
+  const barColor = dim ? "bg-muted-2" : "bg-accent";
   return (
     <div className="mt-8">
       <div className="flex items-baseline justify-between gap-3">
@@ -289,7 +295,6 @@ export default async function SealPage({ params }: Props) {
           <TrustIndexHero
             score={trustIndex}
             threshold={VERIFIED_INDEX}
-            verified={verified.isVerified}
             label={t("trustIndexLabel")}
             scaleLabel={t("trustIndexScale")}
           />
@@ -413,7 +418,6 @@ async function UnclaimedPage({
             <TrustIndexHero
               score={0}
               threshold={VERIFIED_INDEX}
-              verified={false}
               label={t("trustIndexLabel")}
               scaleLabel={t("trustIndexScale")}
               dim
