@@ -1,0 +1,19 @@
+{
+  "name": "witnessed-extension",
+  "version": "0.1.0",
+  "description": "Auto-BCC seal@witnessed.cc into outbound Gmail so every business email builds your public record.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "zip": "cd dist && zip -r ../witnessed-extension.zip ."
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "2.0.0-beta.28",
+    "@types/chrome": "^0.0.287",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0"
+  }
+}

@@ -40,6 +40,7 @@ No auth. No payments. No setup required from users. The CC is the product.
 - **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — ~30-line catch-all forwarder
 - **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
+- **Browser extension** (`extension/`) — MV3 extension that auto-BCCs `seal@witnessed.cc` into every new Gmail compose. v0.1: Gmail only, write-side only. See [`extension/README.md`](extension/README.md)
 
 ---
 
@@ -102,6 +103,7 @@ signet-witness/
 ├── tests/                        # Vitest suite + helpers + programmable neon stub
 ├── workers/
 │   └── email-router/             # Cloudflare Worker (~30 lines) — forwards raw email to /api/inbound
+├── extension/                    # Browser extension — auto-BCC seal@witnessed.cc into Gmail (see extension/README.md)
 ├── schema.sql                    # Run once to create tables (idempotent — safe to re-run)
 ├── vitest.config.ts
 ├── .env.example

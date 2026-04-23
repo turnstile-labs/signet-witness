@@ -1,6 +1,11 @@
 # deps
 node_modules/
 workers/email-router/node_modules/
+extension/node_modules/
+
+# extension build output
+extension/dist/
+extension/*.zip
 
 # next.js
 .next/
