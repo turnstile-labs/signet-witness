@@ -190,6 +190,32 @@ export default async function OpsPage({
         </Section>
       )}
 
+      {/* VIRAL — only renders when there's actual invite volume.
+          Mirrors the anti-abuse block: quiet at zero, loud at signal. */}
+      {stats.invites7d > 0 && (
+        <Section label="viral">
+          <div className="flex items-baseline gap-4 mb-3">
+            <p className="text-3xl font-bold tabular-nums leading-none text-txt">
+              {stats.invites24h.toLocaleString()}
+            </p>
+            <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
+              invites · 24h
+              <div className="mt-1 normal-case tracking-normal text-[0.7rem] text-muted">
+                {stats.invites7d.toLocaleString()} · 7d
+              </div>
+            </div>
+          </div>
+          {stats.invitesByStatus.length > 0 && (
+            <p className="text-[0.7rem] text-muted tabular-nums">
+              <span className="text-muted-2">by status · </span>
+              {stats.invitesByStatus
+                .map((r) => `${r.status} ${r.count}`)
+                .join(" · ")}
+            </p>
+          )}
+        </Section>
+      )}
+
       {/* HYGIENE — denylist + quiet meta */}
       <div className="mt-12 pt-6 border-t border-border space-y-2">
         {stats.denylistTotal > 0 ? (
@@ -211,6 +237,9 @@ export default async function OpsPage({
         )}
         {stats.throttled7d === 0 && (
           <p className="text-[0.7rem] text-muted-2">anti-abuse · quiet</p>
+        )}
+        {stats.invites7d === 0 && (
+          <p className="text-[0.7rem] text-muted-2">viral · quiet</p>
         )}
         <p className="text-[0.6rem] text-muted-2 leading-relaxed">
           rotate STATS_TOKEN to revoke. no caching · fresh query per load.

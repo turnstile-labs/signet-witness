@@ -139,3 +139,27 @@ CREATE INDEX IF NOT EXISTS domain_scores_trust_idx
   ON domain_scores(trust_index DESC);
 CREATE INDEX IF NOT EXISTS domain_scores_stale_idx
   ON domain_scores(stale, computed_at);
+
+-- Viral invites: one-time transactional "you were sealed" notifications
+-- to individual recipients whose domain we don't know yet. Dedup PK is
+-- (sender_domain, receiver_email) — each sender gets at most one shot
+-- at each specific address, ever. No bulk / scheduled follow-up; no
+-- marketing; strictly transactional under GDPR legitimate-interest.
+--
+-- receiver_domain is stored for ops grouping. `status` advances
+-- 'queued' → 'sent' / 'failed' / 'skipped'. resend_id is Resend's
+-- message id for bounce/spam-complaint correlation.
+CREATE TABLE IF NOT EXISTS viral_invites (
+  sender_domain    TEXT NOT NULL,
+  receiver_email   TEXT NOT NULL,
+  receiver_domain  TEXT NOT NULL,
+  invited_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status           TEXT NOT NULL DEFAULT 'queued',
+  resend_id        TEXT,
+  PRIMARY KEY (sender_domain, receiver_email)
+);
+
+CREATE INDEX IF NOT EXISTS viral_invites_receiver_idx
+  ON viral_invites(receiver_domain);
+CREATE INDEX IF NOT EXISTS viral_invites_invited_idx
+  ON viral_invites(invited_at DESC);

@@ -5,7 +5,12 @@ import {
   getReceiverCount,
   getDailyActivity,
 } from "@/lib/db";
-import { getDomainScore, computeVerified, VERIFIED_INDEX } from "@/lib/scores";
+import {
+  getDomainScore,
+  computeVerified,
+  VERIFIED_INDEX,
+  MIN_MUTUALS,
+} from "@/lib/scores";
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import NavBar from "@/app/components/NavBar";
@@ -181,6 +186,61 @@ function TrustIndexHero({
   );
 }
 
+// Path-to-verified callout. Shown only when the domain is on-record
+// but has not yet cleared the Verified threshold. Prescribes the
+// exact work remaining — either trust-index points, mutual
+// counterparties, or both — and names the thing Verified actually
+// requires so the reader doesn't have to infer it from the stats.
+function PathToVerified({
+  trustIndex,
+  mutuals,
+  indexThreshold,
+  mutualsThreshold,
+  labels,
+}: {
+  trustIndex: number;
+  mutuals: number;
+  indexThreshold: number;
+  mutualsThreshold: number;
+  labels: {
+    eyebrow: string;
+    indexGap: string;
+    mutualsGap: string;
+    explainer: string;
+  };
+}) {
+  const indexGap = Math.max(0, indexThreshold - trustIndex);
+  const mutualsGap = Math.max(0, mutualsThreshold - mutuals);
+  if (indexGap === 0 && mutualsGap === 0) return null;
+
+  return (
+    <section className="mt-10 rounded-lg border border-border bg-surface/50 px-4 py-4 sm:px-5 sm:py-5">
+      <EyebrowLabel>{labels.eyebrow}</EyebrowLabel>
+      <ul className="mt-3 space-y-1.5 text-sm text-txt">
+        {indexGap > 0 && (
+          <li className="flex items-baseline gap-2">
+            <span className="text-muted-2 font-mono text-[0.7rem] tabular-nums shrink-0">
+              +{indexGap}
+            </span>
+            <span className="text-muted">{labels.indexGap}</span>
+          </li>
+        )}
+        {mutualsGap > 0 && (
+          <li className="flex items-baseline gap-2">
+            <span className="text-muted-2 font-mono text-[0.7rem] tabular-nums shrink-0">
+              +{mutualsGap}
+            </span>
+            <span className="text-muted">{labels.mutualsGap}</span>
+          </li>
+        )}
+      </ul>
+      <p className="mt-3 text-[0.7rem] text-muted-2 leading-relaxed">
+        {labels.explainer}
+      </p>
+    </section>
+  );
+}
+
 // ── Seal page ─────────────────────────────────────────────────
 export default async function SealPage({ params }: Props) {
   const { locale, domain } = await params;
@@ -277,6 +337,24 @@ export default async function SealPage({ params }: Props) {
               diversity: (diversity * 100).toFixed(0),
             })}
           </p>
+
+          {!verified.isVerified && (
+            <PathToVerified
+              trustIndex={trustIndex}
+              mutuals={mutuals}
+              indexThreshold={VERIFIED_INDEX}
+              mutualsThreshold={MIN_MUTUALS}
+              labels={{
+                eyebrow: t("pathEyebrow"),
+                indexGap: t("pathIndexGap", { threshold: VERIFIED_INDEX }),
+                mutualsGap: t("pathMutualsGap"),
+                explainer: t("pathExplainer", {
+                  index: VERIFIED_INDEX,
+                  mutuals: MIN_MUTUALS,
+                }),
+              }}
+            />
+          )}
 
           <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
             {t("trustLine")}

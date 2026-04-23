@@ -153,7 +153,12 @@ domain_denylist           (domain, reason, created_at)                          
 domain_reputation_cache   (domain, mx_*, dbl_*, first_cert_*, updated_at)               -- anti-abuse
 events_throttled          (id, sender_domain, receiver_domain, dkim_hash, reason, ...)  -- anti-abuse
 domain_scores             (domain_id, verified_event_count, mutual_counterparties, diversity, tenure_days, trust_index, stale, computed_at)
+viral_invites             (sender_domain, receiver_email, receiver_domain, status, resend_id, invited_at)  -- viral loop
 ```
+
+**Post-response work in `/api/inbound`.** After the event is accepted and persisted, two jobs run inside Next's `after()` hook — they do not block the 200 going back to the Cloudflare Worker:
+1. **CT-log warm-up.** `fetchFirstCertAt(senderDomain)` populates `domain_reputation_cache.first_cert_at`. Idempotent via its own 30-day-TTL cache. The next score recompute picks up real tenure instead of the system's `first_seen`.
+2. **Viral invites.** `enqueueViralInvites(sender, recipients)` fires one transactional "you were sealed" email via Resend for each recipient whose domain is not free-mail, not on the denylist, and not already registered — one email per `(sender_domain, receiver_email)` forever, tracked in `viral_invites`. Gated behind `RESEND_API_KEY`; when unset the whole layer is skipped.
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { authenticate } from "mailauth";
 import { createHash } from "crypto";
 import { upsertDomain, insertEvent, isDenylisted } from "@/lib/db";
@@ -7,7 +8,9 @@ import {
   isOnDbl,
   isRateLimited,
   recordThrottled,
+  fetchFirstCertAt,
 } from "@/lib/reputation";
+import { enqueueViralInvites } from "@/lib/viral";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
 const WITNESS_DOMAIN = "witnessed.cc";
@@ -57,15 +60,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Extract receiver domains from To and CC header lines.
-  const emailRegex = /[\w.+-]+@([\w.-]+\.[a-z]{2,})/gi;
+  // 6. Extract receiver addresses (full email + domain) from To / CC.
+  // We keep the email, not just the domain, so the viral-invite layer
+  // has somewhere to send the transactional notification.
+  const emailRegex = /([\w.+-]+)@([\w.-]+\.[a-z]{2,})/gi;
   const toLine = rawHeaders.match(/^To:(.+?)(?=\r?\n\S|\r?\n\r?\n)/ims)?.[1] ?? "";
   const ccLine = rawHeaders.match(/^CC:(.+?)(?=\r?\n\S|\r?\n\r?\n)/ims)?.[1] ?? "";
-  const allRecipients = (toLine + " " + ccLine).matchAll(emailRegex);
-  const receiverDomains = Array.from(allRecipients)
-    .map((m) => m[1].toLowerCase())
-    .filter((d) => d !== WITNESS_DOMAIN && d !== senderDomain);
-
+  const allRecipients: Array<{ email: string; domain: string }> = [];
+  for (const m of (toLine + " " + ccLine).matchAll(emailRegex)) {
+    const email = `${m[1]}@${m[2]}`.toLowerCase();
+    const domain = m[2].toLowerCase();
+    if (domain === WITNESS_DOMAIN) continue;
+    if (domain === senderDomain) continue;
+    allRecipients.push({ email, domain });
+  }
+  const receiverDomains = Array.from(new Set(allRecipients.map((r) => r.domain)));
   const primaryReceiver = receiverDomains[0] ?? "unknown";
 
   // 7. GDPR — honor the denylist. If either the sender or the primary
@@ -153,6 +162,30 @@ export async function POST(req: NextRequest) {
     console.error("DB write error", err);
     return NextResponse.json({ error: "DB error" }, { status: 500 });
   }
+
+  // 12. Post-response work. None of this blocks the 200 going back
+  // upstream; the Vercel runtime keeps the function alive long enough
+  // for `after()` to drain.
+  //
+  //   a) CT-log warm-up: populate domain_reputation_cache.first_cert_at
+  //      for the sender so the next score recompute picks up real
+  //      tenure instead of the system's first_seen fallback. Idempotent
+  //      via its own cache.
+  //   b) Viral invites: fire transactional "you were sealed" notes to
+  //      any recipient whose domain we don't know yet. See lib/viral.ts
+  //      for the dedup + GDPR guards.
+  after(async () => {
+    try {
+      await fetchFirstCertAt(senderDomain);
+    } catch (err) {
+      console.error("[inbound] CT warm-up failed", { senderDomain, err });
+    }
+    try {
+      await enqueueViralInvites(senderDomain, allRecipients);
+    } catch (err) {
+      console.error("[inbound] viral invites failed", { senderDomain, err });
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }

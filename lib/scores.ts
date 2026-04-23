@@ -57,7 +57,7 @@ function sql(...args: Parameters<ReturnType<typeof neon>>) {
 // don't count toward `verified_event_count` because they're trivially
 // available to attackers. A domain whose entire history is gmail.com
 // receivers scores near zero on quality, correctly.
-const FREE_MAIL_DOMAINS = new Set([
+export const FREE_MAIL_DOMAINS = new Set([
   "gmail.com",
   "googlemail.com",
   "yahoo.com",
