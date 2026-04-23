@@ -49,7 +49,7 @@ The defense is layered:
 The inbound pipeline refuses to count any event that fails a structural check. Throttled events are written to `events_throttled` for forensics and **never** affect the sender's public `event_count` or `domain_scores`.
 
 1. **MX existence.** The primary receiver domain must have at least one MX record. Cached 7d positive / 1d negative in `domain_reputation_cache`.
-2. **Spamhaus DBL.** The receiver domain must not be on Spamhaus DBL. Cached 24h. Listed receivers go to `events_throttled` with reason `receiver_blocklist`.
+2. **Spamhaus DBL.** The receiver domain must not be on Spamhaus DBL. Cached 24h. Listed receivers go to `events_throttled` with reason `receiver_blocklist`. **Requires `SPAMHAUS_DQS_KEY`** — the public `dbl.spamhaus.org` zone refuses queries from serverless / open resolvers, so when the key is missing the DBL layer is skipped entirely and the remaining layers carry the anti-abuse load.
 3. **Per-sender rate limit.** 500 events/hour or 5000 events/day trips the throttle. Both accepted and previously-throttled events count toward the window.
 
 All three lookups fail-open on unclassified errors so transient DNS issues don't drop legitimate mail.

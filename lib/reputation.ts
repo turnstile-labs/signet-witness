@@ -207,26 +207,40 @@ export async function isRateLimited(senderDomain: string): Promise<boolean> {
 
 // ── Spamhaus DBL (domain block list) ─────────────────────────
 //
-// DBL is a free-to-query DNSBL that lists domains caught in active
-// spam / phishing / malware campaigns. Query is a reverse DNS lookup:
-// `example.com.dbl.spamhaus.org` → A record means listed.
+// DBL lists domains caught in active spam / phishing / malware
+// campaigns. Query is a reverse DNS lookup — `{domain}.{zone}` →
+// A record means listed.
 //
-// Semantics (https://www.spamhaus.org/dbl/):
+// Zone selection:
+//   public  — `dbl.spamhaus.org`. Spamhaus refuses queries from open
+//             resolvers (Vercel runtime falls under this), returning
+//             a 127.255.255.x sentinel. Effectively unusable from
+//             serverless without a private/upstream resolver.
+//   DQS     — `{key}.dbl.dq.spamhaus.net`. Free tier up to 100k/day
+//             after registering at https://www.spamhaus.com/free-trial/.
+//
+// We only run DBL when SPAMHAUS_DQS_KEY is configured. Without a key,
+// `isOnDbl` short-circuits to false with no DNS round-trip — the
+// remaining anti-abuse layers (MX, rate limit, mutuality, diversity,
+// tenure, free-mail exclusion) already cover the attack surface.
+//
+// Response semantics (https://www.spamhaus.org/dbl/):
 //   127.0.1.2 .. 127.0.1.99   — spam / phish / malware  (listed)
 //   127.0.1.255               — rate-limited            (refused → fail-open)
 //   127.255.255.252 .. .255   — public / open resolver blocked, typing
-//                               error, or volume overage. Spamhaus does
-//                               not serve the public internet directly;
-//                               proper use requires their DQS key or a
-//                               local rsync zone. We treat these as
-//                               refused, NOT as listings.
+//                               error, or volume overage. Treated as
+//                               refused, NOT as a listing.
 //   NXDOMAIN / no record      — not listed
 //
-// Cached 24h. Listings come and go; we want to re-check daily so
-// cleaned-up domains aren't punished forever. Refused responses are
-// never cached — we want the next lookup to retry.
+// Cached 24h. Listings come and go; we re-check daily so cleaned-up
+// domains aren't punished forever. Refused responses are never cached.
 
 const DBL_TTL_MS = 24 * 60 * 60 * 1000;
+const DBL_DQS_KEY = process.env.SPAMHAUS_DQS_KEY?.trim() || "";
+const DBL_ENABLED = DBL_DQS_KEY.length > 0;
+const DBL_ZONE = DBL_ENABLED
+  ? `${DBL_DQS_KEY}.dbl.dq.spamhaus.net`
+  : "dbl.spamhaus.org";
 
 type DblRow = {
   dbl_listed: boolean | null;
@@ -279,7 +293,7 @@ function isRefusalCode(ip: string): boolean {
 async function dblLookupLive(domain: string): Promise<boolean> {
   try {
     const addrs = await withTimeout(
-      dns.resolve4(`${domain}.dbl.spamhaus.org`),
+      dns.resolve4(`${domain}.${DBL_ZONE}`),
       DNS_TIMEOUT_MS,
     );
     if (addrs.every(isRefusalCode)) {
@@ -300,10 +314,13 @@ async function dblLookupLive(domain: string): Promise<boolean> {
 /**
  * True if `domain` is listed on Spamhaus DBL. Cached 24h. Fail-open
  * on unclassified errors so a flaky DNSBL resolver doesn't drop
- * legitimate senders.
+ * legitimate senders. Short-circuits to false when no DQS key is
+ * configured — running DBL against the public zone from a serverless
+ * runtime returns only refusals, so the lookup is pure overhead.
  */
 export async function isOnDbl(domain: string): Promise<boolean> {
   if (!domain || domain === "unknown") return false;
+  if (!DBL_ENABLED) return false;
   const cached = await readDblCache(domain);
   if (cached && cached.dbl_listed !== null && cached.dbl_checked_at) {
     const age = Date.now() - new Date(cached.dbl_checked_at).getTime();
