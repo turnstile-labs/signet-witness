@@ -250,11 +250,6 @@
         "Skip exceptions → Next. Name the rule \"Witnessed CC\" → Finish."
       ],
       "outcome": "Outlook adds the CC automatically on every outbound email you send. The rule only runs on the machine where it was created — repeat once on each device you use."
-    },
-    "everyoneElse": {
-      "eyebrow": "Gmail personal, Apple Mail, Proton, others",
-      "body": "These providers don't yet support \"always-BCC\" rules natively. A one-click browser extension is on the way. In the meantime, the manual path works reliably — drop the address above in CC on any business email and it joins your record automatically.",
-      "outcome": "Paste seal@witnessed.cc into CC the first time; mail clients remember it for next time. You can add more as you send."
     }
   },
   "rightsPage": {

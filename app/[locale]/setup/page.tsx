@@ -97,17 +97,6 @@ export default async function SetupPage({
             steps={outlookSteps}
             outcome={t("outlook.outcome")}
           />
-
-          {/* ── Everyone else — manual fallback ────────────────── */}
-          <section className="mt-12 pt-10 border-t border-border">
-            <EyebrowLabel>{t("everyoneElse.eyebrow")}</EyebrowLabel>
-            <p className="mt-3 text-sm text-muted leading-relaxed max-w-xl">
-              {t("everyoneElse.body")}
-            </p>
-            <p className="mt-4 text-[0.7rem] text-muted-2 leading-relaxed max-w-xl">
-              {t("everyoneElse.outcome")}
-            </p>
-          </section>
         </div>
       </main>
 
