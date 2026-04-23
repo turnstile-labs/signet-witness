@@ -18,9 +18,16 @@ import {
 //
 //   [ icon ]  [ domain ]
 //
-// Verified: filled green pill, white check icon, white text.
-// OnRecord: filled amber pill, white dot icon, white text.
-// Pending : outlined gray pill, outlined gray circle, muted text.
+// Verified: filled green pill, white check mark, white text.
+// OnRecord: tinted amber pill, amber dot, dark-amber text.
+// Pending : outlined pill, outlined circle, muted text.
+//
+// The three treatments form a deliberate hierarchy: filled → tinted →
+// outlined. "Verified" is an achievement, so it's allowed to be loud;
+// "on record" is transitional, so it stays subtle; "pending" has nothing
+// to claim yet, so it sits on the page as quietly as possible. Email
+// signatures reward subtlety — an all-filled palette read as a spam
+// button in Gmail, which is the problem v10 fixes.
 //
 // No progress ring, no score readout. The badge answers the
 // categorical question ("has this domain been sealed?") via bg
@@ -28,9 +35,19 @@ import {
 // page where there's room for detail.
 //
 // No theme param: the state color is the badge's identity across
-// every email client's bg, dark or light.
+// every email client's bg, dark or light. The tinted onRecord variant
+// still reads cleanly on dark bg because its border carries the hue.
+//
+// Font: system sans stack, no custom font file. Satori can't load the
+// mono families we'd previously advertised in the SVG font-family
+// attribute (they were never embedded), so it silently fell back to
+// Noto Sans — which didn't match the SVG a browser would render on
+// its own. System sans is rendered identically by Satori and by every
+// email client's renderer, so SVG and PNG now match.
 const H = BADGE_HEIGHT;
 const R = BADGE_HEIGHT / 2; // pill (rounded-full)
+const FONT_FAMILY =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
 function parseSlug(slug: string): { domain: string; format: "svg" | "png" } {
@@ -62,35 +79,37 @@ interface Palette {
   bg: string;        // pill fill
   border: string;    // pill stroke
   text: string;      // domain color
-  icon: string;      // icon color (stroke / fill)
-  iconBg: string;    // inner fill for filled-icon variants (bg notch)
+  icon: string;      // icon mark color (stroke or fill, flat — no disc)
 }
 
 // One palette per state. Fixed across light/dark email-client themes —
 // the badge's color IS the state, so it stays stable on any bg. Hex
 // values picked to contrast well on both white and near-black surfaces
 // (gmail light/dark, apple mail, outlook).
+//
+// Treatment hierarchy:
+//   verified  → filled       green, white mark on green (loud: achievement)
+//   onRecord  → tinted       light amber fill, amber border + text + mark
+//                            (subtle: signals membership, not arrival)
+//   pending   → outlined     white fill, muted border + text + mark
 const PALETTES: Record<BadgeState, Palette> = {
   verified: {
-    bg: "#16a34a",          // solid green
+    bg: "#16a34a",
     border: "#15803d",
     text: "#ffffff",
     icon: "#ffffff",
-    iconBg: "#16a34a",
   },
   onRecord: {
-    bg: "#d97706",          // solid amber
-    border: "#b45309",
-    text: "#ffffff",
-    icon: "#ffffff",
-    iconBg: "#d97706",
+    bg: "#fef3c7",          // amber-100 — soft wash, not a warning button
+    border: "#d97706",      // amber-600 — carries the hue on dark clients
+    text: "#92400e",        // amber-800 — dark enough to read on light bg
+    icon: "#d97706",
   },
   pending: {
-    bg: "#ffffff",          // outline pill, light bg
+    bg: "#ffffff",
     border: "#c8c8d4",
     text: "#5a5a68",
     icon: "#9a9aaa",
-    iconBg: "#ffffff",
   },
 };
 
@@ -111,29 +130,28 @@ function renderSvg(domain: string, state: BadgeState): string {
   const iconR = ICON_D / 2;
   const domainX = PAD_L + ICON_D + GAP_ICON_DOMAIN;
 
-  // 13px monospace digits sit ~5px below the centre line for mid-
-  // cap alignment on a 32px canvas. Holds across SF Mono / Menlo /
-  // Consolas / JetBrains Mono.
+  // 13px sans digits sit ~4.5px below the centre line for mid-cap
+  // alignment on a 32px canvas. Holds across SF / Segoe / Roboto /
+  // Helvetica Neue.
   const domainBaselineY = H / 2 + 4.5;
 
+  // Flat icon marks — no framing disc. On a 10px canvas the raw mark
+  // (checkstroke / filled dot / outlined ring) is visible enough and
+  // stops competing with the domain text for attention.
   let iconEl = "";
   if (state === "verified") {
-    const check = `M ${iconCX - 3.5} ${iconCY} L ${iconCX - 1} ${iconCY + 2.5} L ${iconCX + 3.5} ${iconCY - 2.5}`;
-    iconEl = `
-    <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}" fill="${p.icon}"/>
-    <path d="${check}" stroke="${p.iconBg}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const check = `M ${iconCX - 3.2} ${iconCY + 0.2} L ${iconCX - 0.8} ${iconCY + 2.4} L ${iconCX + 3.4} ${iconCY - 2.4}`;
+    iconEl = `<path d="${check}" stroke="${p.icon}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
   } else if (state === "onRecord") {
-    iconEl = `
-    <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}" fill="${p.icon}"/>
-    <circle cx="${iconCX}" cy="${iconCY}" r="1.6" fill="${p.iconBg}"/>`;
+    iconEl = `<circle cx="${iconCX}" cy="${iconCY}" r="${iconR - 1.5}" fill="${p.icon}"/>`;
   } else {
-    iconEl = `
-    <circle cx="${iconCX}" cy="${iconCY}" r="${iconR - 0.75}" fill="none" stroke="${p.icon}" stroke-width="1.5"/>`;
+    iconEl = `<circle cx="${iconCX}" cy="${iconCY}" r="${iconR - 0.75}" fill="none" stroke="${p.icon}" stroke-width="1.4"/>`;
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)})">
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="${p.bg}" stroke="${p.border}" stroke-width="1"/>${iconEl}
-  <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" font-weight="600" fill="${p.text}" letter-spacing="-0.01em">${esc(display)}</text>
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="${p.bg}" stroke="${p.border}" stroke-width="1"/>
+  ${iconEl}
+  <text x="${domainX}" y="${domainBaselineY}" font-family="${FONT_FAMILY}" font-size="13" font-weight="600" fill="${p.text}" letter-spacing="-0.01em">${esc(display)}</text>
 </svg>`;
 }
 
@@ -155,16 +173,17 @@ function renderPng(
   const iconD2x = ICON_D * 2;
   const iconR2x = iconD2x / 2;
 
-  // Icon renders as a standalone <svg> child so Satori's flexbox
-  // layout can position it on the main axis alongside the domain.
+  // Flat icon marks — no framing disc. Rendered as a standalone <svg>
+  // child so Satori's flexbox can lay it out on the main axis next to
+  // the domain. Keep shapes simple: arcs/fills only, no path arcs
+  // (Satori's SVG support is narrower than a browser's).
   let iconNode: React.ReactNode;
   if (state === "verified") {
     iconNode = (
       <svg width={iconD2x} height={iconD2x} viewBox={`0 0 ${iconD2x} ${iconD2x}`}>
-        <circle cx={iconR2x} cy={iconR2x} r={iconR2x} fill={p.icon} />
         <path
-          d={`M ${iconR2x - 7} ${iconR2x} L ${iconR2x - 2} ${iconR2x + 5} L ${iconR2x + 7} ${iconR2x - 5}`}
-          stroke={p.iconBg}
+          d={`M ${iconR2x - 6.4} ${iconR2x + 0.4} L ${iconR2x - 1.6} ${iconR2x + 4.8} L ${iconR2x + 6.8} ${iconR2x - 4.8}`}
+          stroke={p.icon}
           strokeWidth="3.6"
           fill="none"
           strokeLinecap="round"
@@ -175,8 +194,7 @@ function renderPng(
   } else if (state === "onRecord") {
     iconNode = (
       <svg width={iconD2x} height={iconD2x} viewBox={`0 0 ${iconD2x} ${iconD2x}`}>
-        <circle cx={iconR2x} cy={iconR2x} r={iconR2x} fill={p.icon} />
-        <circle cx={iconR2x} cy={iconR2x} r="3.2" fill={p.iconBg} />
+        <circle cx={iconR2x} cy={iconR2x} r={iconR2x - 3} fill={p.icon} />
       </svg>
     );
   } else {
@@ -188,7 +206,7 @@ function renderPng(
           r={iconR2x - 1.5}
           fill="none"
           stroke={p.icon}
-          strokeWidth="3"
+          strokeWidth="2.6"
         />
       </svg>
     );
@@ -208,7 +226,7 @@ function renderPng(
           justifyContent: "flex-start",
           padding: `0 ${PAD_R * 2}px 0 ${PAD_L * 2}px`,
           gap: GAP_ICON_DOMAIN * 2,
-          fontFamily: "monospace",
+          fontFamily: FONT_FAMILY,
           boxSizing: "border-box",
         }}
       >
@@ -218,9 +236,9 @@ function renderPng(
             color: p.text,
             fontSize: 26,
             fontWeight: 600,
-            fontFamily: "monospace",
+            fontFamily: FONT_FAMILY,
             lineHeight: 1,
-            letterSpacing: -0.2,
+            letterSpacing: -0.3,
             overflow: "hidden",
             whiteSpace: "nowrap",
           }}
@@ -255,8 +273,9 @@ export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
 ): Record<string, string> {
-  // v9: `[icon] [domain]` state-colored pill; ring + N/100 removed.
-  const etag = `W/"${snapshot.state}-${format}-v9"`;
+  // v10: softened palette (onRecord → tinted, not filled), flat icon
+  // marks (no framing disc), system-sans font so SVG and PNG match.
+  const etag = `W/"${snapshot.state}-${format}-v10"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

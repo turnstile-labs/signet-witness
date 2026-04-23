@@ -26,15 +26,19 @@ export const BADGE_MIN_WIDTH = 140;
 export const BADGE_MAX_WIDTH = 320;
 
 // Layout (logical px, matches the SVG viewBox).
-export const PAD_L = 12;
-export const PAD_R = 14;
-export const ICON_D = 14;
-export const GAP_ICON_DOMAIN = 10;
+// v10: icon is a flat mark (no framing disc), so we shrink it and
+// tighten the surrounding spacing for a more signature-appropriate
+// silhouette. Total canvas height unchanged (32px keeps <img>
+// dimensions stable for already-embedded badges).
+export const PAD_L = 11;
+export const PAD_R = 13;
+export const ICON_D = 10;
+export const GAP_ICON_DOMAIN = 8;
 
-// Typography — metric estimate for SF Mono / Menlo / Consolas. Domain
-// sits at 13px, weight 600. We clamp against min/max and truncate the
-// domain before we'd ever run past the canvas.
-const DOMAIN_CHAR_W = 7.8;
+// Typography — metric estimate for a system sans (SF/Segoe/Roboto) at
+// 13px, weight 600. Slightly narrower than mono; we clamp against
+// min/max and truncate the domain before we'd ever run past the canvas.
+const DOMAIN_CHAR_W = 7.4;
 
 // Hard cap on domain chars — keeps the canvas under BADGE_MAX_WIDTH
 // with room for the icon and padding. Anything longer is ellipsised.
