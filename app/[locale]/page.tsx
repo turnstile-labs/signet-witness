@@ -143,19 +143,19 @@ export default async function Home({
           </div>
 
           <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
-            <div className="border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[0.7rem] sm:text-xs font-mono text-muted shrink-0">
-                  AC
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm sm:text-base font-semibold text-txt truncate">acmecorp.com</p>
-                  <p className="text-[0.7rem] sm:text-xs text-muted font-mono truncate">witnessed.cc/b/acmecorp.com</p>
-                </div>
+            {/* Header — avatar + domain + permalink. The explicit
+                "Verified · Active" pill was dropped: the trust-index
+                hero directly below already communicates state (bar
+                filled past the 65 threshold tick reads as "verified"
+                without ceremony), and a single signal beats two
+                redundant ones. */}
+            <div className="border-b border-border px-4 sm:px-6 py-4 flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[0.7rem] sm:text-xs font-mono text-muted shrink-0">
+                AC
               </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-verified/30 bg-verified/10 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-verified inline-block" />
-                <span className="text-[0.7rem] sm:text-xs font-semibold text-verified">{t("mock.verifiedActive")}</span>
+              <div className="min-w-0">
+                <p className="text-sm sm:text-base font-semibold text-txt truncate">acmecorp.com</p>
+                <p className="text-[0.7rem] sm:text-xs text-muted font-mono truncate">witnessed.cc/b/acmecorp.com</p>
               </div>
             </div>
 
