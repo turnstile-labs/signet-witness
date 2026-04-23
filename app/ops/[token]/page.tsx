@@ -6,11 +6,17 @@ import { getOpsStats, type OpsStats } from "@/lib/db";
 // Internal ops dashboard. Reached via a secret URL: /ops/<STATS_TOKEN>.
 // Not linked from anywhere. Not localised. No tracking.
 //
-// Design rule for this page, above all else: an operator who has
-// never seen the dashboard before should understand every number
-// and every label from a single read, without reference material.
-// Plain English, full words, one number per cell, lots of vertical
-// space, no decoration beyond what a status label needs.
+// Design rule for this page, above all else: a first-read operator
+// should answer the three operator questions from the top of the
+// viewport without scrolling:
+//
+//   1. Is the system alive?       (24h activity)
+//   2. Is anything going wrong?   (rejections, trend vs avg)
+//   3. Is the product growing?    (new domains, verified count)
+//
+// Everything below the fold is detail — tables and anti-abuse
+// breakdowns. Nothing on the page is prose; everything is a label
+// + a number, or a chart + a caption.
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,8 +37,10 @@ function tokenMatches(provided: string, expected: string): boolean {
   }
 }
 
-// "2 days ago" / "3 weeks ago" / "today" — avoids raw timestamps in
-// table cells where only the relative recency matters to an operator.
+// ──────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────
+
 function formatAge(iso: string | null | undefined): string {
   if (!iso) return "—";
   const ts = Date.parse(iso);
@@ -40,22 +48,19 @@ function formatAge(iso: string | null | undefined): string {
   const days = Math.max(0, Math.floor((Date.now() - ts) / 86_400_000));
   if (days === 0) return "today";
   if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
+  if (days < 7) return `${days}d ago`;
   if (days < 30) {
     const weeks = Math.floor(days / 7);
-    return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+    return `${weeks}w ago`;
   }
   if (days < 365) {
     const months = Math.floor(days / 30);
-    return `${months} month${months === 1 ? "" : "s"} ago`;
+    return `${months}mo ago`;
   }
   const years = Math.floor(days / 365);
-  return `${years} year${years === 1 ? "" : "s"} ago`;
+  return `${years}y ago`;
 }
 
-// Canonical state label for a registered sender. Exactly three
-// possible outputs; the label is the full status in plain English.
-// No coloured dot, no abbreviation — just text.
 type StatusLabel = "Verified" | "On record" | "Pending";
 
 function statusFor(row: {
@@ -74,6 +79,29 @@ function statusFor(row: {
   if ((row.verified_event_count ?? 0) > 0) return "On record";
   return "Pending";
 }
+
+function humanReason(reason: string): string {
+  switch (reason) {
+    case "rate_limit":
+      return "Sender rate limit exceeded";
+    case "receiver_no_mx":
+      return "Recipient has no mail server";
+    case "receiver_blocklist":
+      return "Recipient on a known-bad list";
+    case "concentration":
+      return "Sender only emails one recipient";
+    case "erasure":
+      return "GDPR erasure (Art 17)";
+    case "opt_out":
+      return "Opt-out (Art 21)";
+    default:
+      return reason;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Page
+// ──────────────────────────────────────────────────────────────
 
 export default async function OpsPage({
   params,
@@ -104,379 +132,540 @@ export default async function OpsPage({
   const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
   const now = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
 
+  // Derived pulse numbers. We compare 24h against the 7d daily average
+  // because that's the smallest window where "normal" is well-defined;
+  // any shorter and day-of-week noise dominates.
+  const avg7d = stats.events7d > 0 ? Math.round(stats.events7d / 7) : 0;
+  const delta24hPct =
+    avg7d > 0
+      ? Math.round(((stats.events24h - avg7d) / avg7d) * 100)
+      : null;
+
+  // Peak & average over 30d — used in the activity panel.
+  const peak30d = Math.max(0, ...stats.eventsByDay.map((d) => d.count));
+  const avg30d =
+    stats.events30d > 0 ? Math.round(stats.events30d / 30) : 0;
+
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
-      <header className="pb-6 mb-10 border-b border-border">
-        <h1 className="text-lg font-bold tracking-tight mb-1">
-          Witnessed — ops dashboard
-        </h1>
-        <p className="text-xs text-muted-2 tabular-nums">
-          {now} · environment {env} · commit {commit}
-          {stats.dbSize ? ` · database ${stats.dbSize}` : ""}
+    <main className="max-w-6xl mx-auto px-6 py-8 font-mono text-sm text-txt bg-bg min-h-screen">
+      {/* Header ·································· */}
+      <header className="flex flex-wrap items-baseline justify-between gap-4 pb-4 mb-6 border-b border-border">
+        <div>
+          <h1 className="text-lg font-bold tracking-tight">
+            Witnessed ops
+          </h1>
+          <p className="text-xs text-muted-2 mt-0.5">
+            Live view. Fresh DB query on every load.
+          </p>
+        </div>
+        <p className="text-[0.65rem] text-muted-2 tabular-nums text-right leading-relaxed">
+          {now}
+          <br />
+          {env} · {commit}
+          {stats.dbSize ? ` · ${stats.dbSize}` : ""}
         </p>
       </header>
 
-      <Section title="Last 24 hours">
-        <StatTable
-          rows={[
-            { label: "Emails witnessed", value: stats.events24h },
-            {
-              label: "Emails rejected",
-              value: stats.throttled24h,
-              warn: stats.throttled24h > 0,
-            },
-          ]}
+      {/* KPI strip — 4 tiles, one glance = full health read ······· */}
+      <section
+        aria-label="pulse"
+        className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
+      >
+        <Kpi
+          label="Emails · 24h"
+          value={stats.events24h.toLocaleString()}
+          hint={
+            delta24hPct !== null
+              ? `${delta24hPct > 0 ? "+" : ""}${delta24hPct}% vs 7d avg`
+              : avg7d > 0
+                ? "—"
+                : "no 7d baseline"
+          }
+          hintTone={
+            delta24hPct === null
+              ? "muted"
+              : delta24hPct > 0
+                ? "good"
+                : delta24hPct < 0
+                  ? "warn"
+                  : "muted"
+          }
         />
-      </Section>
-
-      <Section title="Last 7 days">
-        <StatTable
-          rows={[
-            { label: "Emails witnessed", value: stats.events7d },
-            {
-              label: "Emails rejected",
-              value: stats.throttled7d,
-              warn: stats.throttled7d > 0,
-            },
-            { label: "New domains registered", value: stats.newDomains7d },
-          ]}
+        <Kpi
+          label="Emails · 7d"
+          value={stats.events7d.toLocaleString()}
+          hint={avg7d > 0 ? `${avg7d.toLocaleString()}/day avg` : "—"}
         />
-      </Section>
-
-      <Section title="All time">
-        <StatTable
-          rows={[
-            { label: "Registered domains", value: stats.domains },
-            { label: "Verified domains", value: stats.verifiedDomains },
-            { label: "Total emails witnessed", value: stats.events },
-            { label: "Domains on denylist", value: stats.denylistTotal },
-          ]}
+        <Kpi
+          label="Rejected · 7d"
+          value={stats.throttled7d.toLocaleString()}
+          tone={stats.throttled7d > 0 ? "warn" : "muted"}
+          hint={
+            stats.throttled7d === 0
+              ? "all clean"
+              : `${stats.throttled24h.toLocaleString()} in last 24h`
+          }
+          hintTone={stats.throttled7d > 0 ? "warn" : "good"}
         />
-      </Section>
+        <Kpi
+          label="New domains · 7d"
+          value={`+${stats.newDomains7d}`}
+          hint={
+            stats.newDomains30d > 0
+              ? `+${stats.newDomains30d} over 30d`
+              : "—"
+          }
+        />
+      </section>
 
-      <Section title="Activity — last 30 days">
-        <Chart data={stats.eventsByDay} days={30} />
-        <ActivitySummary data={stats.eventsByDay} total={stats.events30d} />
-      </Section>
+      {/* Totals ribbon — less urgent scale numbers ················ */}
+      <section
+        aria-label="scale"
+        className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 mb-6 rounded-md border border-border bg-surface/30 text-xs tabular-nums"
+      >
+        <Stat label="Registered domains" value={stats.domains} />
+        <Stat
+          label="Verified"
+          value={stats.verifiedDomains}
+          accent="verified"
+        />
+        <Stat label="Total emails" value={stats.events} />
+        <Stat
+          label="Denylist"
+          value={stats.denylistTotal}
+          accent={stats.denylistTotal > 0 ? "warn" : undefined}
+        />
+      </section>
 
-      <Section title="Registered domains">
-        <p className="text-xs text-muted mb-4 leading-relaxed">
-          Every domain we&apos;ve ever seen as a sender. Ordered by trust
-          score. &ldquo;Verified&rdquo; meets our quality threshold (trust
-          score of 65 or more plus at least three mutual counterparties).
-          &ldquo;On record&rdquo; has accepted emails but hasn&apos;t reached
-          verified yet. &ldquo;Pending&rdquo; has just registered.
-        </p>
-        {stats.topSenders.length === 0 ? (
-          <Empty>No domains have been registered yet.</Empty>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
-                <th className="py-2 pr-4 font-normal">Domain</th>
-                <th className="py-2 pr-4 font-normal">Status</th>
-                <th className="py-2 pr-4 font-normal text-right">Emails</th>
-                <th className="py-2 pr-4 font-normal text-right">
-                  Trust score
-                </th>
-                <th className="py-2 font-normal">First seen</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {stats.topSenders.map((r) => {
-                const status = statusFor(r);
-                return (
-                  <tr key={r.domain}>
-                    <td className="py-3 pr-4 truncate max-w-[14rem]">
-                      {r.domain}
-                    </td>
-                    <td
-                      className={`py-3 pr-4 ${
-                        status === "Verified"
-                          ? "text-verified"
-                          : status === "On record"
-                            ? "text-accent"
-                            : "text-muted"
-                      }`}
-                    >
-                      {status}
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
-                      {r.event_count.toLocaleString()}
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
-                      {r.trust_index !== null ? `${r.trust_index} / 100` : "—"}
-                    </td>
-                    <td className="py-3 text-muted whitespace-nowrap">
-                      {formatAge(r.first_seen)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </Section>
+      {/* Activity panel — chart + side stats ······················ */}
+      <section className="grid md:grid-cols-[1fr_13rem] gap-6 mb-8 p-5 rounded-md border border-border bg-surface/30">
+        <div className="min-w-0">
+          <h2 className="text-xs uppercase tracking-widest text-muted-2 mb-4">
+            Activity · last 30 days
+          </h2>
+          <Chart data={stats.eventsByDay} days={30} />
+        </div>
+        <div className="flex flex-col gap-3 md:border-l md:border-border md:pl-6 justify-center">
+          <InlineStat label="Total" value={stats.events30d.toLocaleString()} />
+          <InlineStat
+            label="Peak day"
+            value={`${peak30d.toLocaleString()} emails`}
+          />
+          <InlineStat
+            label="Daily average"
+            value={`${avg30d.toLocaleString()} emails`}
+          />
+          <InlineStat
+            label="Distinct recipients"
+            value={stats.distinctReceivers.toLocaleString()}
+          />
+          {stats.unclaimedReceivers > 0 && (
+            <InlineStat
+              label="Unclaimed"
+              value={stats.unclaimedReceivers.toLocaleString()}
+              tone="muted"
+            />
+          )}
+        </div>
+      </section>
 
-      <Section title="Top recipient domains">
-        <p className="text-xs text-muted mb-4 leading-relaxed">
-          Domains that most frequently appear as recipients of witnessed
-          emails. &ldquo;Registered&rdquo; means the recipient domain has also
-          sealed at least one email of its own; &ldquo;Unclaimed&rdquo; means
-          it only appears on the receiving end.
-        </p>
-        {stats.topReceivers.length === 0 ? (
-          <Empty>No recipient data yet.</Empty>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
-                <th className="py-2 pr-4 font-normal">Domain</th>
-                <th className="py-2 pr-4 font-normal text-right">
-                  Emails received
-                </th>
-                <th className="py-2 pr-4 font-normal text-right">
-                  Distinct senders
-                </th>
-                <th className="py-2 font-normal">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {stats.topReceivers.map((r) => (
-                <tr key={r.receiver_domain}>
-                  <td className="py-3 pr-4 truncate max-w-[14rem]">
-                    {r.receiver_domain}
-                  </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">
-                    {r.count.toLocaleString()}
-                  </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">
-                    {r.distinct_senders.toLocaleString()}
-                  </td>
-                  <td className="py-3 text-muted">
-                    {r.claimed ? "Registered" : "Unclaimed"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Section>
-
-      <Section title="Rejected emails — last 7 days">
-        <p className="text-xs text-muted mb-4 leading-relaxed">
-          Emails that were received and cryptographically valid, but not
-          added to any domain&apos;s public record. Usually because the
-          sender exceeded a rate limit, the recipient&apos;s domain has no
-          working mail server, or a reputation check failed. Kept for
-          forensic review, never shown publicly.
-        </p>
-        {stats.throttled7d === 0 ? (
-          <Empty>No emails have been rejected in the last 7 days.</Empty>
-        ) : (
-          <>
-            <h3 className="text-xs uppercase tracking-wide text-muted-2 mb-2 mt-6">
-              Grouped by reason
-            </h3>
-            <table className="w-full text-sm mb-8">
+      {/* Domains grid — two side-by-side panels ··················· */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <Panel
+          title="Registered domains"
+          legend={
+            <Legend
+              items={[
+                { color: "bg-verified", label: "Verified" },
+                { color: "bg-accent", label: "On record" },
+                { color: "bg-amber", label: "Pending" },
+              ]}
+            />
+          }
+        >
+          {stats.topSenders.length === 0 ? (
+            <Empty>No domains registered yet.</Empty>
+          ) : (
+            <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
-                  <th className="py-2 pr-4 font-normal">Reason</th>
-                  <th className="py-2 font-normal text-right">Rejected</th>
+                <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
+                  <th className="py-2 pr-3 font-normal">Domain</th>
+                  <th className="py-2 pr-3 font-normal">Status</th>
+                  <th className="py-2 pr-3 font-normal text-right">
+                    Emails
+                  </th>
+                  <th className="py-2 pr-3 font-normal text-right">Trust</th>
+                  <th className="py-2 font-normal text-right">Seen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {stats.throttledByReason.map((r) => (
+                {stats.topSenders.slice(0, 8).map((r) => {
+                  const status = statusFor(r);
+                  return (
+                    <tr key={r.domain}>
+                      <td className="py-2.5 pr-3 truncate max-w-[11rem]">
+                        {r.domain}
+                      </td>
+                      <td className="py-2.5 pr-3">
+                        <StatusBadge status={status} />
+                      </td>
+                      <td className="py-2.5 pr-3 text-right tabular-nums">
+                        {r.event_count.toLocaleString()}
+                      </td>
+                      <td className="py-2.5 pr-3 text-right tabular-nums text-muted">
+                        {r.trust_index !== null ? r.trust_index : "—"}
+                      </td>
+                      <td className="py-2.5 text-right text-muted-2 tabular-nums whitespace-nowrap">
+                        {formatAge(r.first_seen)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+
+        <Panel
+          title="Top recipients"
+          legend={
+            <span className="text-[0.6rem] text-muted-2">
+              last 30 days
+            </span>
+          }
+        >
+          {stats.topReceivers.length === 0 ? (
+            <Empty>No recipient data yet.</Empty>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
+                  <th className="py-2 pr-3 font-normal">Domain</th>
+                  <th className="py-2 pr-3 font-normal text-right">
+                    Received
+                  </th>
+                  <th className="py-2 pr-3 font-normal text-right">
+                    Senders
+                  </th>
+                  <th className="py-2 font-normal">State</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {stats.topReceivers.slice(0, 8).map((r) => (
+                  <tr key={r.receiver_domain}>
+                    <td className="py-2.5 pr-3 truncate max-w-[11rem]">
+                      {r.receiver_domain}
+                    </td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums">
+                      {r.count.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums text-muted">
+                      {r.distinct_senders.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 text-muted-2">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className={`inline-block w-1.5 h-1.5 rounded-full ${
+                            r.claimed
+                              ? "bg-txt"
+                              : "border border-muted-2 bg-transparent"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        {r.claimed ? "Registered" : "Unclaimed"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+
+      {/* Ops grid — anti-abuse + denylist side-by-side ············ */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <Panel
+          title="Anti-abuse"
+          legend={
+            <span className="text-[0.6rem] text-muted-2">last 7 days</span>
+          }
+        >
+          {stats.throttled7d === 0 ? (
+            <Empty tone="good">
+              No emails rejected in the last 7 days.
+            </Empty>
+          ) : (
+            <>
+              <div className="mb-4">
+                <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1">
+                  By reason
+                </p>
+                <table className="w-full text-sm">
+                  <tbody className="divide-y divide-border">
+                    {stats.throttledByReason.map((r) => (
+                      <tr key={r.reason}>
+                        <td className="py-2 pr-3">{humanReason(r.reason)}</td>
+                        <td className="py-2 text-right tabular-nums text-amber">
+                          {r.count.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {stats.throttledTopSenders.length > 0 && (
+                <div>
+                  <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1">
+                    Top offenders
+                  </p>
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y divide-border">
+                      {stats.throttledTopSenders.map((s) => (
+                        <tr key={s.sender_domain}>
+                          <td className="py-2 pr-3 truncate max-w-[13rem]">
+                            {s.sender_domain}
+                          </td>
+                          <td className="py-2 text-right tabular-nums">
+                            {s.count.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </Panel>
+
+        <Panel title="Denylist">
+          {stats.denylistTotal === 0 ? (
+            <Empty tone="good">No domains on the denylist.</Empty>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
+                  <th className="py-2 pr-3 font-normal">Reason</th>
+                  <th className="py-2 font-normal text-right">Domains</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {stats.denylistByReason.map((r) => (
                   <tr key={r.reason}>
-                    <td className="py-3 pr-4">{describeReason(r.reason)}</td>
-                    <td className="py-3 text-right tabular-nums">
+                    <td className="py-2 pr-3">{humanReason(r.reason)}</td>
+                    <td className="py-2 text-right tabular-nums">
                       {r.count.toLocaleString()}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          )}
+        </Panel>
+      </div>
 
-            {stats.throttledTopSenders.length > 0 && (
-              <>
-                <h3 className="text-xs uppercase tracking-wide text-muted-2 mb-2">
-                  Top offending senders
-                </h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
-                      <th className="py-2 pr-4 font-normal">Sender domain</th>
-                      <th className="py-2 font-normal text-right">Rejected</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {stats.throttledTopSenders.map((s) => (
-                      <tr key={s.sender_domain}>
-                        <td className="py-3 pr-4 truncate max-w-[14rem]">
-                          {s.sender_domain}
-                        </td>
-                        <td className="py-3 text-right tabular-nums">
-                          {s.count.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            )}
-          </>
-        )}
-      </Section>
-
-      <Section title="Denylist">
-        <p className="text-xs text-muted mb-4 leading-relaxed">
-          Domains that have requested GDPR erasure or have opted out of
-          being witnessed. Inbound emails that name these domains are
-          silently dropped.
-        </p>
-        {stats.denylistTotal === 0 ? (
-          <Empty>No domains are currently on the denylist.</Empty>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
-                <th className="py-2 pr-4 font-normal">Reason</th>
-                <th className="py-2 font-normal text-right">Domains</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {stats.denylistByReason.map((r) => (
-                <tr key={r.reason}>
-                  <td className="py-3 pr-4">
-                    {r.reason === "erasure"
-                      ? "GDPR erasure (Article 17)"
-                      : r.reason === "opt_out"
-                        ? "Opt-out (Article 21)"
-                        : r.reason}
-                  </td>
-                  <td className="py-3 text-right tabular-nums">
-                    {r.count.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Section>
-
-      <footer className="mt-16 pt-6 border-t border-border">
-        <p className="text-xs text-muted-2 leading-relaxed">
-          Rotate STATS_TOKEN to revoke access to this page. Nothing here is
-          cached — every load runs a fresh query against the production
-          database.
+      <footer className="mt-12 pt-4 border-t border-border">
+        <p className="text-[0.65rem] text-muted-2 leading-relaxed">
+          Rotate <code className="text-muted">STATS_TOKEN</code> to revoke
+          access · Fresh DB query per load · No caching
         </p>
       </footer>
     </main>
   );
 }
 
-// ────────────────────────────────────────────────────────────
-// Labels
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// Primitives
+// ──────────────────────────────────────────────────────────────
 
-// Anti-abuse reasons are short machine tokens in the database
-// (`rate_limit`, `receiver_no_mx`, etc). Translate each to a human
-// phrase at the render boundary so the table doesn't require a legend.
-function describeReason(reason: string): string {
-  switch (reason) {
-    case "rate_limit":
-      return "Sender exceeded the rate limit";
-    case "receiver_no_mx":
-      return "Recipient domain has no mail server";
-    case "receiver_blocklist":
-      return "Recipient domain is on a known-bad list";
-    case "concentration":
-      return "Sender is only emailing one recipient";
-    default:
-      return reason;
-  }
+// KPI tile. Large number, tiny label, one-line hint with its own
+// tone. Tiles are the top-of-page pulse read — everything else is
+// detail-for-when-a-tile-looks-wrong.
+function Kpi({
+  label,
+  value,
+  hint,
+  tone = "default",
+  hintTone = "muted",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "default" | "muted" | "warn";
+  hintTone?: "muted" | "good" | "warn";
+}) {
+  const valueClass =
+    tone === "warn"
+      ? "text-amber"
+      : tone === "muted"
+        ? "text-muted-2"
+        : "text-txt";
+  const hintClass =
+    hintTone === "good"
+      ? "text-verified"
+      : hintTone === "warn"
+        ? "text-amber"
+        : "text-muted-2";
+  return (
+    <div className="rounded-md border border-border bg-surface/30 px-4 py-3.5">
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+        {label}
+      </p>
+      <p
+        className={`text-2xl font-bold tabular-nums mt-1.5 leading-none ${valueClass}`}
+      >
+        {value}
+      </p>
+      {hint && (
+        <p className={`text-[0.65rem] mt-2 tabular-nums ${hintClass}`}>
+          {hint}
+        </p>
+      )}
+    </div>
+  );
 }
 
-// ────────────────────────────────────────────────────────────
-// Primitives
-// ────────────────────────────────────────────────────────────
+// Inline label+value pair. Used on the totals ribbon where
+// horizontal density is the point.
+function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: "verified" | "warn";
+}) {
+  const cls =
+    accent === "verified"
+      ? "text-verified"
+      : accent === "warn"
+        ? "text-amber"
+        : "text-txt";
+  return (
+    <span className="inline-flex items-baseline gap-2">
+      <span className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+        {label}
+      </span>
+      <span className={`font-semibold ${cls}`}>
+        {value.toLocaleString()}
+      </span>
+    </span>
+  );
+}
 
-function Section({
+// Stacked label+value. Used inside the activity-panel sidebar.
+function InlineStat({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "muted";
+}) {
+  return (
+    <div>
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+        {label}
+      </p>
+      <p
+        className={`text-base font-semibold tabular-nums mt-0.5 ${
+          tone === "muted" ? "text-muted" : "text-txt"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// Colored dot + status label. The one place on the page where color
+// is load-bearing — the dot is scannable in the list at a glance.
+function StatusBadge({ status }: { status: StatusLabel }) {
+  const cls =
+    status === "Verified"
+      ? "bg-verified"
+      : status === "On record"
+        ? "bg-accent"
+        : "bg-amber";
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span
+        className={`inline-block w-1.5 h-1.5 rounded-full ${cls}`}
+        aria-hidden="true"
+      />
+      <span className="text-muted">{status}</span>
+    </span>
+  );
+}
+
+// Section panel — consistent framing for the two-column grids below
+// the KPI strip. Title bar has space for a legend on the right.
+function Panel({
   title,
+  legend,
   children,
 }: {
   title: string;
+  legend?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-12">
-      <h2 className="text-base font-bold mb-4 text-txt">{title}</h2>
+    <section className="rounded-md border border-border bg-surface/30 p-5 min-w-0">
+      <header className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-border">
+        <h2 className="text-xs uppercase tracking-widest text-muted-2">
+          {title}
+        </h2>
+        {legend}
+      </header>
       {children}
     </section>
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-muted-2 py-2">{children}</p>;
-}
-
-// Label on the left, number on the right. Nothing else. Used for the
-// top three summary sections (24h, 7d, all-time).
-function StatTable({
-  rows,
+function Legend({
+  items,
 }: {
-  rows: Array<{ label: string; value: number; warn?: boolean }>;
+  items: Array<{ color: string; label: string }>;
 }) {
   return (
-    <table className="w-full text-sm">
-      <tbody className="divide-y divide-border">
-        {rows.map((r) => (
-          <tr key={r.label}>
-            <td className="py-3 pr-4 text-muted">{r.label}</td>
-            <td
-              className={`py-3 text-right tabular-nums font-medium ${
-                r.warn ? "text-amber" : "text-txt"
-              }`}
-            >
-              {r.value.toLocaleString()}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <span className="flex items-center gap-3 text-[0.6rem] text-muted-2">
+      {items.map((it) => (
+        <span key={it.label} className="inline-flex items-center gap-1.5">
+          <span
+            className={`inline-block w-1.5 h-1.5 rounded-full ${it.color}`}
+            aria-hidden="true"
+          />
+          {it.label}
+        </span>
+      ))}
+    </span>
   );
 }
 
-// One-line summary under the 30-day chart: total, peak day, average.
-// All three phrased as full English so the chart never needs a caption.
-function ActivitySummary({
-  data,
-  total,
+function Empty({
+  children,
+  tone = "muted",
 }: {
-  data: Array<{ day: string; count: number }>;
-  total: number;
+  children: React.ReactNode;
+  tone?: "muted" | "good";
 }) {
-  if (total === 0) {
-    return (
-      <p className="text-xs text-muted mt-3">
-        No activity in the last 30 days.
-      </p>
-    );
-  }
-  const peak = Math.max(0, ...data.map((d) => d.count));
-  const avg = Math.round(total / 30);
   return (
-    <p className="text-xs text-muted mt-3 tabular-nums leading-relaxed">
-      {total.toLocaleString()} email{total === 1 ? "" : "s"} over 30 days.
-      Busiest day saw {peak.toLocaleString()}. Average of{" "}
-      {avg.toLocaleString()} per day.
+    <p
+      className={`text-xs py-3 ${
+        tone === "good" ? "text-verified" : "text-muted-2"
+      }`}
+    >
+      {children}
     </p>
   );
 }
 
-// 30 one-pixel-wide bars, one per day, left-to-right oldest-to-newest.
-// Hover a bar for the exact count on that day. Kept simple — if the
-// shape on the chart is interesting, follow up with a real tool.
+// 30 single-pixel-wide bars. Hover a bar for the exact count.
+// Taller than the previous version because the chart carries the
+// activity-panel's visual weight on a dashboard.
 function Chart({
   data,
   days,
@@ -485,10 +674,10 @@ function Chart({
   days: number;
 }) {
   const byDay = new Map(data.map((d) => [d.day, d.count]));
-  const now = new Date();
+  const nowUtc = new Date();
   const buckets: Array<{ day: string; count: number }> = [];
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
+    const d = new Date(nowUtc);
     d.setUTCDate(d.getUTCDate() - i);
     const key = d.toISOString().slice(0, 10);
     buckets.push({ day: key, count: byDay.get(key) ?? 0 });
@@ -497,25 +686,25 @@ function Chart({
 
   return (
     <div>
-      <div className="flex items-end gap-[3px] h-32 border-b border-border pb-0.5">
+      <div className="flex items-end gap-[3px] h-28 border-b border-border pb-0.5">
         {buckets.map((b) => {
           const h =
             b.count === 0
               ? 1
-              : Math.max(4, Math.round((b.count / max) * 120));
+              : Math.max(4, Math.round((b.count / max) * 108));
           return (
             <div
               key={b.day}
               title={`${b.day}: ${b.count} email${b.count === 1 ? "" : "s"}`}
               className={`flex-1 rounded-sm ${
-                b.count === 0 ? "bg-border" : "bg-accent/70"
+                b.count === 0 ? "bg-border" : "bg-accent/70 hover:bg-accent"
               }`}
               style={{ height: `${h}px` }}
             />
           );
         })}
       </div>
-      <div className="flex justify-between mt-2 text-xs text-muted-2 tabular-nums">
+      <div className="flex justify-between mt-1.5 text-[0.6rem] text-muted-2 tabular-nums">
         <span>{buckets[0]?.day ?? ""}</span>
         <span>{buckets[buckets.length - 1]?.day ?? ""}</span>
       </div>
