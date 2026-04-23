@@ -76,8 +76,6 @@
     "statVerifiedEmailsSub": "ponderados por calidad",
     "statActiveHistory": "En el registro",
     "statActiveHistorySub": "desde el primer email",
-    "statCounterparties": "Contrapartes",
-    "statCounterpartiesSub": "negocios distintos",
     "statMutuals": "Contrapartes mutuas",
     "statMutualsSub": "verificadas en ambos sentidos",
     "scoreBasis": "Sobre {receivers, plural, =0 {ninguna contraparte} =1 {# contraparte distinta} other {# contrapartes distintas}} · diversidad {diversity} / 100",

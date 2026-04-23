@@ -70,8 +70,8 @@ Weights are encoded in `lib/scores.ts#computeTrustIndex`: 35% activity (log-scal
 
 - The `/b/[domain]` seal page displays the composite `trust_index` as the headline metric with a 0–100 bar tick-marked at the verified threshold. The three supporting stats are `verified_event_count`, `tenure`, and `mutual_counterparties`.
 - Verified gating: `trust_index ≥ 65 AND mutual_counterparties ≥ 3` OR `domains.grandfathered_verified = TRUE`. The grandfather flag was set one-time for domains that met the pre-Layer-2 rule (90d + 10 events) so no user loses a badge when the metric changes. Operators can clear the flag per-domain for proven abusers.
-- The badge (`/badge/[slug]`) uses the same gating via `trustTierFromScore()`. ETag cache key is `v6` post-switch.
-- The landing-page mock mirrors the new layout so what users see on the homepage matches what they see when they click through.
+- The badge (`/badge/[slug]`) uses the same gating via `trustTierFromScore()`. See the "Badge" section below for the full ETag key shape.
+- The landing-page mock of `acmecorp.com`'s seal card is a 1:1 replica of the real `/b/<domain>` hero — same typography, same `TrustIndexHero`, same stats grid, same `scoreBasis` and `trustLine` copy (reused verbatim from `seal.*`) — so the landing can't drift from the real page.
 - Ops ranks top senders by `trust_index` and displays both `t<index>` and `m<mutuals>` inline next to raw event counts.
 
 **Layer 3 (not built, not planned).** Real-time domain-reputation partners and human review are deliberately out of scope — Layers 0–2 cover the realistic attacker economics at current and near-term scale.
@@ -126,7 +126,7 @@ Discovery happens through the CC field (receivers see `seal@witnessed.cc`) and d
 
 ### Dynamic badge (implemented)
 
-`/badge/[slug]` now serves both SVG and PNG badges (PNG via `next/og`/Satori). Layout is `[ ✓ ]  [ domain ]  [ witnessed.cc ]` — a state-colored mark on the left (`verified` / `onRecord` / `pending`), the domain at 13px semibold as the focal point, and a muted `witnessed.cc` attribution on the right ("almost hidden" but legible on close inspection). Canvas **width adapts to the domain length** (clamped 180–360px) so the badge feels tailored rather than stretched; height stays fixed at 32px for signature compatibility. Dimension math lives in `lib/badge-dimensions.ts` and is shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. Dark and light themes via `?theme=light`. The live event count lives on the seal page — the badge stays intentionally quiet so it teases the click rather than summarizing the data in the signature. Cached at the edge with an `ETag` keyed on `(state, theme, format)` so caches only invalidate on threshold transitions, not on every +1 email.
+`/badge/[slug]` serves both SVG and PNG badges (PNG via `next/og`/Satori). Layout is `[ ring+mark ] [ domain ] [ N/100 ]` — a state-colored mark on the left (verified fill / on-record outline / pending ring), a 0–100% progress ring around it whose fraction = `trust_index / 100`, the domain at 13px semibold as the focal point, and the trust score right-anchored at 11px as a muted-but-legible numeric readout (school-grade semantics — "27 out of 100" reads at a glance across audiences). Canvas **width adapts to the domain length** (clamped 180–360px); height stays fixed at 32px for signature compatibility. Dimension math lives in `lib/badge-dimensions.ts` and is shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. Dark and light themes via `?theme=light`. Pure helpers (`ringFraction`, `ringArcPath`, `resolveSnapshot`, `trustBucket`) live in `lib/badge-state.ts` so the route stays a thin shell around them and tests can import the math without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, 5-point-trust-bucket, theme, format, layout-version)` so the CDN picks up meaningful state transitions without busting on 1-point drift.
 
 ### Internationalization (EN + ES)
 
@@ -162,7 +162,7 @@ viral_invites             (sender_domain, receiver_email, receiver_domain, statu
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 
-**Badge.** `GET /badge/[slug]` renders an SVG or PNG (format from the slug suffix). Layout: `[ ring+mark ] [ domain ] [ witnessed.cc ]`. The ring around the mark is a 0–100% arc whose fraction = `trust_index / 100`. Verified domains always render as a full ring, on-record as a partial ring, pending as an empty ring on the track color. `?preview=verified|onRecord|pending` short-circuits the DB lookup for marketing surfaces; `?t=0..100` overrides the ring fraction in preview mode. ETag keyed on `(state, 5-point-trust-bucket, theme, format, v7)` so the CDN picks up meaningful state transitions without busting on 1-point score drift. Pure helpers (`ringFraction`, `ringArcPath`, `resolveSnapshot`, `trustBucket`) live in `lib/badge-state.ts` so the route stays a thin shell around them and tests can import the math without loading `next/og`.
+**Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?theme=light` toggles palette; `?preview=verified|onRecord|pending` short-circuits the DB lookup for marketing surfaces; `?t=0..100` overrides the ring fraction in preview mode. Bump the trailing `v8` layout fingerprint in `cacheHeaders()` whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
 
 **Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/viral.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `RESEND_API_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
 
@@ -189,10 +189,11 @@ The operating plan is phased by distribution, not feature count. See
 **Months 1–3 — Free tier only.** Goal: 1,000 active domains. No pricing.
 
 **Months 3–6 — Pro + signed PDF certificate.**
-- Pro subscription ($9–19/mo) via Stripe: custom badge styling, no
-  attribution, anomaly alerts, higher API rate limits. The `domains.tier`
-  column is already in place — enabling Pro is one Stripe webhook + one
-  column flip, not a migration.
+- Pro subscription ($9–19/mo) via Stripe: custom badge styling
+  (brand-matched colors, alternate layouts), anomaly alerts, owner
+  analytics, higher API rate limits. The `domains.tier` column is
+  already in place — enabling Pro is one Stripe webhook + one column
+  flip, not a migration.
 - Signed PDF tenure certificate ($29 one-off).
 - WHOIS receiver-age scoring as a quiet signal multiplier.
 

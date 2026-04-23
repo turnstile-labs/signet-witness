@@ -24,17 +24,23 @@ No auth. No payments. No setup required from users. The CC is the product.
 
 ## What's live
 
-- **Seal pages** at `/b/[domain]` — verified/on-record/pending state, 30-day sparkline, stats, recent activity feed
-- **Unclaimed seal pages** for domains that appear only as receivers — shows inbound witnessed count and an on-ramp to start their own record
-- **Dynamic badge endpoint** at `/badge/[domain]` — SVG or PNG (`?theme=light` variant, `ETag`-cached, reflects live event count)
-- **Owner tools** on each seal page — copy the badge as image URL, HTML snippet, or Markdown
-- **Domain lookup** — anyone can search a domain from the landing page
-- **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), and erasure (Art 17), powered by `/api/rights/*`
+- **Seal pages** at `/b/[domain]` — trust-index hero (0–100, tick at the verified threshold), quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and `PathToVerified` callout when on-record but not yet verified
+- **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
+- **Dynamic badge** at `/badge/[domain]` — SVG or PNG (`?theme=light` variant, `ETag`-cached, `?preview=...&t=...` for marketing surfaces) with a state-colored mark, a 0–100% trust-index progress ring, the domain, and a muted `N/100` numeric readout
+- **Trust index** (`lib/scores.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
+- **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
+- **Outbound viral loop** (`lib/viral.ts`) — after an inbound email is accepted, transactional "you were sealed" invites go out via Resend to unregistered / non-free-mail / non-denylisted recipients. Gated on `RESEND_API_KEY`
+- **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
 - **Inbound denylist gate** — any CC from or to an opted-out / erased domain is silently dropped
+- **Setup wizard** at `/setup` — one-time mail-flow rules for Google Workspace, Microsoft 365, and Outlook so "always CC seal@" becomes automatic
+- **Ops dashboard** at `/ops/<STATS_TOKEN>` — activity, top senders (ranked by trust), receivers, anti-abuse throttles, viral invite status, denylist
+- **Admin CT warm-up** at `/api/admin/warm-ct` (auth: `STATS_TOKEN`) — batch backfill `first_cert_at` for stale rows in `domain_reputation_cache`
+- **Domain lookup** on the landing page
 - **English + Spanish** — full i18n via `next-intl`. EN at the root, ES prefixed at `/es/*`
 - **Light + dark theme** — CSS-variable driven, persisted to `localStorage`
 - **Privacy + Terms + Your-rights** pages, fully translated
-- **Cloudflare Worker email router** — 30-line catch-all forwarder
+- **Cloudflare Worker email router** — ~30-line catch-all forwarder
+- **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/viral.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
 
 ---
 
@@ -60,32 +66,25 @@ signet-witness/
 │   ├── globals.css               # Tailwind v4 + light/dark CSS variables
 │   ├── [locale]/
 │   │   ├── layout.tsx            # Locale shell + theme flash prevention + NextIntlClientProvider
-│   │   ├── page.tsx              # Landing page
+│   │   ├── page.tsx              # Landing page (mock seal card 1:1 with /b/<domain>)
 │   │   ├── b/[domain]/
 │   │   │   ├── page.tsx          # Seal page — the product
 │   │   │   └── error.tsx         # Seal route error boundary
+│   │   ├── setup/page.tsx        # One-time mail-flow-rule setup (Workspace / M365 / Outlook)
 │   │   ├── privacy/page.tsx      # Privacy policy (GDPR-aligned)
 │   │   ├── terms/page.tsx        # Terms of service
 │   │   └── rights/page.tsx       # GDPR self-serve: access / opt-out / erasure
 │   ├── api/
-│   │   ├── inbound/route.ts      # Email receiver + DKIM verify + denylist gate + DB write
+│   │   ├── inbound/route.ts      # Email receiver + DKIM verify + anti-abuse gates + DB write + after-hooks
+│   │   ├── admin/warm-ct/route.ts # Admin batch CT-log backfill (auth: STATS_TOKEN)
 │   │   └── rights/
 │   │       ├── challenge/route.ts # Mint DNS-TXT challenge for (domain, action)
 │   │       ├── access/route.ts    # Art 15 — JSON export
 │   │       ├── opt-out/route.ts   # Art 21 — denylist only
 │   │       └── erasure/route.ts   # Art 17 — hard-delete + denylist
-│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge for email signatures
-│   └── components/
-│       ├── NavBar.tsx            # Header — logo + language + theme
-│       ├── Footer.tsx            # Footer — © + privacy/terms/rights links
-│       ├── CopyableEmail.tsx     # Click-to-copy CTA for seal@witnessed.cc
-│       ├── DomainSearch.tsx      # Landing-page domain lookup form
-│       ├── BadgeEmbed.tsx        # Owner-tools panel (image URL + HTML + Markdown snippets)
-│       ├── RightsForm.tsx        # Client flow for DNS-TXT-verified rights requests
-│       ├── HeroBackdrop.tsx      # Soft radial accent halo behind the hero headline
-│       ├── Sparkline.tsx         # 30-day activity bar chart for seal pages
-│       ├── LanguageSwitcher.tsx  # EN/ES selector
-│       └── ThemeToggle.tsx       # Light/dark mode toggle
+│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge with trust-index ring + N/100 readout
+│   ├── ops/[token]/page.tsx      # Internal dashboard — activity, top senders, anti-abuse, viral
+│   └── components/               # NavBar, Footer, CopyableEmail, BadgeEmbed, Sparkline, RightsForm, …
 ├── i18n/
 │   ├── routing.ts                # Locales + localePrefix config
 │   ├── navigation.ts             # Locale-aware Link/router helpers
@@ -95,12 +94,20 @@ signet-witness/
 │   └── es.json                   # Spanish strings
 ├── proxy.ts                      # next-intl middleware (locale detection)
 ├── lib/
-│   ├── db.ts                     # Neon SQL client + typed queries + GDPR helpers
+│   ├── db.ts                     # Neon SQL client + typed queries + GDPR helpers + ops aggregates
+│   ├── scores.ts                 # Trust-index math + free-mail list + verified gating
+│   ├── reputation.ts             # MX / DBL / rate-limit gates + CT-log lookup cache
+│   ├── viral.ts                  # Outbound invite loop (Resend)
+│   ├── badge-state.ts            # Pure helpers for badge state + ring + cache bucket
+│   ├── badge-dimensions.ts       # Shared layout math for SVG/PNG + BadgeEmbed
 │   └── verify-domain.ts          # DNS-TXT owner-proof challenge/verify for /rights
+├── tests/                        # Vitest suite + helpers + programmable neon stub
 ├── workers/
 │   └── email-router/             # Cloudflare Worker (~30 lines) — forwards raw email to /api/inbound
-├── schema.sql                    # Run once to create tables
+├── schema.sql                    # Run once to create tables (idempotent — safe to re-run)
+├── vitest.config.ts
 ├── .env.example
+├── CONTEXT.md                    # Architecture + invariants + current build state
 └── docs/
     ├── PRODUCT.md                # What it is, why it matters, business model
     └── VISION.md                 # Roadmap + long-term Web3 path
@@ -136,6 +143,9 @@ Available scripts:
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
 | `npm run typecheck` | `tsc --noEmit` — pure type check, no emit |
+| `npm test` | Vitest — runs the full suite once |
+| `npm run test:watch` | Vitest watch mode |
+| `npm run test:coverage` | Vitest + v8 coverage report |
 
 ---
 
@@ -146,7 +156,11 @@ Available scripts:
 ```bash
 # Push to GitHub, import in Vercel dashboard
 # Add Postgres store: Vercel dashboard → Storage → Connect → Postgres
-# Add env var INBOUND_SECRET in project settings
+# Add env vars in project settings: INBOUND_SECRET (required), plus
+#   any of STATS_TOKEN / SPAMHAUS_DQS_KEY / RESEND_API_KEY you want
+#   to enable
+# Run schema.sql via the Vercel Postgres query runner (idempotent —
+#   safe to re-run after pulling new migrations)
 ```
 
 ### Cloudflare Worker
@@ -174,29 +188,19 @@ In your Cloudflare dashboard for `witnessed.cc`:
 
 ## Database schema
 
-```sql
-CREATE TABLE IF NOT EXISTS domains (
-  id          SERIAL PRIMARY KEY,
-  domain      TEXT NOT NULL UNIQUE,
-  first_seen  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  event_count INTEGER NOT NULL DEFAULT 0,
-  tier        TEXT NOT NULL DEFAULT 'free',
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+The canonical schema lives in `schema.sql` and is idempotent — run it once
+on a fresh database, and safely re-run it after pulling new changes to
+pick up migrations. Current tables:
 
-CREATE TABLE IF NOT EXISTS events (
-  id               SERIAL PRIMARY KEY,
-  domain_id        INTEGER NOT NULL REFERENCES domains(id) ON DELETE CASCADE,
-  receiver_domain  TEXT NOT NULL,
-  dkim_hash        TEXT NOT NULL,
-  witnessed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS events_domain_id_idx       ON events(domain_id);
-CREATE INDEX IF NOT EXISTS events_receiver_domain_idx ON events(receiver_domain);
-```
-
-The canonical schema lives in `schema.sql`; the snippet above is for reference.
+| Table | Purpose |
+|---|---|
+| `domains` | Sender registry (`id`, `domain`, `first_seen`, `event_count`, `tier`, `grandfathered_verified`) |
+| `events` | DKIM-verified witnessed emails (`domain_id`, `receiver_domain`, `dkim_hash`, `witnessed_at`) |
+| `domain_denylist` | GDPR opt-outs and erasures — consulted on every inbound email |
+| `domain_reputation_cache` | Anti-abuse: MX status, DBL status, CT-log `first_cert_at`, per-signal TTLs |
+| `events_throttled` | Forensic-only log of dropped inbound events (never read by the seal page) |
+| `domain_scores` | Lazy-refreshed trust-index row per domain (the number users see) |
+| `viral_invites` | Idempotency + status log for the outbound "you were sealed" loop |
 
 ---
 
@@ -214,11 +218,16 @@ emails build history. History built this way cannot be backdated or forged.
 
 ## Environment variables
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` or `STORAGE_URL` | Neon Postgres connection string |
-| `INBOUND_SECRET` | Shared secret between Cloudflare Worker and `/api/inbound` |
-| `RIGHTS_SECRET` | (optional) HMAC key for `/api/rights/*` TXT challenges. Defaults to `INBOUND_SECRET`. Rotating it invalidates any in-flight challenges. |
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` (or `STORAGE_URL`) | yes | Neon Postgres connection string |
+| `INBOUND_SECRET` | yes | Shared secret between the Cloudflare Worker and `/api/inbound` |
+| `STATS_TOKEN` | optional | Enables the internal `/ops/<token>` dashboard and the admin CT warm-up endpoint. Must be ≥ 16 chars. Rotate to revoke |
+| `SPAMHAUS_DQS_KEY` | optional | Spamhaus Data Query Service key. When unset, the DBL layer is skipped (the public zone refuses queries from serverless resolvers) |
+| `RESEND_API_KEY` | optional | Resend API key for the outbound viral-invite loop. When unset, the viral layer is skipped |
+| `RIGHTS_SECRET` | optional | HMAC key for `/api/rights/*` TXT challenges. Defaults to `INBOUND_SECRET`. Rotating it invalidates any in-flight challenges |
+
+See `.env.example` for a copy-pasteable template.
 
 ---
 

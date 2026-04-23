@@ -11,10 +11,10 @@ layer for both Web2 businesses and Web3 operators.
 ### Pro tier + signed PDF certificate
 
 First paid surface for domain owners. Pro ($9–19/mo via Stripe) unlocks
-custom badge styling, removal of the `witnessed.cc` attribution, anomaly
-alerts, and owner analytics. The `domains.tier` column is already in
-place — enabling Pro is a Stripe webhook plus a column flip, not a
-migration.
+custom badge styling (brand-matched colors, alternate layouts), anomaly
+alerts, owner analytics, and higher API rate limits. The `domains.tier`
+column is already in place — enabling Pro is a Stripe webhook plus a
+column flip, not a migration.
 
 Alongside Pro, the signed PDF tenure certificate ($29 one-off) launches
 for any domain owner — free or Pro — who needs a court-admissible,

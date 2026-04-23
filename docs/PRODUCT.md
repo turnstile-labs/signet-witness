@@ -72,8 +72,8 @@ it has at least 3 mutual counterparties. The composite is what the badge
 reads; the badge renders at `/badge/[domain]` in SVG or PNG, in dark or
 light theme (`?theme=light`).
 
-> `acme.com`  —  **VERIFIED · t72**
-> witnessed.cc
+> `acme.com`  **72/100**
+> ( verified ring + mark · domain · trust readout )
 
 A scammer can copy the image. They can't copy the history. One click reveals
 the real record — trust index, verified events, tenure, mutual counterparties.
@@ -134,15 +134,25 @@ pipeline re-checks the denylist on every email.
 
 ## How the History Gets Stronger
 
-Two signals, checked automatically. No action from the user.
+Four signals feed the trust index automatically. No action from the user.
 
-**Receiver domain age.** An email to a domain registered in 2010 weighs more
-than one to a domain registered last month. Checked via public WHOIS data.
-*(Planned — not yet in MVP.)*
+**Mutual counterparties.** A receiver that's *itself* a sender who CCs
+`seal@` back is the strongest anti-fake edge: it requires the counterparty
+to run its own DKIM-signing MTA and its own record. The trust index weights
+mutuality at 25%.
 
-**Receiver Signet status.** A CC on an email to another Signet-verified domain
-carries a multiplier. Your history gets stronger when you communicate with
-other verified businesses. *(Planned — not yet in MVP.)*
+**Diversity.** `1 − Gini(events per receiver)` — pumping one friendly
+counterparty 500 times yields near-zero diversity and a weak index.
+
+**Quality-adjusted activity.** Events toward free-mail accounts
+(`gmail.com`, `outlook.com`, etc.) still land in the raw event count but
+never in the quality-adjusted number that the index reads.
+
+**Tenure.** `first_cert_at` via Certificate Transparency logs (`crt.sh`) —
+a public, free lower bound on "this domain has been operating since …,"
+more reliable than WHOIS (rate-limited, privacy-masked, TLD-inconsistent)
+and backfilled in the background so the first-seen clock is corroborated
+by real-world history from day one.
 
 ---
 
@@ -175,7 +185,7 @@ billing mechanic.
 | Tier | Who it serves | Price | What they get |
 |---|---|---|---|
 | **Free** | Any domain owner | $0, forever | Seal page, default badge, email CC ingestion, GDPR rights, domain lookup |
-| **Pro** | Serious domain owners | **$9 – 19 / mo** | Custom badge styling, no "Witnessed.cc" attribution, PDF tenure certificate, anomaly alerts, owner analytics, higher API rate limits |
+| **Pro** | Serious domain owners | **$9 – 19 / mo** | Custom badge styling (brand colors, alternate layouts), PDF tenure certificate, anomaly alerts, owner analytics, higher API rate limits |
 | **API** | Platforms (KYB, marketplaces, procurement, ad networks) | **$99 – 999 / mo** usage-tiered | Bulk lookups, webhooks on state change, velocity/anomaly signals, historical deltas, SLA, dedicated support |
 
 The seal page and CC ingestion are free forever. Charging owners to
@@ -186,8 +196,9 @@ API valuable.
 
 A small subset of domain owners — founders with public signatures, agencies
 with prospects to impress, freelancers working high-stakes contracts — want
-premium presentation and don't want the "Witnessed.cc" attribution in their
-badge. Pro is the gentle upgrade path.
+premium presentation (brand-matched badge colors, alternate layouts, PDF
+tenure certificates on demand) and owner-facing signals (anomaly alerts,
+detailed analytics). Pro is the gentle upgrade path.
 
 Realistic conversion: 2–5% of active free domains. At 1,000 domains, that's
 $180–950 MRR. Not the business, but the first signal of willingness to pay.

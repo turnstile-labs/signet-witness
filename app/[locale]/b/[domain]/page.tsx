@@ -63,15 +63,11 @@ function EyebrowLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// The "No record yet" pill on the Unclaimed page. Used to live as a
-// three-state <StatusPill /> (verified / onRecord / pending), but the
-// verified and on-record branches were redundant with the trust-index
-// hero + PathToVerified callout directly below them — two widgets
-// arguing the same fact. This pill survives because on the unclaimed
-// page the hero is a dimmed placeholder, and without the pill there's
-// no way to disambiguate "no record exists" from "a real record with
-// a terrible score." That semantic anchor is the whole reason it's
-// still here.
+// The "No record yet" pill on the Unclaimed page. On claimed pages
+// the trust-index hero carries state, so the pill would duplicate
+// that signal. On the Unclaimed page the hero is a dimmed placeholder
+// and this pill is the only thing separating "no record exists" from
+// "a real record with a terrible score."
 function NoRecordPill({ label }: { label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface text-muted text-xs font-semibold shrink-0 self-start">
@@ -272,16 +268,11 @@ export default async function SealPage({ params }: Props) {
         <section>
           <EyebrowLabel>{t("eyebrow")}</EyebrowLabel>
 
-          {/* Header — domain + permalink. The verified/on-record status
-              pill used to sit right-anchored here, but the trust-index
-              hero below already carries that signal completely: a bar
-              past the threshold reads as verified without ceremony, and
-              the PathToVerified callout explicitly frames on-record
-              state when the threshold isn't yet cleared. Keeping both
-              was two widgets arguing about the same fact. The pill is
-              still rendered on the Unclaimed page, where the hero is a
-              placeholder and the "No record yet" semantics can't come
-              from anywhere else. */}
+          {/* Header — domain + permalink. No pill: the trust-index
+              hero below carries state directly (bar past threshold =
+              verified; PathToVerified callout frames on-record).
+              NoRecordPill only appears on the Unclaimed page where
+              the hero is a placeholder. */}
           <div className="mt-3">
             <h1 className="text-3xl sm:text-5xl font-bold text-txt tracking-tight break-all leading-[1.05]">
               {decoded}

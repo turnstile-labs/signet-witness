@@ -403,10 +403,10 @@ export function cacheHeaders(
   // Cache key incorporates the trust index bucketed to 5-point bins.
   // Without the bin, every recompute would bust the CDN even for a
   // 1-point drift; with it, transitions are coarse enough to keep
-  // hit rates high while still picking up meaningful progress.
-  // Bumped to v8 — witnessed.cc brand text replaced with "N/100"
-  // trust readout. Old v7 ETags would otherwise 304 into the stale
-  // layout.
+  // hit rates high while still picking up meaningful progress. The
+  // trailing `v8` is a layout fingerprint — bump it whenever the
+  // rendered output changes visually so in-the-wild 304s don't serve
+  // stale pixels.
   const bucket = trustBucket(snapshot.trustIndex);
   const etag = `W/"${snapshot.state}-t${bucket}-${theme}-${format}-v8"`;
   return {

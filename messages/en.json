@@ -76,8 +76,6 @@
     "statVerifiedEmailsSub": "quality-adjusted",
     "statActiveHistory": "On record",
     "statActiveHistorySub": "since first email",
-    "statCounterparties": "Counterparties",
-    "statCounterpartiesSub": "distinct businesses",
     "statMutuals": "Mutual counterparties",
     "statMutualsSub": "verified both directions",
     "scoreBasis": "Based on {receivers, plural, =0 {no} =1 {# distinct counterparty} other {# distinct counterparties}} · diversity {diversity} / 100",
