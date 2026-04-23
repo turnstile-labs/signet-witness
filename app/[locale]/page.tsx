@@ -6,6 +6,7 @@ import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
 import DomainSearch from "@/app/components/DomainSearch";
 import { sizeBadge } from "@/lib/badge-dimensions";
+import { VERIFIED_INDEX } from "@/lib/scores";
 
 export const revalidate = 300;
 
@@ -18,6 +19,29 @@ export default async function Home({
   setRequestLocale(locale);
 
   const t = await getTranslations("home");
+  // The seal-page mock below reuses seal.* copy verbatim instead of
+  // maintaining a parallel home.mock.stats* branch — the whole point
+  // of the mock is to render exactly what a real seal page renders,
+  // so "literally the same strings" is the right contract. Means if
+  // we ever revise seal copy (e.g. new trustLine), the mock tracks
+  // automatically.
+  const tSeal = await getTranslations("seal");
+
+  // Mock numbers for the acmecorp.com preview seal. Tuned so the mock
+  // reads as a "mature, verified, but not a suspicious 100" sender:
+  //   - trust 72  → above the 65 verified threshold with visible
+  //     headroom on the bar, bar color = verified green
+  //   - 847 events + 14mo history + 7 mutuals → plausible sustained
+  //     use without looking like a superpower
+  //   - 24 counterparties + 60 diversity → scoreBasis reads "Based
+  //     on 24 distinct counterparties · diversity 60 / 100"
+  const MOCK_DOMAIN = "acmecorp.com";
+  const MOCK_TRUST = 72;
+  const MOCK_EVENTS = 847;
+  const MOCK_HISTORY = "14 mo";
+  const MOCK_MUTUALS = 7;
+  const MOCK_RECEIVERS = 24;
+  const MOCK_DIVERSITY_PCT = 60;
 
   // Landing-page signature mock — Jane Doe @ Acme Studio. The badge
   // advertises acme.studio (matches the persona) and is rendered via
@@ -142,70 +166,99 @@ export default async function Home({
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
-            {/* Header — avatar + domain + permalink. The explicit
-                "Verified · Active" pill was dropped: the trust-index
-                hero directly below already communicates state (bar
-                filled past the 65 threshold tick reads as "verified"
-                without ceremony), and a single signal beats two
-                redundant ones. */}
-            <div className="border-b border-border px-4 sm:px-6 py-4 flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[0.7rem] sm:text-xs font-mono text-muted shrink-0">
-                AC
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm sm:text-base font-semibold text-txt truncate">acmecorp.com</p>
-                <p className="text-[0.7rem] sm:text-xs text-muted font-mono truncate">witnessed.cc/b/acmecorp.com</p>
-              </div>
+          {/* Mock seal-page card — a 1:1 replica of the real
+              /b/<domain> hero section, wrapped in a rounded surface
+              so visitors read it as "here's what you'll see when
+              someone clicks your badge." Every piece of copy inside
+              the card comes from the seal.* namespace directly, so
+              the mock can't drift from the real page's wording. */}
+          <div className="rounded-xl border border-border bg-surface px-6 sm:px-10 py-8 sm:py-10 shadow-sm">
+            {/* Eyebrow */}
+            <p className="text-[0.65rem] font-mono uppercase tracking-widest text-muted-2">
+              {tSeal("eyebrow")}
+            </p>
+
+            {/* Domain + permalink — matches seal page's H1 / perma
+                treatment (smaller sizes than the real seal's 3xl/5xl
+                since the mock sits inside a card rather than as the
+                whole page, but same proportional rhythm). */}
+            <div className="mt-3">
+              <h3 className="text-2xl sm:text-4xl font-bold text-txt tracking-tight break-all leading-[1.05]">
+                {MOCK_DOMAIN}
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-2 font-mono mt-2 break-all">
+                witnessed.cc/b/{MOCK_DOMAIN}
+              </p>
             </div>
 
-            {/* Trust-index hero in the mock — mirrors the real seal
-                page. Bar fills to 72/100 with a tick at the verified
-                threshold (65), so the shape alone reads as "verified." */}
-            <div className="px-4 sm:px-6 pt-5 sm:pt-6">
+            {/* Trust-index hero — same composition as seal.tsx's
+                TrustIndexHero: big number left, uppercase scale right,
+                label under the number, bar with a tick at the verified
+                threshold. Sized one notch smaller than the real seal
+                so it fits the card's narrower column comfortably. */}
+            <div className="mt-8">
               <div className="flex items-baseline justify-between gap-3">
-                <p className="text-3xl sm:text-4xl font-bold text-txt font-mono leading-none tabular-nums">
-                  72<span className="text-lg sm:text-xl text-muted-2 ml-1">/ 100</span>
-                </p>
-                <p className="text-[0.55rem] sm:text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
-                  {t("mock.trustIndexScale")}
+                <div>
+                  <p className="text-4xl sm:text-5xl font-bold font-mono leading-none tabular-nums text-txt">
+                    {MOCK_TRUST}
+                    <span className="text-xl sm:text-2xl text-muted-2 ml-1">
+                      / 100
+                    </span>
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold text-txt mt-2">
+                    {tSeal("trustIndexLabel")}
+                  </p>
+                </div>
+                <p className="text-[0.6rem] font-mono uppercase tracking-widest text-muted-2 shrink-0">
+                  {tSeal("trustIndexScale")}
                 </p>
               </div>
-              <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1">
-                {t("mock.trustIndexLabel")}
-              </p>
-              <div className="relative mt-2 h-1 rounded-full bg-bg border border-border overflow-hidden">
+              <div className="relative mt-3 h-1.5 rounded-full bg-bg border border-border overflow-hidden">
                 <div
                   className="absolute left-0 top-0 h-full bg-verified"
-                  style={{ width: "72%" }}
+                  style={{ width: `${MOCK_TRUST}%` }}
                 />
                 <div
                   className="absolute top-0 h-full w-px bg-verified/60"
-                  style={{ left: "65%" }}
+                  style={{ left: `${VERIFIED_INDEX}%` }}
                 />
               </div>
             </div>
 
-            <div className="px-2 sm:px-6 py-5 sm:py-6 grid grid-cols-3 gap-1 sm:gap-4">
+            {/* Stats — three values matching the seal page's Stat
+                component: 3xl/4xl value, xs/sm label, 0.65rem/xs sub. */}
+            <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10">
               {[
-                { value: "847",   label: t("mock.statsVerifiedEmails"), sub: t("mock.statsVerifiedEmailsSub") },
-                { value: "14 mo", label: t("mock.statsActiveHistory"),  sub: t("mock.statsActiveHistorySub") },
-                { value: "7",     label: t("mock.statsMutuals"),        sub: t("mock.statsMutualsSub") },
+                { value: MOCK_EVENTS.toLocaleString(), label: tSeal("statVerifiedEmails"), sub: tSeal("statVerifiedEmailsSub") },
+                { value: MOCK_HISTORY,                 label: tSeal("statActiveHistory"),  sub: tSeal("statActiveHistorySub")  },
+                { value: MOCK_MUTUALS.toString(),      label: tSeal("statMutuals"),        sub: tSeal("statMutualsSub")        },
               ].map((stat) => (
-                <div key={stat.label} className="text-center px-1">
-                  <p className="text-xl sm:text-2xl font-bold text-txt font-mono leading-none">{stat.value}</p>
-                  <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-1">{stat.label}</p>
-                  <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-2 mt-0.5 leading-tight">{stat.sub}</p>
+                <div key={stat.label}>
+                  <p className="text-3xl sm:text-4xl font-bold font-mono leading-none text-txt">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold text-txt mt-2">{stat.label}</p>
+                  <p className="text-[0.65rem] sm:text-xs text-muted-2 mt-0.5 leading-tight">{stat.sub}</p>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-border px-4 sm:px-6 py-3">
-              <p className="text-[0.7rem] sm:text-xs text-muted text-center leading-relaxed">
-                <span className="text-accent font-semibold">{t("mock.disclaimerStrong")}</span>{" "}
-                {t("mock.disclaimerRest")}
-              </p>
-            </div>
+            {/* scoreBasis meta line — quiet, 0.7rem, explains what the
+                trust number is built on. Same rendering as seal.tsx. */}
+            <p className="mt-6 text-[0.7rem] text-muted-2 leading-relaxed max-w-xl">
+              {tSeal("scoreBasis", {
+                receivers: MOCK_RECEIVERS,
+                diversity: MOCK_DIVERSITY_PCT,
+              })}
+            </p>
+
+            {/* trustLine — the same one-liner the real seal page
+                closes its hero with. Sits at the emotional bottom of
+                the preview: "this is a forward-only record, each
+                entry verified at the moment of sending." */}
+            <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
+              {tSeal("trustLine")}
+            </p>
           </div>
 
           <div className="mt-10 sm:mt-12">
