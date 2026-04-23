@@ -359,7 +359,12 @@ export async function isOnDbl(domain: string): Promise<boolean> {
 // certificate does not change. Failed lookups are not cached so we
 // retry later.
 
-const CT_LOOKUP_TIMEOUT_MS = 8000;
+// crt.sh response time is highly variable — cold queries have been
+// measured at 15-20s for domains with small CT histories, sometimes
+// more when the service is under load. Give it generous headroom;
+// the caller path is already async (after()) or explicit (admin
+// backfill) so the latency never touches a user-facing render.
+const CT_LOOKUP_TIMEOUT_MS = 20000;
 
 type CertRow = {
   first_cert_at: string | null;
