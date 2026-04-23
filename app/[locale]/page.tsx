@@ -21,10 +21,16 @@ export default async function Home({
 
   // Landing-page signature mock — Jane Doe @ Acme Studio. The badge
   // advertises acme.studio (matches the persona) and is rendered via
-  // `?preview=verified` so the demo always looks attractive without
-  // adding a fake row to the real registry. The mock is *not*
-  // clickable: this is an illustration, not a real seal page.
+  // `?preview=verified&t=78` so the demo always looks attractive
+  // without adding a fake row to the real registry, AND reads as a
+  // plausible real score (earned, not a suspicious-looking 100/100).
+  // 78 sits comfortably above the 65 verified threshold and above
+  // the seal-page mock below (72), so the two personas tell a
+  // "different firms, both verified, different histories" story.
+  // The mock is *not* clickable: this is an illustration, not a
+  // real seal page.
   const DEMO_DOMAIN = "acme.studio";
+  const DEMO_TRUST = 78;
   const demoBadge = sizeBadge(DEMO_DOMAIN);
 
   return (
@@ -96,7 +102,7 @@ export default async function Home({
                 <div className="mt-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified`}
+                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&t=${DEMO_TRUST}`}
                     alt={`Witnessed · ${DEMO_DOMAIN}`}
                     width={demoBadge.width}
                     height={demoBadge.height}
@@ -105,7 +111,7 @@ export default async function Home({
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&theme=light`}
+                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&t=${DEMO_TRUST}&theme=light`}
                     alt={`Witnessed · ${DEMO_DOMAIN}`}
                     width={demoBadge.width}
                     height={demoBadge.height}
