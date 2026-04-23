@@ -8,8 +8,10 @@ import {
 import {
   getDomainScore,
   computeVerified,
+  trustTierFromScore,
   VERIFIED_INDEX,
   MIN_MUTUALS,
+  type TrustTier,
 } from "@/lib/scores";
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
@@ -105,79 +107,129 @@ function Stat({
   );
 }
 
-// Trust-index hero: big numeric, a quiet 0–100 bar with a tick at the
-// verified threshold. Reads well without the number (bar shape) and
-// without the bar (number alone). Editorial contract: one focal
-// artifact, one quiet supporting line.
-// Trust-index hero. The bar uses a single fill color (accent) across
-// every score — verified or not. State is already encoded four other
-// ways: the number itself, the fill width, the verified tick at
-// `threshold`, and the PathToVerified callout that appears iff
-// below threshold. Making the fill also swap green/purple adds no
-// signal, forces mocks to pick a "representative" score to avoid
-// repainting, and makes 100/100 tautological (green bar says what
-// the big number already says). The tick stays green as the fixed
-// threshold marker. The `dim` variant is reserved for the Unclaimed
-// placeholder, where the whole hero reads as ghosted. The badge
-// keeps color-as-state because in a signature there's no number or
-// tick to carry the semantics — here on a full page, there is.
-function TrustIndexHero({
-  score,
-  threshold,
-  label,
-  scaleLabel,
-  dim = false,
-}: {
-  score: number;
-  threshold: number;
-  label: string;
-  scaleLabel: string;
-  dim?: boolean;
-}) {
-  const pct = Math.max(0, Math.min(100, score));
-  const barColor = dim ? "bg-muted-2" : "bg-accent";
+// ── Trust state visuals ──────────────────────────────────────
+//
+// Canonical state taxonomy lives in `lib/scores.ts#trustTierFromScore`
+// and returns one of `verified | onRecord | pending`. This file maps
+// each tier to one Tailwind palette and one icon so every surface on
+// the seal page (hero, landing replica, eventually ops) reads from
+// the same definitions. `dim` is a fourth tone used only on the
+// Unclaimed placeholder, where the state block reads as ghosted.
+//
+//   verified  → filled green  / ✓ check    / "Verified"
+//   onRecord  → filled amber  / ● dot      / "On record"
+//   pending   → outline gray  / ○ hollow   / "Warming up"
+//   dim       → outline gray  / ○ hollow   / "—" (Unclaimed only)
+//
+// Labels and subtitles are i18n-driven. Icon and color choices are
+// structural and constant across locales.
+
+type StateTone = TrustTier | "dim";
+
+const STATE_TONE_CLASSES: Record<StateTone, {
+  frame: string;
+  title: string;
+  subtitle: string;
+}> = {
+  verified: {
+    frame: "border-verified/40 bg-verified/10",
+    title: "text-verified",
+    subtitle: "text-muted",
+  },
+  onRecord: {
+    frame: "border-amber/40 bg-amber/10",
+    title: "text-amber",
+    subtitle: "text-muted",
+  },
+  pending: {
+    frame: "border-border bg-surface/60",
+    title: "text-txt",
+    subtitle: "text-muted",
+  },
+  dim: {
+    frame: "border-border bg-surface/40",
+    title: "text-muted-2",
+    subtitle: "text-muted-2",
+  },
+};
+
+function StateIcon({ tone }: { tone: StateTone }) {
+  if (tone === "verified") {
+    return (
+      <span
+        aria-hidden
+        className="shrink-0 w-10 h-10 rounded-full bg-verified flex items-center justify-center"
+      >
+        <svg viewBox="0 0 16 16" className="w-5 h-5 text-bg" fill="none">
+          <path
+            d="M 4 8.5 L 7 11 L 12 5.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (tone === "onRecord") {
+    return (
+      <span
+        aria-hidden
+        className="shrink-0 w-10 h-10 rounded-full bg-amber flex items-center justify-center"
+      >
+        <span className="w-2.5 h-2.5 rounded-full bg-bg" />
+      </span>
+    );
+  }
   return (
-    <div className="mt-8">
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <p
-            className={`text-5xl sm:text-6xl font-bold font-mono leading-none tabular-nums ${
-              dim ? "text-muted-2" : "text-txt"
-            }`}
-          >
-            {score}
-            <span className="text-2xl sm:text-3xl text-muted-2 ml-1">
-              / 100
-            </span>
-          </p>
-          <p className="text-xs sm:text-sm font-semibold text-txt mt-2">
-            {label}
-          </p>
+    <span
+      aria-hidden
+      className="shrink-0 w-10 h-10 rounded-full border-2 border-muted-2"
+    />
+  );
+}
+
+// Seal-page hero. Leads with the state (colored frame, labeled,
+// one icon) — the verdict a citizen reader is looking for. The
+// 0–100 number drops to the supporting line as technical detail.
+// Same component is mirrored 1:1 on the landing mock and the
+// Unclaimed placeholder (dim tone), so state visuals are defined
+// once and can't drift between surfaces.
+function StateBlock({
+  tone,
+  title,
+  subtitle,
+}: {
+  tone: StateTone;
+  title: string;
+  subtitle: string;
+}) {
+  const c = STATE_TONE_CLASSES[tone];
+  return (
+    <div
+      className={`mt-8 rounded-xl border ${c.frame} px-4 sm:px-5 py-4 sm:py-5`}
+    >
+      <div className="flex items-center gap-4">
+        <StateIcon tone={tone} />
+        <div className="min-w-0">
+          <p className={`text-xl sm:text-2xl font-bold ${c.title}`}>{title}</p>
+          <p className={`text-xs sm:text-sm mt-1 ${c.subtitle}`}>{subtitle}</p>
         </div>
-        <p className="text-[0.6rem] font-mono uppercase tracking-widest text-muted-2 shrink-0">
-          {scaleLabel}
-        </p>
-      </div>
-      <div className="relative mt-3 h-1.5 rounded-full bg-surface border border-border overflow-hidden">
-        <div
-          className={`absolute left-0 top-0 h-full ${barColor} transition-all`}
-          style={{ width: `${pct}%` }}
-        />
-        {/* Verified-threshold tick */}
-        <div
-          className="absolute top-0 h-full w-px bg-verified/60"
-          style={{ left: `${threshold}%` }}
-        />
       </div>
     </div>
   );
 }
 
-// Path-to-verified callout. Shown only when the domain is on-record
-// but has not yet cleared the Verified threshold. Prescribes the
-// exact work remaining — either trust-index points, mutual
-// counterparties, or both — and names the thing Verified actually
-// requires so the reader doesn't have to infer it from the stats.
+// Path-to-verified checklist. Replaces the earlier "+39 / +3" delta
+// math, which made mutuals (a 3-step discrete threshold) look
+// trivially small next to the index gap (a continuous 65-point
+// composite). The two requirements are not commensurable, and the
+// delta form forced them into a matching visual shape that misled
+// the reader. The checklist form reads the same whether you're at
+// 0-of-3 or 2-of-3 and makes the AND relationship explicit.
+// Returns null when both requirements are met — verified domains
+// don't see this section at all.
 function PathToVerified({
   trustIndex,
   mutuals,
@@ -191,40 +243,73 @@ function PathToVerified({
   mutualsThreshold: number;
   labels: {
     eyebrow: string;
-    indexGap: string;
-    mutualsGap: string;
+    indexItem: string;
+    indexCurrent: string;
+    mutualsItem: string;
+    mutualsCurrent: string;
     explainer: string;
   };
 }) {
-  const indexGap = Math.max(0, indexThreshold - trustIndex);
-  const mutualsGap = Math.max(0, mutualsThreshold - mutuals);
-  if (indexGap === 0 && mutualsGap === 0) return null;
+  const indexMet = trustIndex >= indexThreshold;
+  const mutualsMet = mutuals >= mutualsThreshold;
+  if (indexMet && mutualsMet) return null;
 
   return (
     <section className="mt-10 rounded-lg border border-border bg-surface/50 px-4 py-4 sm:px-5 sm:py-5">
       <EyebrowLabel>{labels.eyebrow}</EyebrowLabel>
-      <ul className="mt-3 space-y-1.5 text-sm text-txt">
-        {indexGap > 0 && (
-          <li className="flex items-baseline gap-2">
-            <span className="text-muted-2 font-mono text-[0.7rem] tabular-nums shrink-0">
-              +{indexGap}
-            </span>
-            <span className="text-muted">{labels.indexGap}</span>
-          </li>
-        )}
-        {mutualsGap > 0 && (
-          <li className="flex items-baseline gap-2">
-            <span className="text-muted-2 font-mono text-[0.7rem] tabular-nums shrink-0">
-              +{mutualsGap}
-            </span>
-            <span className="text-muted">{labels.mutualsGap}</span>
-          </li>
-        )}
+      <ul className="mt-3 space-y-2 text-sm">
+        <ChecklistItem
+          done={indexMet}
+          label={labels.indexItem}
+          current={labels.indexCurrent}
+        />
+        <ChecklistItem
+          done={mutualsMet}
+          label={labels.mutualsItem}
+          current={labels.mutualsCurrent}
+        />
       </ul>
       <p className="mt-3 text-[0.7rem] text-muted-2 leading-relaxed">
         {labels.explainer}
       </p>
     </section>
+  );
+}
+
+function ChecklistItem({
+  done,
+  label,
+  current,
+}: {
+  done: boolean;
+  label: string;
+  current: string;
+}) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <span
+        aria-hidden
+        className={`mt-0.5 shrink-0 w-4 h-4 rounded-sm border flex items-center justify-center ${
+          done ? "border-verified bg-verified/20" : "border-muted-2"
+        }`}
+      >
+        {done && (
+          <svg viewBox="0 0 10 10" className="w-3 h-3 text-verified" fill="none">
+            <path
+              d="M 2 5 L 4 7 L 8 3"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+      <span className={done ? "text-muted-2 line-through" : "text-txt"}>
+        {label}
+        <span className="ml-1.5 text-muted-2">— {current}</span>
+      </span>
+    </li>
   );
 }
 
@@ -254,6 +339,7 @@ export default async function SealPage({ params }: Props) {
 
   const days = daysActive(record.first_seen);
   const verified = computeVerified(score, record.grandfathered_verified);
+  const tier = trustTierFromScore(score, verified);
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
   const firstSeenLabel = formatFirstSeen(record.first_seen, locale);
 
@@ -265,6 +351,20 @@ export default async function SealPage({ params }: Props) {
   const mutuals = score?.mutual_counterparties ?? 0;
   const diversity = score?.diversity ?? 0;
 
+  // State block copy — one label + one supporting line per tier.
+  // Subtitle carries the 0–100 trust index as technical detail under
+  // the headline verdict. Below-threshold tiers also name the target
+  // so the reader sees where they're headed.
+  const stateTitle = t(`state.${tier}Title`);
+  const stateSubtitle = verified.isVerified
+    ? t("state.subtitleVerified", { index: trustIndex })
+    : tier === "pending"
+      ? t("state.subtitlePending")
+      : t("state.subtitleBuilding", {
+          index: trustIndex,
+          threshold: VERIFIED_INDEX,
+        });
+
   return (
     <div className="flex flex-col min-h-screen bg-bg">
       <NavBar />
@@ -274,11 +374,9 @@ export default async function SealPage({ params }: Props) {
         <section>
           <EyebrowLabel>{t("eyebrow")}</EyebrowLabel>
 
-          {/* Header — domain + permalink. No pill: the trust-index
-              hero below carries state directly (bar past threshold =
-              verified; PathToVerified callout frames on-record).
-              NoRecordPill only appears on the Unclaimed page where
-              the hero is a placeholder. */}
+          {/* Header — domain + permalink. State is carried by the
+              StateBlock immediately below; no inline pill on claimed
+              pages. NoRecordPill only lives on the Unclaimed page. */}
           <div className="mt-3">
             <h1 className="text-3xl sm:text-5xl font-bold text-txt tracking-tight break-all leading-[1.05]">
               {decoded}
@@ -288,16 +386,11 @@ export default async function SealPage({ params }: Props) {
             </p>
           </div>
 
-          {/* Trust index — the headline signal. Quality-adjusted, 0–100.
-              A filled bar shows where the domain sits relative to the
-              verified threshold, so even without the number the reader
-              gets a shape. */}
-          <TrustIndexHero
-            score={trustIndex}
-            threshold={VERIFIED_INDEX}
-            label={t("trustIndexLabel")}
-            scaleLabel={t("trustIndexScale")}
-          />
+          {/* The verdict — colored block, labeled state, icon. Reads
+              at a glance. The 0–100 number drops to the subtitle as
+              technical detail, where a curious reader still finds it
+              but a casual one doesn't have to parse it. */}
+          <StateBlock tone={tier} title={stateTitle} subtitle={stateSubtitle} />
 
           <div className="mt-10 grid grid-cols-3 gap-4 sm:gap-10">
             <Stat
@@ -332,12 +425,11 @@ export default async function SealPage({ params }: Props) {
               mutualsThreshold={MIN_MUTUALS}
               labels={{
                 eyebrow: t("pathEyebrow"),
-                indexGap: t("pathIndexGap", { threshold: VERIFIED_INDEX }),
-                mutualsGap: t("pathMutualsGap"),
-                explainer: t("pathExplainer", {
-                  index: VERIFIED_INDEX,
-                  mutuals: MIN_MUTUALS,
-                }),
+                indexItem: t("pathIndexItem", { threshold: VERIFIED_INDEX }),
+                indexCurrent: t("pathIndexCurrent", { current: trustIndex }),
+                mutualsItem: t("pathMutualsItem", { threshold: MIN_MUTUALS }),
+                mutualsCurrent: t("pathMutualsCurrent", { current: mutuals }),
+                explainer: t("pathExplainer"),
               }}
             />
           )}
@@ -414,13 +506,11 @@ async function UnclaimedPage({
             <NoRecordPill label={t("noRecordPill")} />
           </div>
 
-          <div className="opacity-60 select-none">
-            <TrustIndexHero
-              score={0}
-              threshold={VERIFIED_INDEX}
-              label={t("trustIndexLabel")}
-              scaleLabel={t("trustIndexScale")}
-              dim
+          <div className="opacity-70 select-none">
+            <StateBlock
+              tone="dim"
+              title={t("state.unclaimedTitle")}
+              subtitle={t("state.subtitleUnclaimed")}
             />
           </div>
 

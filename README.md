@@ -24,9 +24,9 @@ No auth. No payments. No setup required from users. The CC is the product.
 
 ## What's live
 
-- **Seal pages** at `/b/[domain]` — trust-index hero (0–100, tick at the verified threshold), quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and `PathToVerified` callout when on-record but not yet verified
+- **Seal pages** at `/b/[domain]` — `StateBlock` verdict (Verified / On record / Warming up) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when on-record but not yet verified
 - **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
-- **Dynamic badge** at `/badge/[domain]` — SVG or PNG (`?theme=light` variant, `ETag`-cached, `?preview=...&t=...` for marketing surfaces) with a state-colored mark, a 0–100% trust-index progress ring, the domain, and a muted `N/100` numeric readout
+- **Dynamic badge** at `/badge/[domain]` — SVG or PNG, state-colored pill (`[ icon ][ domain ]`): solid green for Verified, solid amber for On record, outline gray for Pending. `ETag`-cached by state; `?preview=verified|onRecord|pending` for marketing surfaces
 - **Trust index** (`lib/scores.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
 - **Outbound viral loop** (`lib/viral.ts`) — after an inbound email is accepted, transactional "you were sealed" invites go out via Resend to unregistered / non-free-mail / non-denylisted recipients. Gated on `RESEND_API_KEY`
@@ -82,7 +82,7 @@ signet-witness/
 │   │       ├── access/route.ts    # Art 15 — JSON export
 │   │       ├── opt-out/route.ts   # Art 21 — denylist only
 │   │       └── erasure/route.ts   # Art 17 — hard-delete + denylist
-│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge with trust-index ring + N/100 readout
+│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge — state-colored pill ([icon] [domain])
 │   ├── ops/[token]/page.tsx      # Internal dashboard — activity, top senders, anti-abuse, viral
 │   └── components/               # NavBar, Footer, CopyableEmail, BadgeEmbed, Sparkline, RightsForm, …
 ├── i18n/
@@ -98,7 +98,7 @@ signet-witness/
 │   ├── scores.ts                 # Trust-index math + free-mail list + verified gating
 │   ├── reputation.ts             # MX / DBL / rate-limit gates + CT-log lookup cache
 │   ├── viral.ts                  # Outbound invite loop (Resend)
-│   ├── badge-state.ts            # Pure helpers for badge state + ring + cache bucket
+│   ├── badge-state.ts            # Pure state resolver for the badge (DB-free, test-friendly)
 │   ├── badge-dimensions.ts       # Shared layout math for SVG/PNG + BadgeEmbed
 │   └── verify-domain.ts          # DNS-TXT owner-proof challenge/verify for /rights
 ├── tests/                        # Vitest suite + helpers + programmable neon stub

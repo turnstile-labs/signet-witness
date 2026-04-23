@@ -71,7 +71,7 @@ Weights are encoded in `lib/scores.ts#computeTrustIndex`: 35% activity (log-scal
 - The `/b/[domain]` seal page displays the composite `trust_index` as the headline metric with a 0–100 bar tick-marked at the verified threshold. The three supporting stats are `verified_event_count`, `tenure`, and `mutual_counterparties`.
 - Verified gating: `trust_index ≥ 65 AND mutual_counterparties ≥ 3` OR `domains.grandfathered_verified = TRUE`. The grandfather flag was set one-time for domains that met the pre-Layer-2 rule (90d + 10 events) so no user loses a badge when the metric changes. Operators can clear the flag per-domain for proven abusers.
 - The badge (`/badge/[slug]`) uses the same gating via `trustTierFromScore()`. See the "Badge" section below for the full ETag key shape.
-- The landing-page mock of `acmecorp.com`'s seal card is a 1:1 replica of the real `/b/<domain>` hero — same typography, same `TrustIndexHero`, same stats grid, same `scoreBasis` and `trustLine` copy (reused verbatim from `seal.*`) — so the landing can't drift from the real page.
+- The landing-page mock of `acmecorp.com`'s seal card is a 1:1 replica of the real `/b/<domain>` hero — same `StateBlock` (amber on-record tone), same stats grid, same `scoreBasis` and `trustLine` copy (reused verbatim from `seal.*`) — so the landing can't drift from the real page.
 - Ops ranks top senders by `trust_index` and displays both `t<index>` and `m<mutuals>` inline next to raw event counts.
 
 **Layer 3 (not built, not planned).** Real-time domain-reputation partners and human review are deliberately out of scope — Layers 0–2 cover the realistic attacker economics at current and near-term scale.
@@ -124,13 +124,36 @@ Domain age *is* a signal — but WHOIS is a poor way to get it: rate-limited, in
 
 Discovery happens through the CC field (receivers see `seal@witnessed.cc`) and direct URL sharing (`witnessed.cc/b/acme.com`). The URL is the search. Add search when users ask for it.
 
+### Canonical trust-state system
+
+Trust has three active tiers plus a null state. They're resolved from `(domain, score)` by `lib/scores.ts#trustTierFromScore()` and then rendered identically everywhere — seal page, landing mock, badge, ops — so state can't drift between surfaces. One definition, one palette, one icon per tier:
+
+| Tier | Criteria | Color | Icon | Label |
+|------|----------|-------|------|-------|
+| **Verified** | `trust_index ≥ 65 AND mutuals ≥ 3`, OR grandfathered | green (`#16a34a` / `--verified`) | ✓ check | "Verified" |
+| **On record** | has `verified_event_count > 0` but not verified | amber (`#d97706` / `--amber`) | ● filled dot | "On record" |
+| **Pending** | exists but no verified events yet | outline gray | ○ hollow circle | "Warming up" |
+| **Unclaimed** | no `domains` row at all | dim gray | ○ hollow circle | "No record yet" (different page) |
+
+Unclaimed is rendered on its own page (the Unclaimed flow that turns receiver-only activity into a sign-up). The other three live on `/b/[domain]`.
+
+On why only three active states and no "red": a newly-registered domain with zero history is not *dangerous*, it's *unknown*. Red would scare users away from every legitimate domain on its first day. Green / amber / gray honestly maps to "trust / building / too early." That's the correct shape of our data.
+
+### Seal-page hero is a state block, not a score
+
+The hero on `/b/[domain]` is `StateBlock` — a colored frame + icon + label + one-line subtitle. The subtitle carries the 0–100 trust index as technical detail under the verdict ("Trust index 41 / 100 · building toward 65"), so readers get the headline at a glance and the precise number within a glance. No bar, no tick, no big number competing with the label. The `PathToVerified` component below it is a two-item checklist ("Trust index of 65+ — you're at 26" / "3+ mutual counterparties — you have 0") so the two non-commensurable requirements stop looking like a single delta sum. Reading from the root: a citizen visitor wants a verdict first and a measurement second, so the component order is `[verdict] → [supporting stats] → [path, if below threshold]`.
+
 ### Dynamic badge (implemented)
 
-`/badge/[slug]` serves both SVG and PNG badges (PNG via `next/og`/Satori). Layout is `[ ring+mark ] [ domain ] [ N/100 ]` — a state-colored mark on the left (verified fill / on-record outline / pending ring), a 0–100% progress ring around it whose fraction = `trust_index / 100`, the domain at 13px semibold as the focal point, and the trust score right-anchored at 11px as a muted-but-legible numeric readout (school-grade semantics — "27 out of 100" reads at a glance across audiences). Canvas **width adapts to the domain length** (clamped 180–360px); height stays fixed at 32px for signature compatibility. Dimension math lives in `lib/badge-dimensions.ts` and is shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. Dark and light themes via `?theme=light`. Pure helpers (`ringFraction`, `ringArcPath`, `resolveSnapshot`, `trustBucket`) live in `lib/badge-state.ts` so the route stays a thin shell around them and tests can import the math without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, 5-point-trust-bucket, theme, format, layout-version)` so the CDN picks up meaningful state transitions without busting on 1-point drift.
+`/badge/[slug]` serves both SVG and PNG (PNG via `next/og`/Satori). Layout is a single pill:
 
-### Trust-index hero on seal page uses one color, not two
+```
+[ icon ]  [ domain ]
+```
 
-The `TrustIndexHero` bar on `/b/[domain]` (and its landing-page replica) is a single accent-purple fill across every score. The badge **does** flip color by state (verified-green mark vs pending-muted) because in a signature it's the only signal available — no number, no tick, no surrounding copy. The seal-page hero has all of those, so state is already encoded four ways: the numeric score, the fill width, the verified tick hairline at `threshold`, and the `PathToVerified` callout that appears iff below threshold. A fifth encoder (color-flipping the fill green/purple at 65) adds no new signal, makes 100/100 tautological (green bar says what the big number already says louder), and forces landing-page mocks to pick a "representative" score to avoid repainting. The tick stays green as a fixed threshold marker regardless of current state. The `dim` variant of the hero is reserved for the Unclaimed placeholder, where the whole block reads as ghosted.
+State *is* the badge's identity — a verified domain renders a **solid green pill** with a white check, on-record is **solid amber** with a white dot, pending is an **outlined gray pill** with a hollow circle. No progress ring, no 0–100 readout, no theme variance — the color does all the work, and badges in email signatures need to read on any client bg anyway. The precise 0–100 number lives on the seal page where there's room for the detail.
+
+Canvas **width adapts to the domain length** (clamped 140–320px); height stays fixed at 32px (signature-compatible). Dimension math lives in `lib/badge-dimensions.ts` and is shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. State resolution lives in `lib/badge-state.ts#resolveSnapshot` so tests can import it without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, format, layout-version)` — the only thing that changes the pixels now is a real state transition, so cache hit rates are effectively perfect per domain until the state moves. The `?preview=verified|onRecord|pending` query short-circuits the DB lookup for marketing surfaces; it never mutates data.
 
 ### Internationalization (EN + ES)
 

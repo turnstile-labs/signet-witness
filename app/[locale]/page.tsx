@@ -28,16 +28,13 @@ export default async function Home({
   const tSeal = await getTranslations("seal");
 
   // Mock numbers for the acmecorp.com preview seal. Tuned for the
-  // "on-record, building toward verified" state — which is what most
-  // first-time visitors will see on their own page for weeks or
-  // months. Reads as honest ("here's where you'll be after a few
-  // months"), not aspirational ("here's the finish line"), and pairs
-  // with the signature-badge mock above (acme.studio @ 78) to tell a
+  // "On record, building toward verified" state — what most first-
+  // time visitors see on their own page for weeks or months. Reads
+  // as honest ("here's where you'll be after a few months"), not
+  // aspirational ("here's the finish line"), and pairs with the
+  // signature-badge mock above (acme.studio, Verified) to tell a
   // two-persona story: one domain already verified and advertising
-  // it in signatures, another on-record and building. The trust-bar
-  // fill is a single color across states (see TrustIndexHero), so
-  // MOCK_TRUST is free to sit on either side of 65 without the mock
-  // repainting — we keep it at 58 purely for narrative.
+  // it in signatures, another on-record and building.
   const MOCK_DOMAIN = "acmecorp.com";
   const MOCK_TRUST = 58;
   const MOCK_EVENTS = 412;
@@ -48,16 +45,10 @@ export default async function Home({
 
   // Landing-page signature mock — Jane Doe @ Acme Studio. The badge
   // advertises acme.studio (matches the persona) and is rendered via
-  // `?preview=verified&t=78` so the demo always looks attractive
-  // without adding a fake row to the real registry, AND reads as a
-  // plausible real score (earned, not a suspicious-looking 100/100).
-  // 78 sits comfortably above the 65 verified threshold and above
-  // the seal-page mock below (72), so the two personas tell a
-  // "different firms, both verified, different histories" story.
-  // The mock is *not* clickable: this is an illustration, not a
-  // real seal page.
+  // `?preview=verified` so the demo always shows the verified-green
+  // pill without adding a fake row to the real registry. The mock
+  // is *not* clickable: it's an illustration, not a real seal page.
   const DEMO_DOMAIN = "acme.studio";
-  const DEMO_TRUST = 78;
   const demoBadge = sizeBadge(DEMO_DOMAIN);
 
   return (
@@ -127,22 +118,17 @@ export default async function Home({
                   {t("badge.signatureContact")}
                 </p>
                 <div className="mt-4">
+                  {/* Single asset — state color IS the badge identity.
+                      Reads the same on any email-client bg (light or
+                      dark), so no theme variance needed here or in the
+                      route itself. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&t=${DEMO_TRUST}`}
+                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified`}
                     alt={`Witnessed · ${DEMO_DOMAIN}`}
                     width={demoBadge.width}
                     height={demoBadge.height}
-                    className="border-0 inline-block align-middle light:hidden select-none"
-                    draggable={false}
-                  />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&t=${DEMO_TRUST}&theme=light`}
-                    alt={`Witnessed · ${DEMO_DOMAIN}`}
-                    width={demoBadge.width}
-                    height={demoBadge.height}
-                    className="border-0 hidden align-middle light:inline-block select-none"
+                    className="border-0 inline-block align-middle select-none"
                     draggable={false}
                   />
                 </div>
@@ -191,37 +177,33 @@ export default async function Home({
               </p>
             </div>
 
-            <div className="mt-6">
-              <div className="flex items-baseline justify-between gap-3">
-                <div>
-                  <p className="text-3xl sm:text-4xl font-bold font-mono leading-none tabular-nums text-txt">
-                    {MOCK_TRUST}
-                    <span className="text-base sm:text-lg text-muted-2 ml-1">
-                      / 100
-                    </span>
+            {/* State block — structurally identical to the real
+                /b/<domain> StateBlock, scaled one step down to match
+                the preview-card typography. Amber "On record" tone
+                paired with the MOCK_TRUST subtitle so the preview
+                tells the "building toward verified" story at a
+                glance. If we ever add a fourth state or rename a
+                label, the real page changes first and this mock
+                follows via the seal.* keys. */}
+            <div className="mt-5 rounded-xl border border-amber/40 bg-amber/10 px-4 py-4">
+              <div className="flex items-center gap-3.5">
+                <span
+                  aria-hidden
+                  className="shrink-0 w-8 h-8 rounded-full bg-amber flex items-center justify-center"
+                >
+                  <span className="w-2 h-2 rounded-full bg-bg" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-lg sm:text-xl font-bold text-amber leading-none">
+                    {tSeal("state.onRecordTitle")}
                   </p>
-                  <p className="text-[0.7rem] sm:text-xs font-semibold text-txt mt-2">
-                    {tSeal("trustIndexLabel")}
+                  <p className="text-[0.7rem] sm:text-xs text-muted mt-1">
+                    {tSeal("state.subtitleBuilding", {
+                      index: MOCK_TRUST,
+                      threshold: VERIFIED_INDEX,
+                    })}
                   </p>
                 </div>
-                <p className="text-[0.55rem] font-mono uppercase tracking-widest text-muted-2 shrink-0">
-                  {tSeal("trustIndexScale")}
-                </p>
-              </div>
-              {/* Single-color fill (accent) across all states —
-                  mirrors TrustIndexHero on the real seal page. The
-                  verified tick (green) marks the threshold; the
-                  number, fill width, and tick carry all the state
-                  signal without color-flip duplication. */}
-              <div className="relative mt-2.5 h-1 rounded-full bg-bg border border-border overflow-hidden">
-                <div
-                  className="absolute left-0 top-0 h-full bg-accent"
-                  style={{ width: `${MOCK_TRUST}%` }}
-                />
-                <div
-                  className="absolute top-0 h-full w-px bg-verified/60"
-                  style={{ left: `${VERIFIED_INDEX}%` }}
-                />
               </div>
             </div>
 

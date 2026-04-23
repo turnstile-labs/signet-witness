@@ -68,12 +68,17 @@ bidirectional edges are the strongest anti-fake signal), counterparty
 diversity, and corroborating Certificate Transparency history.
 
 A domain earns the **Verified** badge when the trust index crosses 65 *and*
-it has at least 3 mutual counterparties. The composite is what the badge
-reads; the badge renders at `/badge/[domain]` in SVG or PNG, in dark or
-light theme (`?theme=light`).
+it has at least 3 mutual counterparties. The badge renders at `/badge/[domain]`
+in SVG or PNG as a single state-colored pill — green for verified, amber for
+on-record, outline gray for pending:
 
-> `acme.com`  **72/100**
-> ( verified ring + mark · domain · trust readout )
+> `[ ✓ acme.com ]`  ← solid green pill, white text
+
+The badge answers the categorical question ("does this domain have a sealed
+history?"). The precise 0–100 number and the supporting stats live on the
+seal page at `witnessed.cc/b/<domain>`, where there's room to show the
+verdict as a state block, the trust index as technical detail, and a
+checklist of what's needed to get Verified if you're not there yet.
 
 A scammer can copy the image. They can't copy the history. One click reveals
 the real record — trust index, verified events, tenure, mutual counterparties.

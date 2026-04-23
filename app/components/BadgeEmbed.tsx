@@ -1,33 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { sizeBadge } from "@/lib/badge-dimensions";
-
-type Theme = "dark" | "light";
 
 // Owner-facing badge surface on the seal page. Visually mirrors the
 // landing's badge section so what you preview is what gets pasted.
 // One job: get a *clickable* badge onto the clipboard so the owner
 // can paste it into their email signature (Gmail, Apple Mail, Outlook).
 //
-// The preview + copied HTML both follow site theme (toggled via the
-// navbar by flipping `html.light`). Owners who want a light badge for
-// Gmail flip the site to light mode, verify the mock, and copy.
-// Rich-text copy via navigator.clipboard.write([ClipboardItem]) is
-// what makes this work — Gmail's signature editor is WYSIWYG and
-// only preserves formatting from the clipboard's text/html entry.
+// The badge itself is one asset per state (no theme variance) — the
+// state color IS the badge's identity, and it reads on any email
+// client bg, light or dark. Rich-text copy via clipboard.write is
+// what makes this work: Gmail's signature editor is WYSIWYG and only
+// preserves formatting from the clipboard's text/html entry.
 
 export default function BadgeEmbed({ domain }: { domain: string }) {
   const t = useTranslations("badge");
-  const theme = useSiteTheme();
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
 
   const origin = "https://witnessed.cc";
-  const themeParam = theme === "light" ? "?theme=light" : "";
   const sealUrl = `${origin}/b/${domain}`;
-  const imageUrl = `${origin}/badge/${domain}.png${themeParam}`;
-  const previewSrc = `/badge/${domain}.png${themeParam}`;
+  const imageUrl = `${origin}/badge/${domain}.png`;
+  const previewSrc = `/badge/${domain}.png`;
   // Width adapts to the domain so the copied <img> advertises the same
   // dimensions as the PNG we render. Height is fixed.
   const { width: badgeW, height: badgeH } = sizeBadge(domain);
@@ -53,32 +48,18 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
     }
   }
 
-  const cardBg = theme === "dark" ? "bg-[#0c0c0f]" : "bg-white";
-  const cardBorder = theme === "dark" ? "border-[#25252f]" : "border-[#e0e0ec]";
-  const nameColor = theme === "dark" ? "text-white" : "text-[#0c0c0f]";
-  const roleColor = theme === "dark" ? "text-[#a3a3b2]" : "text-[#4a4a57]";
-  const contactColor = theme === "dark" ? "text-[#6a6a78]" : "text-[#6a6a78]";
-  const labelColor = theme === "dark" ? "text-[#6a6a78]" : "text-[#8a8a99]";
-  const dividerColor = theme === "dark" ? "border-[#25252f]" : "border-[#e0e0ec]";
-
   return (
     <div className="space-y-5">
-      <div
-        className={`rounded-xl border overflow-hidden transition-colors ${cardBg} ${cardBorder}`}
-      >
-        <div
-          className={`px-5 py-2.5 border-b text-[0.6rem] font-mono uppercase tracking-widest ${dividerColor} ${labelColor}`}
-        >
+      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+        <div className="px-5 py-2.5 border-b border-border text-[0.6rem] font-mono uppercase tracking-widest text-muted-2">
           {t("mockLabel")}
         </div>
         <div className="px-5 py-5">
-          <p className={`text-sm font-semibold leading-tight ${nameColor}`}>
+          <p className="text-sm font-semibold leading-tight text-txt">
             {t("signatureName")}
           </p>
-          <p className={`text-xs mt-0.5 ${roleColor}`}>
-            {t("signatureRole")}
-          </p>
-          <p className={`text-[0.7rem] mt-1 font-mono ${contactColor}`}>
+          <p className="text-xs mt-0.5 text-muted">{t("signatureRole")}</p>
+          <p className="text-[0.7rem] mt-1 font-mono text-muted-2">
             {t("signatureContact", { domain })}
           </p>
           <div className="mt-4">
@@ -124,21 +105,4 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
       </p>
     </div>
   );
-}
-
-// Subscribe to the site-wide `html.light` toggle. We observe the
-// documentElement class list so the preview + copied HTML reflect the
-// current theme reactively — no local state, no duplicate toggle UI.
-function useSiteTheme(): Theme {
-  const [theme, setTheme] = useState<Theme>("dark");
-  useEffect(() => {
-    const root = document.documentElement;
-    const read = () =>
-      setTheme(root.classList.contains("light") ? "light" : "dark");
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
-  }, []);
-  return theme;
 }

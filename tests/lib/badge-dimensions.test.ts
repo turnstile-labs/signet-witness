@@ -3,9 +3,9 @@ import {
   BADGE_HEIGHT,
   BADGE_MIN_WIDTH,
   BADGE_MAX_WIDTH,
-  SCORE_TEXT_MAX,
-  SCORE_TEXT_WIDTH,
   DOMAIN_MAX_CHARS,
+  ICON_D,
+  GAP_ICON_DOMAIN,
   computeBadgeWidth,
   sizeBadge,
   truncateDomainForBadge,
@@ -15,11 +15,11 @@ describe("badge-dimensions", () => {
   describe("constants", () => {
     it("exports stable layout primitives", () => {
       expect(BADGE_HEIGHT).toBe(32);
-      // witnessed.cc is gone — the attribution slot is now the
-      // 0–100 trust readout. "100/100" is the widest possible value
-      // and defines the reserved slot width.
-      expect(SCORE_TEXT_MAX).toBe("100/100");
-      expect(SCORE_TEXT_WIDTH).toBeGreaterThan(0);
+      // Score slot and ring removed in v9 — the badge is now
+      // [ icon ] [ domain ] only, so the layout primitives are
+      // just the icon diameter and the icon↔domain gap.
+      expect(ICON_D).toBeGreaterThan(0);
+      expect(GAP_ICON_DOMAIN).toBeGreaterThan(0);
       expect(DOMAIN_MAX_CHARS).toBeGreaterThan(10);
     });
   });
