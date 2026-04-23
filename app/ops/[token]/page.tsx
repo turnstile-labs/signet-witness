@@ -3,15 +3,14 @@ import { timingSafeEqual } from "crypto";
 import type { Metadata } from "next";
 import { getOpsStats, type OpsStats } from "@/lib/db";
 
-// Internal ops dashboard. Secret URL: /ops/<STATS_TOKEN>.
-// Not linked from anywhere. Not locale-aware. Temporary.
+// Internal ops dashboard. Reached via a secret URL: /ops/<STATS_TOKEN>.
+// Not linked from anywhere. Not localised. No tracking.
 //
-// Layout rhythm, top to bottom:
-//   1. Pulse tiles  — six KPIs, one glance tells you the state of the box.
-//   2. Activity     — 30-day events bar chart + totals footer.
-//   3. Domains      — top senders (by trust) + top receivers side by side.
-//   4. Anti-abuse   — always visible; when quiet, declares itself quiet.
-//   5. Hygiene      — denylist breakdown + meta footer.
+// Design rule for this page, above all else: an operator who has
+// never seen the dashboard before should understand every number
+// and every label from a single read, without reference material.
+// Plain English, full words, one number per cell, lots of vertical
+// space, no decoration beyond what a status label needs.
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,6 +31,50 @@ function tokenMatches(provided: string, expected: string): boolean {
   }
 }
 
+// "2 days ago" / "3 weeks ago" / "today" — avoids raw timestamps in
+// table cells where only the relative recency matters to an operator.
+function formatAge(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const ts = Date.parse(iso);
+  if (!Number.isFinite(ts)) return "—";
+  const days = Math.max(0, Math.floor((Date.now() - ts) / 86_400_000));
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+  }
+  if (days < 365) {
+    const months = Math.floor(days / 30);
+    return `${months} month${months === 1 ? "" : "s"} ago`;
+  }
+  const years = Math.floor(days / 365);
+  return `${years} year${years === 1 ? "" : "s"} ago`;
+}
+
+// Canonical state label for a registered sender. Exactly three
+// possible outputs; the label is the full status in plain English.
+// No coloured dot, no abbreviation — just text.
+type StatusLabel = "Verified" | "On record" | "Pending";
+
+function statusFor(row: {
+  trust_index: number | null;
+  mutual_counterparties: number | null;
+  verified_event_count: number | null;
+  grandfathered_verified: boolean;
+}): StatusLabel {
+  if (row.grandfathered_verified) return "Verified";
+  if (
+    (row.trust_index ?? 0) >= 65 &&
+    (row.mutual_counterparties ?? 0) >= 3
+  ) {
+    return "Verified";
+  }
+  if ((row.verified_event_count ?? 0) > 0) return "On record";
+  return "Pending";
+}
+
 export default async function OpsPage({
   params,
 }: {
@@ -49,7 +92,7 @@ export default async function OpsPage({
   } catch (err) {
     return (
       <main className="max-w-3xl mx-auto px-6 py-16 font-mono text-sm">
-        <h1 className="text-base font-bold mb-3">ops · error</h1>
+        <h1 className="text-lg font-bold mb-3">Ops — error</h1>
         <pre className="text-red-400 whitespace-pre-wrap text-xs">
           {(err as Error).message}
         </pre>
@@ -61,621 +104,379 @@ export default async function OpsPage({
   const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
   const now = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
 
-  const avg7d = stats.events7d > 0 ? Math.round(stats.events7d / 7) : 0;
-  const vs7dAvg =
-    avg7d > 0 ? Math.round(((stats.events24h - avg7d) / avg7d) * 100) : null;
-
   return (
     <main className="max-w-3xl mx-auto px-6 py-12 font-mono text-sm text-txt bg-bg min-h-screen">
-      {/* Identity + heartbeat. Right-aligned meta block is small but
-          carries env + commit so a screenshot is self-describing. */}
-      <header className="flex items-baseline justify-between pb-5 mb-8 border-b border-border">
-        <h1 className="text-base font-bold tracking-tight">witnessed · ops</h1>
-        <div className="text-[0.6rem] text-muted-2 text-right leading-relaxed tabular-nums">
-          <div>{now}</div>
-          <div>
-            {env} · {commit}
-            {stats.dbSize ? ` · ${stats.dbSize}` : ""}
-          </div>
-        </div>
+      <header className="pb-6 mb-10 border-b border-border">
+        <h1 className="text-lg font-bold tracking-tight mb-1">
+          Witnessed — ops dashboard
+        </h1>
+        <p className="text-xs text-muted-2 tabular-nums">
+          {now} · environment {env} · commit {commit}
+          {stats.dbSize ? ` · database ${stats.dbSize}` : ""}
+        </p>
       </header>
 
-      {/* PULSE — six tiles, one look. Everything at-a-glance a sleepy
-          on-call wants before reading prose. */}
-      <SectionLabel>pulse</SectionLabel>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-10">
-        <Tile
-          label="events · 24h"
-          value={stats.events24h.toLocaleString()}
-          hint={
-            vs7dAvg !== null
-              ? `${vs7dAvg > 0 ? "+" : ""}${vs7dAvg}% vs 7d avg`
-              : undefined
-          }
-          hintTone={
-            vs7dAvg === null
-              ? "muted"
-              : vs7dAvg > 0
-                ? "good"
-                : vs7dAvg < 0
-                  ? "warn"
-                  : "muted"
-          }
-          tone="accent"
+      <Section title="Last 24 hours">
+        <StatTable
+          rows={[
+            { label: "Emails witnessed", value: stats.events24h },
+            {
+              label: "Emails rejected",
+              value: stats.throttled24h,
+              warn: stats.throttled24h > 0,
+            },
+          ]}
         />
-        <Tile
-          label="events · 7d"
-          value={stats.events7d.toLocaleString()}
-          hint={avg7d > 0 ? `${avg7d.toLocaleString()}/day avg` : undefined}
-        />
-        <Tile
-          label="new domains · 7d"
-          value={`+${stats.newDomains7d}`}
-          hint={
-            stats.newDomains30d > 0
-              ? `+${stats.newDomains30d} · 30d`
-              : undefined
-          }
-          tone={stats.newDomains7d === 0 ? "muted" : "default"}
-        />
-        <Tile
-          label="verified"
-          value={stats.verifiedDomains.toLocaleString()}
-          hint={
-            stats.domains > 0
-              ? `of ${stats.domains.toLocaleString()} registered`
-              : undefined
-          }
-        />
-        <Tile
-          label="throttled · 24h"
-          value={stats.throttled24h.toLocaleString()}
-          hint={
-            stats.throttled7d > 0
-              ? `${stats.throttled7d.toLocaleString()} · 7d`
-              : "7d clean"
-          }
-          tone={stats.throttled24h === 0 ? "muted" : "warn"}
-        />
-        <Tile
-          label="denylist"
-          value={stats.denylistTotal.toLocaleString()}
-          hint={
-            stats.denylistTotal > 0
-              ? stats.denylistByReason
-                  .map((r) => `${r.reason} ${r.count}`)
-                  .join(" · ")
-              : "empty"
-          }
-          tone={stats.denylistTotal === 0 ? "muted" : "default"}
-        />
-      </div>
-
-      {/* ACTIVITY — the shape of the last 30 days. Hover a bar for the
-          per-day count; the footer gives absolute totals so the chart's
-          relative scale doesn't mislead. */}
-      <Section label="activity · 30d">
-        <Chart data={stats.eventsByDay} days={30} />
-        <p className="mt-4 text-[0.7rem] text-muted tabular-nums">
-          <span className="text-muted-2">window · </span>
-          {stats.events30d.toLocaleString()} events ·{" "}
-          {stats.distinctReceivers.toLocaleString()} distinct receiver
-          {stats.distinctReceivers === 1 ? "" : "s"}
-          {stats.unclaimedReceivers > 0 && (
-            <>
-              {" ("}
-              <span className="text-muted-2">
-                {stats.unclaimedReceivers.toLocaleString()} unclaimed
-              </span>
-              {")"}
-            </>
-          )}
-        </p>
-        <p className="mt-1 text-[0.7rem] text-muted-2 tabular-nums">
-          <span className="text-muted-2">registry · </span>
-          {stats.events.toLocaleString()} events lifetime ·{" "}
-          {stats.domains.toLocaleString()} domain
-          {stats.domains === 1 ? "" : "s"}
-        </p>
       </Section>
 
-      {/* DOMAINS — both sides of the wire, with canonical-state shape
-          above each column so the head-of-list doesn't masquerade as
-          the whole picture. Senders carry tier/trust/mutuals/reach/age;
-          receivers carry volume and distinct-sender reach. */}
-      <Section label="domains">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-          <SenderList
-            rows={stats.topSenders.slice(0, 8)}
-            tiers={stats.senderTiers}
-            total={stats.domains}
-          />
-          <ReceiverList
-            rows={stats.topReceivers.slice(0, 8)}
-            total={stats.distinctReceivers}
-            unclaimed={stats.unclaimedReceivers}
-          />
-        </div>
-        {stats.mutualPairsTotal > 0 && (
-          <MutualPairs
-            rows={stats.mutualPairs}
-            total={stats.mutualPairsTotal}
-          />
+      <Section title="Last 7 days">
+        <StatTable
+          rows={[
+            { label: "Emails witnessed", value: stats.events7d },
+            {
+              label: "Emails rejected",
+              value: stats.throttled7d,
+              warn: stats.throttled7d > 0,
+            },
+            { label: "New domains registered", value: stats.newDomains7d },
+          ]}
+        />
+      </Section>
+
+      <Section title="All time">
+        <StatTable
+          rows={[
+            { label: "Registered domains", value: stats.domains },
+            { label: "Verified domains", value: stats.verifiedDomains },
+            { label: "Total emails witnessed", value: stats.events },
+            { label: "Domains on denylist", value: stats.denylistTotal },
+          ]}
+        />
+      </Section>
+
+      <Section title="Activity — last 30 days">
+        <Chart data={stats.eventsByDay} days={30} />
+        <ActivitySummary data={stats.eventsByDay} total={stats.events30d} />
+      </Section>
+
+      <Section title="Registered domains">
+        <p className="text-xs text-muted mb-4 leading-relaxed">
+          Every domain we&apos;ve ever seen as a sender. Ordered by trust
+          score. &ldquo;Verified&rdquo; meets our quality threshold (trust
+          score of 65 or more plus at least three mutual counterparties).
+          &ldquo;On record&rdquo; has accepted emails but hasn&apos;t reached
+          verified yet. &ldquo;Pending&rdquo; has just registered.
+        </p>
+        {stats.topSenders.length === 0 ? (
+          <Empty>No domains have been registered yet.</Empty>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
+                <th className="py-2 pr-4 font-normal">Domain</th>
+                <th className="py-2 pr-4 font-normal">Status</th>
+                <th className="py-2 pr-4 font-normal text-right">Emails</th>
+                <th className="py-2 pr-4 font-normal text-right">
+                  Trust score
+                </th>
+                <th className="py-2 font-normal">First seen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {stats.topSenders.map((r) => {
+                const status = statusFor(r);
+                return (
+                  <tr key={r.domain}>
+                    <td className="py-3 pr-4 truncate max-w-[14rem]">
+                      {r.domain}
+                    </td>
+                    <td
+                      className={`py-3 pr-4 ${
+                        status === "Verified"
+                          ? "text-verified"
+                          : status === "On record"
+                            ? "text-accent"
+                            : "text-muted"
+                      }`}
+                    >
+                      {status}
+                    </td>
+                    <td className="py-3 pr-4 text-right tabular-nums">
+                      {r.event_count.toLocaleString()}
+                    </td>
+                    <td className="py-3 pr-4 text-right tabular-nums">
+                      {r.trust_index !== null ? `${r.trust_index} / 100` : "—"}
+                    </td>
+                    <td className="py-3 text-muted whitespace-nowrap">
+                      {formatAge(r.first_seen)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </Section>
 
-      {/* ANTI-ABUSE — always visible. On clean days it says so loudly;
-          on active days, reason breakdown + the domains driving it. */}
-      <Section label="anti-abuse · 7d">
+      <Section title="Top recipient domains">
+        <p className="text-xs text-muted mb-4 leading-relaxed">
+          Domains that most frequently appear as recipients of witnessed
+          emails. &ldquo;Registered&rdquo; means the recipient domain has also
+          sealed at least one email of its own; &ldquo;Unclaimed&rdquo; means
+          it only appears on the receiving end.
+        </p>
+        {stats.topReceivers.length === 0 ? (
+          <Empty>No recipient data yet.</Empty>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
+                <th className="py-2 pr-4 font-normal">Domain</th>
+                <th className="py-2 pr-4 font-normal text-right">
+                  Emails received
+                </th>
+                <th className="py-2 pr-4 font-normal text-right">
+                  Distinct senders
+                </th>
+                <th className="py-2 font-normal">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {stats.topReceivers.map((r) => (
+                <tr key={r.receiver_domain}>
+                  <td className="py-3 pr-4 truncate max-w-[14rem]">
+                    {r.receiver_domain}
+                  </td>
+                  <td className="py-3 pr-4 text-right tabular-nums">
+                    {r.count.toLocaleString()}
+                  </td>
+                  <td className="py-3 pr-4 text-right tabular-nums">
+                    {r.distinct_senders.toLocaleString()}
+                  </td>
+                  <td className="py-3 text-muted">
+                    {r.claimed ? "Registered" : "Unclaimed"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Section>
+
+      <Section title="Rejected emails — last 7 days">
+        <p className="text-xs text-muted mb-4 leading-relaxed">
+          Emails that were received and cryptographically valid, but not
+          added to any domain&apos;s public record. Usually because the
+          sender exceeded a rate limit, the recipient&apos;s domain has no
+          working mail server, or a reputation check failed. Kept for
+          forensic review, never shown publicly.
+        </p>
         {stats.throttled7d === 0 ? (
-          <p className="text-xs text-muted-2">
-            quiet — 0 events throttled in the last 7 days.
-          </p>
+          <Empty>No emails have been rejected in the last 7 days.</Empty>
         ) : (
           <>
-            <div className="flex items-baseline gap-4 mb-3">
-              <p className="text-3xl font-bold tabular-nums leading-none text-amber">
-                {stats.throttled24h.toLocaleString()}
-              </p>
-              <div className="text-[0.65rem] uppercase tracking-widest text-muted-2">
-                throttled · 24h
-                <div className="mt-1 normal-case tracking-normal text-[0.7rem] text-muted">
-                  {stats.throttled7d.toLocaleString()} over 7d
-                </div>
-              </div>
-            </div>
-            {stats.throttledByReason.length > 0 && (
-              <div className="mb-5">
-                <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1.5">
-                  by reason
-                </p>
-                <ul className="text-xs space-y-0.5">
-                  {stats.throttledByReason.map((r) => (
-                    <li
-                      key={r.reason}
-                      className="flex justify-between tabular-nums"
-                    >
-                      <span className="text-txt">{r.reason}</span>
-                      <span className="text-muted">
-                        {r.count.toLocaleString()}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <h3 className="text-xs uppercase tracking-wide text-muted-2 mb-2 mt-6">
+              Grouped by reason
+            </h3>
+            <table className="w-full text-sm mb-8">
+              <thead>
+                <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
+                  <th className="py-2 pr-4 font-normal">Reason</th>
+                  <th className="py-2 font-normal text-right">Rejected</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {stats.throttledByReason.map((r) => (
+                  <tr key={r.reason}>
+                    <td className="py-3 pr-4">{describeReason(r.reason)}</td>
+                    <td className="py-3 text-right tabular-nums">
+                      {r.count.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
             {stats.throttledTopSenders.length > 0 && (
-              <TopList
-                title="review queue · 7d"
-                rows={stats.throttledTopSenders.map((s) => ({
-                  label: s.sender_domain,
-                  value: s.count,
-                }))}
-                emptyLabel=""
-              />
+              <>
+                <h3 className="text-xs uppercase tracking-wide text-muted-2 mb-2">
+                  Top offending senders
+                </h3>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
+                      <th className="py-2 pr-4 font-normal">Sender domain</th>
+                      <th className="py-2 font-normal text-right">Rejected</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {stats.throttledTopSenders.map((s) => (
+                      <tr key={s.sender_domain}>
+                        <td className="py-3 pr-4 truncate max-w-[14rem]">
+                          {s.sender_domain}
+                        </td>
+                        <td className="py-3 text-right tabular-nums">
+                          {s.count.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
           </>
         )}
       </Section>
 
-      {/* FOOTER — rotate affordance + what the page guarantees. Small,
-          quiet, intentional. */}
-      <div className="mt-14 pt-5 border-t border-border">
-        <p className="text-[0.6rem] text-muted-2 leading-relaxed">
-          rotate STATS_TOKEN to revoke · no caching · fresh query per load
+      <Section title="Denylist">
+        <p className="text-xs text-muted mb-4 leading-relaxed">
+          Domains that have requested GDPR erasure or have opted out of
+          being witnessed. Inbound emails that name these domains are
+          silently dropped.
         </p>
-      </div>
+        {stats.denylistTotal === 0 ? (
+          <Empty>No domains are currently on the denylist.</Empty>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[0.65rem] uppercase tracking-wide text-muted-2 border-b border-border">
+                <th className="py-2 pr-4 font-normal">Reason</th>
+                <th className="py-2 font-normal text-right">Domains</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {stats.denylistByReason.map((r) => (
+                <tr key={r.reason}>
+                  <td className="py-3 pr-4">
+                    {r.reason === "erasure"
+                      ? "GDPR erasure (Article 17)"
+                      : r.reason === "opt_out"
+                        ? "Opt-out (Article 21)"
+                        : r.reason}
+                  </td>
+                  <td className="py-3 text-right tabular-nums">
+                    {r.count.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Section>
+
+      <footer className="mt-16 pt-6 border-t border-border">
+        <p className="text-xs text-muted-2 leading-relaxed">
+          Rotate STATS_TOKEN to revoke access to this page. Nothing here is
+          cached — every load runs a fresh query against the production
+          database.
+        </p>
+      </footer>
     </main>
   );
 }
 
-// ──────────────────────────────────────────────────────────────
-// Primitives
-// ──────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+// Labels
+// ────────────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-3">
-      {children}
-    </p>
-  );
+// Anti-abuse reasons are short machine tokens in the database
+// (`rate_limit`, `receiver_no_mx`, etc). Translate each to a human
+// phrase at the render boundary so the table doesn't require a legend.
+function describeReason(reason: string): string {
+  switch (reason) {
+    case "rate_limit":
+      return "Sender exceeded the rate limit";
+    case "receiver_no_mx":
+      return "Recipient domain has no mail server";
+    case "receiver_blocklist":
+      return "Recipient domain is on a known-bad list";
+    case "concentration":
+      return "Sender is only emailing one recipient";
+    default:
+      return reason;
+  }
 }
 
+// ────────────────────────────────────────────────────────────
+// Primitives
+// ────────────────────────────────────────────────────────────
+
 function Section({
-  label,
+  title,
   children,
 }: {
-  label: string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-10">
-      <SectionLabel>{label}</SectionLabel>
+    <section className="mb-12">
+      <h2 className="text-base font-bold mb-4 text-txt">{title}</h2>
       {children}
     </section>
   );
 }
 
-// KPI tile. Three lines: label → value → one-line hint. `tone` colors
-// the value; `hintTone` colors the hint independently (green delta
-// against a default-tone value, for instance).
-function Tile({
-  label,
-  value,
-  hint,
-  tone = "default",
-  hintTone = "muted",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: "default" | "muted" | "accent" | "warn";
-  hintTone?: "muted" | "good" | "warn";
-}) {
-  const valueClass =
-    tone === "muted"
-      ? "text-muted-2"
-      : tone === "accent"
-        ? "text-accent"
-        : tone === "warn"
-          ? "text-amber"
-          : "text-txt";
-  const hintClass =
-    hintTone === "good"
-      ? "text-verified"
-      : hintTone === "warn"
-        ? "text-amber"
-        : "text-muted";
-  return (
-    <div className="rounded-md border border-border bg-surface/40 px-3.5 py-3">
-      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
-        {label}
-      </p>
-      <p
-        className={`text-2xl font-bold tabular-nums mt-1 leading-none ${valueClass}`}
-      >
-        {value}
-      </p>
-      {hint && (
-        <p className={`text-[0.65rem] mt-1.5 tabular-nums truncate ${hintClass}`}>
-          {hint}
-        </p>
-      )}
-    </div>
-  );
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-muted-2 py-2">{children}</p>;
 }
 
-// Human-friendly "days since first_seen". 0-29d → "Nd", 30-364d → "Nmo",
-// 365+d → "Ny". No fractional months; one token, always.
-function formatAge(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const ts = Date.parse(iso);
-  if (!Number.isFinite(ts)) return null;
-  const days = Math.max(0, Math.floor((Date.now() - ts) / 86_400_000));
-  if (days < 30) return `${days}d`;
-  if (days < 365) return `${Math.floor(days / 30)}mo`;
-  return `${Math.floor(days / 365)}y`;
-}
-
-// Canonical-state tier for a sender row. Mirrors lib/scores.ts
-// (trustTierFromScore) — duplicated here because the ops page is
-// the one surface that also knows about `grandfathered_verified`.
-type SenderTier = "verified" | "onRecord" | "pending";
-function tierFor(row: {
-  trust_index: number | null;
-  mutual_counterparties: number | null;
-  verified_event_count: number | null;
-  grandfathered_verified: boolean;
-}): SenderTier {
-  if (row.grandfathered_verified) return "verified";
-  if (
-    (row.trust_index ?? 0) >= 65 &&
-    (row.mutual_counterparties ?? 0) >= 3
-  ) {
-    return "verified";
-  }
-  if ((row.verified_event_count ?? 0) > 0) return "onRecord";
-  return "pending";
-}
-
-// Three-state coloured dot. Same palette the seal page uses so an
-// operator's eye already knows the mapping.
-function TierDot({ tier }: { tier: SenderTier }) {
-  const cls =
-    tier === "verified"
-      ? "bg-verified"
-      : tier === "onRecord"
-        ? "bg-accent"
-        : "bg-amber";
-  const title =
-    tier === "verified"
-      ? "verified"
-      : tier === "onRecord"
-        ? "on record"
-        : "pending";
-  return (
-    <span
-      title={title}
-      aria-label={title}
-      className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${cls}`}
-    />
-  );
-}
-
-// Shared column grids. Fixed-width numeric cells so header labels
-// line up pixel-perfect with the values below them. Domain occupies
-// the first, flexible column and truncates on overflow.
-const SENDER_COLS =
-  "grid grid-cols-[minmax(0,1fr)_2.25rem_2.25rem_2.25rem_1.75rem_2rem] items-baseline gap-x-2";
-const RECEIVER_COLS =
-  "grid grid-cols-[minmax(0,1fr)_2.5rem_2.75rem] items-baseline gap-x-2";
-
-function ColHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-right text-[0.55rem] uppercase tracking-widest text-muted-2">
-      {children}
-    </span>
-  );
-}
-
-// Senders list — one row per sender, each row carrying:
-//   · tier dot   verified / on-record / pending, colour-coded
-//   · events     raw event_count
-//   · reach      distinct counterparties reached (domain_scores.counterparty_count)
-//   · trust      composite trust_index (0-100)
-//   · mut        mutual counterparties (blank when zero)
-//   · age        days/months/years since first seen
-// Column header carries both the labels and the population split so
-// the head of the list isn't confused for the whole.
-function SenderList({
+// Label on the left, number on the right. Nothing else. Used for the
+// top three summary sections (24h, 7d, all-time).
+function StatTable({
   rows,
-  tiers,
-  total,
 }: {
-  rows: Array<{
-    domain: string;
-    event_count: number;
-    first_seen: string;
-    trust_index: number | null;
-    mutual_counterparties: number | null;
-    counterparty_count: number | null;
-    verified_event_count: number | null;
-    grandfathered_verified: boolean;
-  }>;
-  tiers: { verified: number; onRecord: number; pending: number };
-  total: number;
+  rows: Array<{ label: string; value: number; warn?: boolean }>;
 }) {
   return (
-    <div>
-      <div className="mb-2">
-        <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
-          senders · by trust
-        </p>
-        <p className="text-[0.6rem] text-muted-2 mt-0.5 tabular-nums">
-          {total.toLocaleString()} total ·{" "}
-          <span className="text-verified">{tiers.verified} verified</span> ·{" "}
-          <span className="text-accent">{tiers.onRecord} on-record</span> ·{" "}
-          <span className="text-amber">{tiers.pending} pending</span>
-        </p>
-      </div>
-      {rows.length === 0 ? (
-        <p className="text-xs text-muted-2 py-2">no senders yet</p>
-      ) : (
-        <>
-          <div className={`${SENDER_COLS} pb-1.5 border-b border-border`}>
-            <span className="text-[0.55rem] uppercase tracking-widest text-muted-2">
-              domain
-            </span>
-            <ColHeader>events</ColHeader>
-            <ColHeader>reach</ColHeader>
-            <ColHeader>trust</ColHeader>
-            <ColHeader>mut</ColHeader>
-            <ColHeader>age</ColHeader>
-          </div>
-          <ul className="divide-y divide-border text-xs">
-            {rows.map((r) => {
-              const age = formatAge(r.first_seen);
-              const tier = tierFor(r);
-              const hasMut =
-                r.mutual_counterparties !== null &&
-                r.mutual_counterparties > 0;
-              const hasReach =
-                r.counterparty_count !== null && r.counterparty_count > 0;
-              return (
-                <li key={r.domain} className={`${SENDER_COLS} py-2`}>
-                  <span className="text-txt flex items-center gap-2 min-w-0">
-                    <TierDot tier={tier} />
-                    <span className="truncate">{r.domain}</span>
-                  </span>
-                  <span className="text-right text-muted tabular-nums">
-                    {r.event_count.toLocaleString()}
-                  </span>
-                  <span
-                    title={
-                      hasReach
-                        ? `${r.counterparty_count} distinct counterparties`
-                        : undefined
-                    }
-                    className="text-right text-[0.7rem] text-muted-2 tabular-nums"
-                  >
-                    {hasReach ? r.counterparty_count : ""}
-                  </span>
-                  <span className="text-right text-[0.7rem] text-accent tabular-nums">
-                    {r.trust_index !== null ? r.trust_index : ""}
-                  </span>
-                  <span className="text-right text-[0.7rem] text-muted tabular-nums">
-                    {hasMut ? r.mutual_counterparties : ""}
-                  </span>
-                  <span className="text-right text-[0.7rem] text-muted-2 tabular-nums">
-                    {age ?? ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-}
-
-// Receivers list — one row per distinct receiver_domain, each row:
-//   · claimed dot   filled = also a registered sender, hollow = unclaimed
-//   · events        total volume (the ranking key)
-//   · senders       distinct senders who sealed to it (inbound reach)
-// Header carries the claimed/unclaimed split across all receivers.
-function ReceiverList({
-  rows,
-  total,
-  unclaimed,
-}: {
-  rows: Array<{
-    receiver_domain: string;
-    count: number;
-    distinct_senders: number;
-    claimed: boolean;
-  }>;
-  total: number;
-  unclaimed: number;
-}) {
-  const claimed = Math.max(0, total - unclaimed);
-  return (
-    <div>
-      <div className="mb-2">
-        <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
-          receivers · by volume
-        </p>
-        <p className="text-[0.6rem] text-muted-2 mt-0.5 tabular-nums">
-          {total.toLocaleString()} distinct ·{" "}
-          <span className="text-txt">{claimed} claimed</span> ·{" "}
-          <span className="text-muted">{unclaimed} unclaimed</span>
-        </p>
-      </div>
-      {rows.length === 0 ? (
-        <p className="text-xs text-muted-2 py-2">no receivers yet</p>
-      ) : (
-        <>
-          <div className={`${RECEIVER_COLS} pb-1.5 border-b border-border`}>
-            <span className="text-[0.55rem] uppercase tracking-widest text-muted-2">
-              domain
-            </span>
-            <ColHeader>events</ColHeader>
-            <ColHeader>senders</ColHeader>
-          </div>
-          <ul className="divide-y divide-border text-xs">
-            {rows.map((r) => (
-              <li key={r.receiver_domain} className={`${RECEIVER_COLS} py-2`}>
-                <span className="text-txt flex items-center gap-2 min-w-0">
-                  <span
-                    title={r.claimed ? "registered sender" : "unclaimed"}
-                    aria-label={r.claimed ? "registered sender" : "unclaimed"}
-                    className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
-                      r.claimed
-                        ? "bg-txt"
-                        : "border border-muted-2 bg-transparent"
-                    }`}
-                  />
-                  <span className="truncate">{r.receiver_domain}</span>
-                </span>
-                <span className="text-right text-muted tabular-nums">
-                  {r.count.toLocaleString()}
-                </span>
-                <span
-                  title={
-                    r.distinct_senders > 0
-                      ? `${r.distinct_senders} distinct senders`
-                      : undefined
-                  }
-                  className="text-right text-[0.7rem] text-muted-2 tabular-nums"
-                >
-                  {r.distinct_senders > 0 ? r.distinct_senders : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-}
-
-// Mutual pairs — reciprocal edges (A↔B where each sealed to the other).
-// The strongest trust signal in the graph; both sides are already in
-// `domains`, so surfacing them here doesn't expose a private receiver.
-const PAIR_COLS =
-  "grid grid-cols-[minmax(0,1fr)_3rem] items-baseline gap-x-2";
-
-function MutualPairs({
-  rows,
-  total,
-}: {
-  rows: Array<{ a: string; b: string; events: number }>;
-  total: number;
-}) {
-  return (
-    <div className="mt-6 pt-5 border-t border-border">
-      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
-        mutual pairs · {total.toLocaleString()}
-      </p>
-      <div className={`${PAIR_COLS} pb-1.5 border-b border-border`}>
-        <span className="text-[0.55rem] uppercase tracking-widest text-muted-2">
-          pair
-        </span>
-        <ColHeader>events</ColHeader>
-      </div>
-      <ul className="divide-y divide-border text-xs">
+    <table className="w-full text-sm">
+      <tbody className="divide-y divide-border">
         {rows.map((r) => (
-          <li key={`${r.a}~${r.b}`} className={`${PAIR_COLS} py-2`}>
-            <span className="text-txt truncate min-w-0">
-              <span className="truncate">{r.a}</span>
-              <span className="text-muted-2 px-1.5">↔</span>
-              <span className="truncate">{r.b}</span>
-            </span>
-            <span className="text-right text-muted tabular-nums">
-              {r.events.toLocaleString()}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function TopList({
-  title,
-  rows,
-  emptyLabel,
-}: {
-  title: string;
-  rows: Array<{ label: string; value: number }>;
-  emptyLabel: string;
-}) {
-  return (
-    <div>
-      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
-        {title}
-      </p>
-      {rows.length === 0 ? (
-        <p className="text-xs text-muted-2 py-2">{emptyLabel}</p>
-      ) : (
-        <ul className="divide-y divide-border text-xs">
-          {rows.map((r) => (
-            <li
-              key={r.label}
-              className="flex justify-between items-baseline py-2 gap-3"
+          <tr key={r.label}>
+            <td className="py-3 pr-4 text-muted">{r.label}</td>
+            <td
+              className={`py-3 text-right tabular-nums font-medium ${
+                r.warn ? "text-amber" : "text-txt"
+              }`}
             >
-              <span className="truncate text-txt">{r.label}</span>
-              <span className="text-muted tabular-nums shrink-0">
-                {r.value.toLocaleString()}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              {r.value.toLocaleString()}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
+// One-line summary under the 30-day chart: total, peak day, average.
+// All three phrased as full English so the chart never needs a caption.
+function ActivitySummary({
+  data,
+  total,
+}: {
+  data: Array<{ day: string; count: number }>;
+  total: number;
+}) {
+  if (total === 0) {
+    return (
+      <p className="text-xs text-muted mt-3">
+        No activity in the last 30 days.
+      </p>
+    );
+  }
+  const peak = Math.max(0, ...data.map((d) => d.count));
+  const avg = Math.round(total / 30);
+  return (
+    <p className="text-xs text-muted mt-3 tabular-nums leading-relaxed">
+      {total.toLocaleString()} email{total === 1 ? "" : "s"} over 30 days.
+      Busiest day saw {peak.toLocaleString()}. Average of{" "}
+      {avg.toLocaleString()} per day.
+    </p>
+  );
+}
+
+// 30 one-pixel-wide bars, one per day, left-to-right oldest-to-newest.
+// Hover a bar for the exact count on that day. Kept simple — if the
+// shape on the chart is interesting, follow up with a real tool.
 function Chart({
   data,
   days,
@@ -696,28 +497,27 @@ function Chart({
 
   return (
     <div>
-      <div className="flex items-end gap-[3px] h-24 border-b border-border pb-0.5">
+      <div className="flex items-end gap-[3px] h-32 border-b border-border pb-0.5">
         {buckets.map((b) => {
-          // Zero-count days get a 1px baseline tick instead of a visible tile —
-          // keeps the chart quiet and lets real activity breathe.
           const h =
-            b.count === 0 ? 1 : Math.max(4, Math.round((b.count / max) * 92));
+            b.count === 0
+              ? 1
+              : Math.max(4, Math.round((b.count / max) * 120));
           return (
             <div
               key={b.day}
-              title={`${b.day} · ${b.count}`}
+              title={`${b.day}: ${b.count} email${b.count === 1 ? "" : "s"}`}
               className={`flex-1 rounded-sm ${
-                b.count === 0 ? "bg-border" : "bg-accent/70 hover:bg-accent"
+                b.count === 0 ? "bg-border" : "bg-accent/70"
               }`}
               style={{ height: `${h}px` }}
             />
           );
         })}
       </div>
-      <div className="flex justify-between mt-2 text-[0.6rem] text-muted-2 tabular-nums">
-        <span>{buckets[0]?.day.slice(5) ?? ""}</span>
-        <span>peak {max.toLocaleString()}/day</span>
-        <span>{buckets[buckets.length - 1]?.day.slice(5) ?? ""}</span>
+      <div className="flex justify-between mt-2 text-xs text-muted-2 tabular-nums">
+        <span>{buckets[0]?.day ?? ""}</span>
+        <span>{buckets[buckets.length - 1]?.day ?? ""}</span>
       </div>
     </div>
   );
