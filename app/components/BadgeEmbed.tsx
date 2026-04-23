@@ -25,8 +25,17 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
   const previewSrc = `/badge/${domain}.png`;
   // Width adapts to the domain so the copied <img> advertises the same
   // dimensions as the PNG we render. Height is fixed.
+  //
+  // We ship dimensions both as HTML attributes AND as inline CSS. Gmail's
+  // signature editor strips `width`/`height` attributes during the paste
+  // roundtrip (clipboard → rich-text editor → server), which leaves the
+  // <img> to fall back to its intrinsic pixel size — and our PNG is
+  // rendered at 2× retina density, so without the hint it displays at
+  // exactly twice the intended size (this is the "why is the badge huge
+  // in my signature?" bug). Inline styles survive the sanitizer.
   const { width: badgeW, height: badgeH } = sizeBadge(domain);
-  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="${badgeW}" height="${badgeH}" style="border:0;display:inline-block;vertical-align:middle" /></a>`;
+  const imgStyle = `border:0;display:inline-block;vertical-align:middle;width:${badgeW}px;height:${badgeH}px;max-width:${badgeW}px`;
+  const html = `<a href="${sealUrl}"><img src="${imageUrl}" alt="Witnessed · ${domain}" width="${badgeW}" height="${badgeH}" style="${imgStyle}" /></a>`;
 
   async function handleCopy() {
     try {
