@@ -264,12 +264,30 @@ export interface OpsStats {
     first_seen: string;
     trust_index: number | null;
     mutual_counterparties: number | null;
+    counterparty_count: number | null;
+    verified_event_count: number | null;
+    grandfathered_verified: boolean;
   }>;
-  topReceivers: Array<{ receiver_domain: string; count: number }>;
+  topReceivers: Array<{
+    receiver_domain: string;
+    count: number;
+    distinct_senders: number;
+    claimed: boolean;
+  }>;
   eventsByDay: Array<{ day: string; count: number }>;
   newDomainsByDay: Array<{ day: string; count: number }>;
   verifiedDomains: number;
   dbSize: string | null;
+  // Canonical-state split across every registered sender. Sums to
+  // `domains`; used on ops to show the shape of the population, not
+  // just the leaderboard head.
+  senderTiers: { verified: number; onRecord: number; pending: number };
+  // Mutual edges — sender A sealed to sender B AND vice-versa. These
+  // are the strongest trust signal in the graph and the only network
+  // shape an attacker can't cheaply fake (requires both sides to be
+  // DKIM-signing, domain-owning, seal@-CCing senders).
+  mutualPairsTotal: number;
+  mutualPairs: Array<{ a: string; b: string; events: number }>;
   // Anti-abuse visibility (Layer 0). Counts of events we refused to
   // surface publicly, broken down by reason and by top offender.
   throttled24h: number;
@@ -324,20 +342,26 @@ async function verifiedCount(): Promise<{ n: number }[]> {
 // tie-breaker. Falls back to a bare query when domain_scores hasn't
 // been migrated in yet — keeps the ops page working on first deploy
 // before the schema update is run.
-async function topSendersWithScores(): Promise<
-  Array<{
-    domain: string;
-    event_count: number;
-    first_seen: string;
-    trust_index: number | null;
-    mutual_counterparties: number | null;
-  }>
-> {
+type OpsSenderRow = {
+  domain: string;
+  event_count: number;
+  first_seen: string;
+  trust_index: number | null;
+  mutual_counterparties: number | null;
+  counterparty_count: number | null;
+  verified_event_count: number | null;
+  grandfathered_verified: boolean;
+};
+
+async function topSendersWithScores(): Promise<OpsSenderRow[]> {
   try {
     return (await sql`
       SELECT d.domain, d.event_count, d.first_seen,
-             s.trust_index AS trust_index,
-             s.mutual_counterparties AS mutual_counterparties
+             d.grandfathered_verified,
+             s.trust_index           AS trust_index,
+             s.mutual_counterparties AS mutual_counterparties,
+             s.counterparty_count    AS counterparty_count,
+             s.verified_event_count  AS verified_event_count
       FROM domains d
       LEFT JOIN domain_scores s ON s.domain_id = d.id
       ORDER BY
@@ -345,31 +369,115 @@ async function topSendersWithScores(): Promise<
         d.event_count DESC,
         d.first_seen ASC
       LIMIT 15
-    `) as unknown as Array<{
-      domain: string;
-      event_count: number;
-      first_seen: string;
-      trust_index: number | null;
-      mutual_counterparties: number | null;
-    }>;
+    `) as unknown as OpsSenderRow[];
   } catch (err) {
     const code = (err as { code?: string }).code;
     const msg = (err as Error).message ?? "";
     if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
     return (await sql`
       SELECT domain, event_count, first_seen,
+             COALESCE(grandfathered_verified, FALSE) AS grandfathered_verified,
              NULL::int AS trust_index,
-             NULL::int AS mutual_counterparties
+             NULL::int AS mutual_counterparties,
+             NULL::int AS counterparty_count,
+             NULL::int AS verified_event_count
       FROM domains
       ORDER BY event_count DESC, first_seen ASC
       LIMIT 15
+    `) as unknown as OpsSenderRow[];
+  }
+}
+
+// Population shape across every registered sender: how many are
+// Verified / On-record / Pending. Same predicates as lib/scores.ts
+// (trustTierFromScore) — duplicated in SQL for a one-shot count.
+async function senderTierCounts(): Promise<{
+  verified: number;
+  onRecord: number;
+  pending: number;
+}> {
+  try {
+    const rows = (await sql`
+      SELECT
+        COUNT(*) FILTER (
+          WHERE d.grandfathered_verified
+             OR (s.trust_index >= 65 AND s.mutual_counterparties >= 3)
+        )::int AS verified,
+        COUNT(*) FILTER (
+          WHERE NOT (
+            d.grandfathered_verified
+            OR (s.trust_index >= 65 AND s.mutual_counterparties >= 3)
+          ) AND COALESCE(s.verified_event_count, 0) > 0
+        )::int AS on_record,
+        COUNT(*) FILTER (
+          WHERE NOT (
+            d.grandfathered_verified
+            OR (s.trust_index >= 65 AND s.mutual_counterparties >= 3)
+          ) AND COALESCE(s.verified_event_count, 0) = 0
+        )::int AS pending
+      FROM domains d
+      LEFT JOIN domain_scores s ON s.domain_id = d.id
     `) as unknown as Array<{
-      domain: string;
-      event_count: number;
-      first_seen: string;
-      trust_index: number | null;
-      mutual_counterparties: number | null;
+      verified: number;
+      on_record: number;
+      pending: number;
     }>;
+    return {
+      verified: rows[0]?.verified ?? 0,
+      onRecord: rows[0]?.on_record ?? 0,
+      pending: rows[0]?.pending ?? 0,
+    };
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const msg = (err as Error).message ?? "";
+    if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
+    return { verified: 0, onRecord: 0, pending: 0 };
+  }
+}
+
+// Mutual edges — top 5 by combined volume, plus total count. A mutual
+// pair exists iff domain A has sealed to domain B AND domain B (also
+// registered as a sender) has sealed back to A. Both sides of the
+// edge are already in `domains`, so surfacing them on /ops doesn't
+// disclose a receiver identity we'd normally keep private.
+async function mutualPairsSnapshot(): Promise<{
+  total: number;
+  top: Array<{ a: string; b: string; events: number }>;
+}> {
+  try {
+    const rows = (await sql`
+      WITH edges AS (
+        SELECT d.domain AS a, e.receiver_domain AS b, COUNT(*)::int AS n
+        FROM events e
+        JOIN domains d ON d.id = e.domain_id
+        GROUP BY 1, 2
+      ),
+      pairs AS (
+        SELECT e1.a AS a, e1.b AS b, (e1.n + e2.n)::int AS events
+        FROM edges e1
+        JOIN edges e2 ON e1.a = e2.b AND e1.b = e2.a
+        WHERE e1.a < e1.b
+      )
+      SELECT a, b, events,
+             COUNT(*) OVER ()::int AS total
+      FROM pairs
+      ORDER BY events DESC
+      LIMIT 5
+    `) as unknown as Array<{
+      a: string;
+      b: string;
+      events: number;
+      total: number;
+    }>;
+    return {
+      total: rows[0]?.total ?? 0,
+      top: rows.map((r) => ({ a: r.a, b: r.b, events: r.events })),
+    };
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const msg = (err as Error).message ?? "";
+    if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
+    return { total: 0, top: [] };
   }
 }
 
@@ -385,6 +493,8 @@ export async function getOpsStats(): Promise<OpsStats> {
     newDomainsByDay,
     verified,
     dbSize,
+    senderTiers,
+    mutualPairs,
   ] = await Promise.all([
     sql`
       SELECT
@@ -432,12 +542,25 @@ export async function getOpsStats(): Promise<OpsStats> {
     ),
     topSendersWithScores(),
     sql`
-      SELECT receiver_domain, COUNT(*)::int AS count
-      FROM events
-      GROUP BY receiver_domain
+      SELECT
+        e.receiver_domain,
+        COUNT(*)::int                      AS count,
+        COUNT(DISTINCT e.domain_id)::int   AS distinct_senders,
+        EXISTS (
+          SELECT 1 FROM domains d2 WHERE d2.domain = e.receiver_domain
+        )                                  AS claimed
+      FROM events e
+      GROUP BY e.receiver_domain
       ORDER BY count DESC
       LIMIT 15
-    ` as unknown as Promise<{ receiver_domain: string; count: number }[]>,
+    ` as unknown as Promise<
+      Array<{
+        receiver_domain: string;
+        count: number;
+        distinct_senders: number;
+        claimed: boolean;
+      }>
+    >,
     sql`
       SELECT to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS day,
              COUNT(*)::int AS count
@@ -459,6 +582,8 @@ export async function getOpsStats(): Promise<OpsStats> {
       ` as unknown as Promise<{ size: string }[]>,
       [] as { size: string }[],
     ),
+    senderTierCounts(),
+    mutualPairsSnapshot(),
   ]);
 
   // Anti-abuse visibility — fetched separately so the legacy totals
@@ -527,6 +652,9 @@ export async function getOpsStats(): Promise<OpsStats> {
     newDomainsByDay,
     verifiedDomains: verified[0]?.n ?? 0,
     dbSize: dbSize[0]?.size ?? null,
+    senderTiers,
+    mutualPairsTotal: mutualPairs.total,
+    mutualPairs: mutualPairs.top,
     throttled24h: throttledWindowed[0]?.d1 ?? 0,
     throttled7d: throttledWindowed[0]?.d7 ?? 0,
     throttledByReason,

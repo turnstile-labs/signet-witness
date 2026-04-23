@@ -179,20 +179,29 @@ export default async function OpsPage({
         </p>
       </Section>
 
-      {/* DOMAINS — top of the leaderboard on both sides of the wire.
-          Senders carry trust/mutuals/age inline; receivers are volume-only. */}
+      {/* DOMAINS — both sides of the wire, with canonical-state shape
+          above each column so the head-of-list doesn't masquerade as
+          the whole picture. Senders carry tier/trust/mutuals/reach/age;
+          receivers carry volume and distinct-sender reach. */}
       <Section label="domains">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
-          <SenderList rows={stats.topSenders.slice(0, 8)} />
-          <TopList
-            title="receivers · by volume"
-            rows={stats.topReceivers.slice(0, 8).map((r) => ({
-              label: r.receiver_domain,
-              value: r.count,
-            }))}
-            emptyLabel="no receivers yet"
+          <SenderList
+            rows={stats.topSenders.slice(0, 8)}
+            tiers={stats.senderTiers}
+            total={stats.domains}
+          />
+          <ReceiverList
+            rows={stats.topReceivers.slice(0, 8)}
+            total={stats.distinctReceivers}
+            unclaimed={stats.unclaimedReceivers}
           />
         </div>
+        {stats.mutualPairsTotal > 0 && (
+          <MutualPairs
+            rows={stats.mutualPairs}
+            total={stats.mutualPairsTotal}
+          />
+        )}
       </Section>
 
       {/* ANTI-ABUSE — always visible. On clean days it says so loudly;
@@ -348,12 +357,64 @@ function formatAge(iso: string | null | undefined): string | null {
   return `${Math.floor(days / 365)}y`;
 }
 
-// Senders list carries three inline tags after the event count:
-//   · tNN   trust index (always when known)
-//   · mNN   mutual counterparties (only when > 0 — zero is noisy)
-//   · age   days/months/years since first seen (contextual tenure cue)
+// Canonical-state tier for a sender row. Mirrors lib/scores.ts
+// (trustTierFromScore) — duplicated here because the ops page is
+// the one surface that also knows about `grandfathered_verified`.
+type SenderTier = "verified" | "onRecord" | "pending";
+function tierFor(row: {
+  trust_index: number | null;
+  mutual_counterparties: number | null;
+  verified_event_count: number | null;
+  grandfathered_verified: boolean;
+}): SenderTier {
+  if (row.grandfathered_verified) return "verified";
+  if (
+    (row.trust_index ?? 0) >= 65 &&
+    (row.mutual_counterparties ?? 0) >= 3
+  ) {
+    return "verified";
+  }
+  if ((row.verified_event_count ?? 0) > 0) return "onRecord";
+  return "pending";
+}
+
+// Three-state coloured dot. Same palette the seal page uses so an
+// operator's eye already knows the mapping.
+function TierDot({ tier }: { tier: SenderTier }) {
+  const cls =
+    tier === "verified"
+      ? "bg-verified"
+      : tier === "onRecord"
+        ? "bg-accent"
+        : "bg-amber";
+  const title =
+    tier === "verified"
+      ? "verified"
+      : tier === "onRecord"
+        ? "on record"
+        : "pending";
+  return (
+    <span
+      title={title}
+      aria-label={title}
+      className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${cls}`}
+    />
+  );
+}
+
+// Senders list — one row per sender, each row carrying:
+//   · tier dot   verified / on-record / pending, colour-coded
+//   · events     raw event_count
+//   · →N         distinct counterparties reached (reach)
+//   · tNN        trust index when scored
+//   · mN         mutual counterparties (only when > 0)
+//   · age        days/months/years since first seen
+// The column header carries the population split so the head of the
+// list isn't confused for the whole.
 function SenderList({
   rows,
+  tiers,
+  total,
 }: {
   rows: Array<{
     domain: string;
@@ -361,29 +422,55 @@ function SenderList({
     first_seen: string;
     trust_index: number | null;
     mutual_counterparties: number | null;
+    counterparty_count: number | null;
+    verified_event_count: number | null;
+    grandfathered_verified: boolean;
   }>;
+  tiers: { verified: number; onRecord: number; pending: number };
+  total: number;
 }) {
   return (
     <div>
-      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
-        senders · by trust
-      </p>
+      <div className="mb-2">
+        <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+          senders · by trust
+        </p>
+        <p className="text-[0.6rem] text-muted-2 mt-0.5 tabular-nums">
+          {total.toLocaleString()} total ·{" "}
+          <span className="text-verified">{tiers.verified} verified</span> ·{" "}
+          <span className="text-accent">{tiers.onRecord} on-record</span> ·{" "}
+          <span className="text-amber">{tiers.pending} pending</span>
+        </p>
+      </div>
       {rows.length === 0 ? (
         <p className="text-xs text-muted-2 py-2">no senders yet</p>
       ) : (
         <ul className="divide-y divide-border text-xs">
           {rows.map((r) => {
             const age = formatAge(r.first_seen);
+            const tier = tierFor(r);
             return (
               <li
                 key={r.domain}
                 className="flex justify-between items-baseline py-2 gap-3"
               >
-                <span className="truncate text-txt">{r.domain}</span>
+                <span className="truncate text-txt flex items-center gap-2 min-w-0">
+                  <TierDot tier={tier} />
+                  <span className="truncate">{r.domain}</span>
+                </span>
                 <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
                   <span className="text-muted">
                     {r.event_count.toLocaleString()}
                   </span>
+                  {r.counterparty_count !== null &&
+                    r.counterparty_count > 0 && (
+                      <span
+                        title={`${r.counterparty_count} distinct counterparties`}
+                        className="text-[0.7rem] text-muted-2"
+                      >
+                        →{r.counterparty_count}
+                      </span>
+                    )}
                   {r.trust_index !== null && (
                     <span className="text-[0.7rem] text-accent">
                       t{r.trust_index}
@@ -404,6 +491,116 @@ function SenderList({
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+// Receivers list — one row per distinct receiver_domain, each row:
+//   · claimed dot   filled = also a registered sender, hollow = unclaimed
+//   · events        total volume (the ranking key)
+//   · from N        distinct senders who sealed to it (reach, inbound)
+// Header carries the claimed/unclaimed split across all receivers.
+function ReceiverList({
+  rows,
+  total,
+  unclaimed,
+}: {
+  rows: Array<{
+    receiver_domain: string;
+    count: number;
+    distinct_senders: number;
+    claimed: boolean;
+  }>;
+  total: number;
+  unclaimed: number;
+}) {
+  const claimed = Math.max(0, total - unclaimed);
+  return (
+    <div>
+      <div className="mb-2">
+        <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+          receivers · by volume
+        </p>
+        <p className="text-[0.6rem] text-muted-2 mt-0.5 tabular-nums">
+          {total.toLocaleString()} distinct ·{" "}
+          <span className="text-txt">{claimed} claimed</span> ·{" "}
+          <span className="text-muted">{unclaimed} unclaimed</span>
+        </p>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-2 py-2">no receivers yet</p>
+      ) : (
+        <ul className="divide-y divide-border text-xs">
+          {rows.map((r) => (
+            <li
+              key={r.receiver_domain}
+              className="flex justify-between items-baseline py-2 gap-3"
+            >
+              <span className="truncate text-txt flex items-center gap-2 min-w-0">
+                <span
+                  title={r.claimed ? "registered sender" : "unclaimed"}
+                  aria-label={r.claimed ? "registered sender" : "unclaimed"}
+                  className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                    r.claimed
+                      ? "bg-txt"
+                      : "border border-muted-2 bg-transparent"
+                  }`}
+                />
+                <span className="truncate">{r.receiver_domain}</span>
+              </span>
+              <span className="shrink-0 flex items-baseline gap-2 tabular-nums">
+                <span className="text-muted">
+                  {r.count.toLocaleString()}
+                </span>
+                {r.distinct_senders > 0 && (
+                  <span
+                    title={`${r.distinct_senders} distinct senders`}
+                    className="text-[0.7rem] text-muted-2"
+                  >
+                    from {r.distinct_senders}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// Mutual pairs — reciprocal edges (A↔B where each sealed to the other).
+// The strongest trust signal in the graph; both sides are already in
+// `domains`, so surfacing them here doesn't expose a private receiver.
+function MutualPairs({
+  rows,
+  total,
+}: {
+  rows: Array<{ a: string; b: string; events: number }>;
+  total: number;
+}) {
+  return (
+    <div className="mt-6 pt-5 border-t border-border">
+      <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-2">
+        mutual pairs · {total.toLocaleString()}
+      </p>
+      <ul className="divide-y divide-border text-xs">
+        {rows.map((r) => (
+          <li
+            key={`${r.a}~${r.b}`}
+            className="flex justify-between items-baseline py-2 gap-3"
+          >
+            <span className="truncate text-txt">
+              <span className="truncate">{r.a}</span>
+              <span className="text-muted-2 px-1.5">↔</span>
+              <span className="truncate">{r.b}</span>
+            </span>
+            <span className="shrink-0 text-muted tabular-nums">
+              {r.events.toLocaleString()}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
