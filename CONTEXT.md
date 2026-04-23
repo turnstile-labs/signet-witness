@@ -162,6 +162,10 @@ viral_invites             (sender_domain, receiver_email, receiver_domain, statu
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 
+**Badge.** `GET /badge/[slug]` renders an SVG or PNG (format from the slug suffix). Layout: `[ ring+mark ] [ domain ] [ witnessed.cc ]`. The ring around the mark is a 0–100% arc whose fraction = `trust_index / 100`. Verified domains always render as a full ring, on-record as a partial ring, pending as an empty ring on the track color. `?preview=verified|onRecord|pending` short-circuits the DB lookup for marketing surfaces; `?t=0..100` overrides the ring fraction in preview mode. ETag keyed on `(state, 5-point-trust-bucket, theme, format, v7)` so the CDN picks up meaningful state transitions without busting on 1-point score drift. Pure helpers (`ringFraction`, `ringArcPath`, `resolveSnapshot`, `trustBucket`) live in `lib/badge-state.ts` so the route stays a thin shell around them and tests can import the math without loading `next/og`.
+
+**Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/viral.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `RESEND_API_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
+
 ---
 
 ## Deploy checklist

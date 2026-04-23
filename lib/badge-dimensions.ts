@@ -25,6 +25,12 @@ export const MARK_D = 16;
 export const GAP_MARK_DOMAIN = 12;
 export const GAP_DOMAIN_BRAND = 12;
 
+// Progress ring sits OUTSIDE the mark — 1.25px stroke, centered on
+// the (MARK_D + ring) radius. The inner MARK_D geometry never
+// changes, so existing layout math stays stable.
+export const RING_STROKE = 1.25;
+export const RING_GAP = 1.25; // visual breathing between mark and ring
+
 // Typography — metric estimates for SF Mono / Menlo / Consolas. These
 // don't have to be exact; we clamp against min/max and truncate the
 // domain before we'd ever run past the canvas.

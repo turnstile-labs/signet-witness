@@ -1,5 +1,3 @@
-import { getDomain } from "@/lib/db";
-import { getDomainScore, computeVerified, trustTierFromScore } from "@/lib/scores";
 import { ImageResponse } from "next/og";
 import {
   BADGE_HEIGHT,
@@ -9,8 +7,18 @@ import {
   MARK_D,
   PAD_L,
   PAD_R,
+  RING_GAP,
+  RING_STROKE,
   sizeBadge,
 } from "@/lib/badge-dimensions";
+import {
+  ringFraction,
+  ringArcPath,
+  resolveSnapshot,
+  trustBucket,
+  type BadgeSnapshot,
+  type BadgeState,
+} from "@/lib/badge-state";
 
 // Badge canvas — width adapts to the domain, height stays fixed so
 // the badge stays signature-compatible.
@@ -53,7 +61,7 @@ function esc(s: string): string {
 }
 
 type Theme = "dark" | "light";
-type State = "verified" | "onRecord" | "pending";
+type State = BadgeState;
 
 interface Palette {
   bgTop: string;         // gradient top — subtle depth
@@ -62,6 +70,7 @@ interface Palette {
   domain: string;        // hero text
   brand: string;         // "witnessed.cc" — muted attribution
   pendingStroke: string; // outline for the pending mark
+  ringTrack: string;     // unfilled portion of the progress ring
 }
 
 // Brand color sits ~3 luminance steps above the background, so it's
@@ -75,6 +84,7 @@ const PALETTES: Record<Theme, Palette> = {
     domain: "#fafafe",
     brand: "#5a5a6a",
     pendingStroke: "#6a6a7a",
+    ringTrack: "#2a2a38",
   },
   light: {
     bgTop: "#ffffff",
@@ -83,6 +93,7 @@ const PALETTES: Record<Theme, Palette> = {
     domain: "#0a0a14",
     brand: "#9a9aa8",
     pendingStroke: "#a0a0b0",
+    ringTrack: "#e4e4ee",
   },
 };
 
@@ -96,7 +107,12 @@ function stateAria(state: State): string {
   }
 }
 
-function renderSvg(domain: string, state: State, theme: Theme): string {
+function renderSvg(
+  domain: string,
+  state: State,
+  trustIndex: number,
+  theme: Theme,
+): string {
   const p = PALETTES[theme];
   const gradId = `bg-${theme}`;
 
@@ -131,14 +147,28 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
     <circle cx="${markCX}" cy="${markCY}" r="${markR - 0.75}" fill="none" stroke="${p.pendingStroke}" stroke-width="1.5"/>`;
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)})">
+  // Progress ring — the composite trust index drawn as an arc
+  // around the mark. Always present so state transitions read as
+  // continuous motion (0 → 65 → 100) rather than a new glyph
+  // appearing. Verified is implicitly always a full circle; the
+  // computeVerified gate guarantees trust_index ≥ threshold.
+  const ringR = markR + RING_GAP + RING_STROKE / 2;
+  const ringColor = state === "pending" ? p.pendingStroke : "#22c55e";
+  const ringTrack = `<circle cx="${markCX}" cy="${markCY}" r="${ringR}" fill="none" stroke="${p.ringTrack}" stroke-width="${RING_STROKE}"/>`;
+  const ringFill = ringArcPath(markCX, markCY, ringR, ringFraction(trustIndex));
+  const ringEl = ringFill
+    ? `${ringTrack}
+    <path d="${ringFill}" fill="none" stroke="${ringColor}" stroke-width="${RING_STROKE}" stroke-linecap="round"/>`
+    : ringTrack;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)}, trust ${Math.round(trustIndex)}/100)">
   <defs>
     <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${p.bgTop}"/>
       <stop offset="100%" stop-color="${p.bgBot}"/>
     </linearGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>${markEl}
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="url(#${gradId})" stroke="${p.border}" stroke-width="1"/>${ringEl}${markEl}
   <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" font-weight="600" fill="${p.domain}" letter-spacing="-0.01em">${esc(display)}</text>
   <text x="${brandX}" y="${brandBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="9" font-weight="400" fill="${p.brand}" letter-spacing="0.02em">${BRAND_TEXT}</text>
 </svg>`;
@@ -149,6 +179,7 @@ function renderSvg(domain: string, state: State, theme: Theme): string {
 function renderPng(
   domain: string,
   state: State,
+  trustIndex: number,
   theme: Theme,
   cacheHeaders: Record<string, string>
 ) {
@@ -164,73 +195,103 @@ function renderPng(
   const markSize = MARK_D * 2;
   const markCheckPath = `M ${markSize / 2 - 8} ${markSize / 2} L ${markSize / 2 - 2} ${markSize / 2 + 6} L ${markSize / 2 + 8} ${markSize / 2 - 6}`;
 
-  let markNode: React.ReactNode;
+  // Ring at 2× — same geometry as SVG, just doubled. Renders in a
+  // larger viewBox that accommodates the mark plus the outside ring.
+  const ringR2x = (MARK_D / 2 + RING_GAP + RING_STROKE / 2) * 2;
+  const ringBoxSize = Math.ceil(ringR2x * 2 + RING_STROKE * 2 + 4);
+  const ringCenter = ringBoxSize / 2;
+  const ringArc = ringArcPath(ringCenter, ringCenter, ringR2x, ringFraction(trustIndex));
+  const ringColor = state === "pending" ? p.pendingStroke : "#22c55e";
+
+  // The mark itself is drawn inside the same SVG box as the ring so
+  // both stay perfectly concentric regardless of flex rounding.
+  const markOffset = (ringBoxSize - markSize) / 2;
+
+  let markGlyph: React.ReactNode;
   if (state === "verified") {
-    markNode = (
-      <svg
-        width={markSize}
-        height={markSize}
-        viewBox={`0 0 ${markSize} ${markSize}`}
-      >
+    markGlyph = (
+      <>
         <circle
-          cx={markSize / 2}
-          cy={markSize / 2}
+          cx={ringCenter}
+          cy={ringCenter}
           r={markSize / 2}
           fill="#22c55e"
         />
         <path
-          d={markCheckPath}
+          d={`M ${ringCenter - 8} ${ringCenter} L ${ringCenter - 2} ${ringCenter + 6} L ${ringCenter + 8} ${ringCenter - 6}`}
           stroke={p.bgBot}
           strokeWidth="4"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      </svg>
+      </>
     );
   } else if (state === "onRecord") {
-    markNode = (
-      <svg
-        width={markSize}
-        height={markSize}
-        viewBox={`0 0 ${markSize} ${markSize}`}
-      >
+    markGlyph = (
+      <>
         <circle
-          cx={markSize / 2}
-          cy={markSize / 2}
+          cx={ringCenter}
+          cy={ringCenter}
           r={markSize / 2 - 1.5}
           fill="none"
           stroke="#16a34a"
           strokeWidth="3"
         />
         <path
-          d={markCheckPath}
+          d={`M ${ringCenter - 8} ${ringCenter} L ${ringCenter - 2} ${ringCenter + 6} L ${ringCenter + 8} ${ringCenter - 6}`}
           stroke="#16a34a"
           strokeWidth="3.6"
           fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      </svg>
+      </>
     );
   } else {
-    markNode = (
-      <svg
-        width={markSize}
-        height={markSize}
-        viewBox={`0 0 ${markSize} ${markSize}`}
-      >
-        <circle
-          cx={markSize / 2}
-          cy={markSize / 2}
-          r={markSize / 2 - 1.5}
-          fill="none"
-          stroke={p.pendingStroke}
-          strokeWidth="3"
-        />
-      </svg>
+    markGlyph = (
+      <circle
+        cx={ringCenter}
+        cy={ringCenter}
+        r={markSize / 2 - 1.5}
+        fill="none"
+        stroke={p.pendingStroke}
+        strokeWidth="3"
+      />
     );
   }
+
+  // Silence unused-var warnings from the prior-layout constants while
+  // keeping them in scope for potential future use.
+  void markCheckPath;
+  void markOffset;
+
+  const markNode: React.ReactNode = (
+    <svg
+      width={ringBoxSize}
+      height={ringBoxSize}
+      viewBox={`0 0 ${ringBoxSize} ${ringBoxSize}`}
+    >
+      <circle
+        cx={ringCenter}
+        cy={ringCenter}
+        r={ringR2x}
+        fill="none"
+        stroke={p.ringTrack}
+        strokeWidth={RING_STROKE * 2}
+      />
+      {ringArc && (
+        <path
+          d={ringArc}
+          fill="none"
+          stroke={ringColor}
+          strokeWidth={RING_STROKE * 2}
+          strokeLinecap="round"
+        />
+      )}
+      {markGlyph}
+    </svg>
+  );
 
   return new ImageResponse(
     (
@@ -298,27 +359,7 @@ function renderPng(
   );
 }
 
-interface Snapshot {
-  state: State;
-  count: number;
-}
-
-// Mirrors the seal page's verified gating exactly — composite trust
-// index + mutuality floor, with a grandfather escape for domains that
-// met the pre-Layer-2 rule. Keeps the badge consistent with the page
-// it links to.
-async function resolveSnapshot(domain: string): Promise<Snapshot> {
-  try {
-    const record = await getDomain(domain);
-    if (!record) return { state: "pending", count: 0 };
-    const score = await getDomainScore(record.id, record.domain);
-    const verified = computeVerified(score, record.grandfathered_verified);
-    const tier = trustTierFromScore(score, verified);
-    return { state: tier, count: record.event_count };
-  } catch {
-    return { state: "pending", count: 0 };
-  }
-}
+type Snapshot = BadgeSnapshot;
 
 // Aggressive-but-friendly caching for email embeds.
 //
@@ -332,16 +373,19 @@ async function resolveSnapshot(domain: string): Promise<Snapshot> {
 // control, but a short max-age plus an ETag keyed on (state, theme)
 // means it *can* revalidate cheaply and pick up state transitions
 // (pending → onRecord → verified) within hours.
-function cacheHeaders(
+export function cacheHeaders(
   snapshot: Snapshot,
   theme: Theme,
   format: "svg" | "png"
 ): Record<string, string> {
-  // Cache key omits the live count (the badge doesn't render it) and
-  // the width (derived from the URL path's domain, which is already
-  // the primary cache key). Bumped to v6 — verified gating switched
-  // from raw event_count + days to composite trust_index + mutuality.
-  const etag = `W/"${snapshot.state}-${theme}-${format}-v6"`;
+  // Cache key incorporates the trust index bucketed to 5-point bins.
+  // Without the bin, every recompute would bust the CDN even for a
+  // 1-point drift; with it, transitions are coarse enough to keep
+  // hit rates high while still picking up meaningful progress.
+  // Bumped to v7 — ring added, state alone no longer fully describes
+  // the rendered output.
+  const bucket = trustBucket(snapshot.trustIndex);
+  const etag = `W/"${snapshot.state}-t${bucket}-${theme}-${format}-v7"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
@@ -385,22 +429,38 @@ export async function GET(
       ? previewParam
       : null;
 
+  // `?t=<0..100>` lets preview surfaces drive the ring fraction
+  // without touching the DB. Clamped inside ringFraction.
+  const previewTrustRaw = url.searchParams.get("t");
+  const previewTrustIndex = previewTrustRaw !== null
+    ? Number.parseInt(previewTrustRaw, 10)
+    : undefined;
+
+  const defaultTrustForState = (s: State): number =>
+    s === "verified" ? 100 : s === "onRecord" ? 55 : 0;
+
   const snapshot: Snapshot = previewState
-    ? { state: previewState, count: 0 }
+    ? {
+        state: previewState,
+        count: 0,
+        trustIndex: Number.isFinite(previewTrustIndex)
+          ? (previewTrustIndex as number)
+          : defaultTrustForState(previewState),
+      }
     : await resolveSnapshot(domain);
   const headers = cacheHeaders(snapshot, theme, format);
 
   // Conditional GET — respond 304 when the caller (CDN, Gmail proxy, browser)
-  // already has the same (state, theme) fingerprint.
+  // already has the same (state, theme, trust-bucket) fingerprint.
   const ifNoneMatch = request.headers.get("if-none-match");
   if (ifNoneMatch && ifNoneMatch === headers.ETag) {
     return new Response(null, { status: 304, headers });
   }
 
   if (format === "png") {
-    return renderPng(domain, snapshot.state, theme, headers);
+    return renderPng(domain, snapshot.state, snapshot.trustIndex, theme, headers);
   }
 
-  const svg = renderSvg(domain, snapshot.state, theme);
+  const svg = renderSvg(domain, snapshot.state, snapshot.trustIndex, theme);
   return new Response(svg, { headers });
 }
