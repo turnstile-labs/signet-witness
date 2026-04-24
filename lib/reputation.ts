@@ -154,7 +154,7 @@ export async function receiverHasMx(domain: string): Promise<boolean> {
 // ── Rate limit ───────────────────────────────────────────────
 //
 // Thresholds are deliberately permissive. Real commerce — even a
-// 100-person sales org CCing seal@ on every outbound — plateaus
+// 100-person sales org sealing every outbound — plateaus
 // well below these numbers. Spray-and-pray spoofing sits an order
 // of magnitude above. Any legitimate sender that bumps the ceiling
 // should become a paid customer with a tier-based lift.

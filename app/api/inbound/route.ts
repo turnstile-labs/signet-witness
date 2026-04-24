@@ -59,7 +59,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Extract the primary receiver domain from the To / CC lines.
+  // 6. Extract the primary receiver domain from the visible headers.
+  // We look at both To and Cc because a sealed email may carry either:
+  // the standard flow is a silent Bcc to seal@ with the real recipient
+  // in To, but some senders still Cc their counterparty, and Outlook
+  // desktop's rule engine can only duplicate via Cc. Bcc headers are
+  // stripped by the sender's server and never appear here — which is
+  // the whole point: the recipient can't tell we were copied.
+  //
   // We only keep domains — individual recipient identities are never
   // stored publicly (GDPR), and nothing downstream of this file needs
   // full email addresses.

@@ -38,7 +38,7 @@ Expand from one badge to three, earned through consistent activity:
 
 Each tier is a visible upgrade on the seal page and the embedded badge. Tiers
 create aspiration — "Established" is something you work toward — and a reason
-to keep CCing long after the initial verified threshold. Today only **Verified**
+to keep sealing long after the initial verified threshold. Today only **Verified**
 ships; the higher tiers activate when there are enough domains in the registry
 for them to read as scarce rather than arbitrary.
 
@@ -270,6 +270,6 @@ credential no competitor can offer.
 
 ---
 
-*CC one address. Connect one wallet. History builds while you work.*
+*Bcc one address. Connect one wallet. History builds while you work.*
 
 **AI can fake everything except yesterday.**

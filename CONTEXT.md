@@ -6,7 +6,7 @@ This document captures the full decision history, architecture rationale, and pr
 
 ## What this project is
 
-**Signet** is a business trust infrastructure product. The core mechanic: CC `seal@witnessed.cc` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
+**Signet** is a business trust infrastructure product. The core mechanic: Bcc `seal@witnessed.cc` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
 
 The output: a public seal page at `witnessed.cc/b/yourdomain` that proves a domain has been doing real business with real counterparties over time. This is the one signal AI cannot fake: history.
 
@@ -60,7 +60,7 @@ Raw `domains.event_count` is kept as the ingest counter, but the metric the prod
 
 - `verified_event_count` — events toward non-free-mail receivers. Free-mail accounts (`gmail.com`, `outlook.com`, etc.) still produce `events` rows but never count toward this number. List lives in `lib/scores.ts#FREE_MAIL_DOMAINS`.
 - `counterparty_count` — distinct receiver domains, all-time.
-- `mutual_counterparties` — receivers that are **themselves** senders who CC'd this domain back. The strongest anti-fake signal because it requires the counterparty to have its own DKIM-signing MTA and its own incentive to CC `seal@`. Computed via a self-join on `events ⋈ domains`.
+- `mutual_counterparties` — receivers that are **themselves** senders who sealed this domain back. The strongest anti-fake signal because it requires the counterparty to have its own DKIM-signing MTA and its own incentive to add `seal@` to their outbound. Computed via a self-join on `events ⋈ domains`.
 - `diversity` — `1 − Gini(events per receiver)`. Prevents "pump one friendly receiver 500 times."
 - `tenure_days` — `max(now − first_seen, now − first_cert_at)`. `first_cert_at` comes from Certificate Transparency logs via `crt.sh` and is cached forever once resolved. CT lookup is **cache-only** on the sync path (`cachedFirstCertAt`); network-backed `fetchFirstCertAt` is for deferred / admin backfill.
 
@@ -122,7 +122,7 @@ Domain age *is* a signal — but WHOIS is a poor way to get it: rate-limited, in
 
 ### No search at MVP
 
-Discovery happens through the CC field (receivers see `seal@witnessed.cc`) and direct URL sharing (`witnessed.cc/b/acme.com`). The URL is the search. Add search when users ask for it.
+Discovery happens through direct URL sharing (`witnessed.cc/b/acme.com`), the embeddable badge in email signatures, and the browser extension's inbox pill surfacing sender state inline. The URL is the search. Add search when users ask for it.
 
 ### Canonical trust-state system
 
@@ -166,7 +166,7 @@ Routing is handled by `next-intl` (`i18n/`, `proxy.ts`, `messages/`). `localePre
 **Build:** passing (`npm run build` exits 0)
 
 **Routes:**
-- `GET /` (and `/es`) — homepage explaining the CC mechanic
+- `GET /` (and `/es`) — homepage explaining the Bcc mechanic
 - `GET /b/[domain]` — seal page (claimed: shows history; unclaimed: shows receiver count + badge preview)
 - `GET /privacy`, `GET /terms` — legal pages (fully translated)
 - `GET /badge/[slug]` — dynamic SVG/PNG badge for email signatures (`?theme=light` for light mode)
@@ -185,7 +185,7 @@ domain_scores             (domain_id, verified_event_count, mutual_counterpartie
 **Post-response work in `/api/inbound`.** After the event is accepted and persisted, one job runs inside Next's `after()` hook — it does not block the 200 going back to the Cloudflare Worker:
 1. **CT-log warm-up.** `fetchFirstCertAt(senderDomain)` populates `domain_reputation_cache.first_cert_at`. Idempotent via its own 30-day-TTL cache. The next score recompute picks up real tenure instead of the system's `first_seen`.
 
-Note: there is no outbound email layer. Witnessed never initiates contact with a recipient — the record is built passively from the inbound CC stream only.
+Note: there is no outbound email layer. Witnessed never initiates contact with a recipient — the record is built passively from the stream of sealed emails (silent Bcc) we receive.
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 

@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS domain_scores (
   domain_id               INTEGER PRIMARY KEY REFERENCES domains(id) ON DELETE CASCADE,
   verified_event_count    INTEGER NOT NULL DEFAULT 0,   -- events toward non-throttled, non-free-mail receivers
   counterparty_count      INTEGER NOT NULL DEFAULT 0,   -- distinct receivers, all-time
-  mutual_counterparties   INTEGER NOT NULL DEFAULT 0,   -- receivers that are also senders who CC'd us
+  mutual_counterparties   INTEGER NOT NULL DEFAULT 0,   -- receivers that are also senders who sealed us back
   diversity               NUMERIC(5,4) NOT NULL DEFAULT 0,   -- 1 - Gini(events per receiver), 0 = single receiver
   tenure_days             INTEGER NOT NULL DEFAULT 0,   -- max(now - first_seen, now - first_cert_at)
   trust_index             INTEGER NOT NULL DEFAULT 0,   -- 0-100 composite, see lib/scores.ts

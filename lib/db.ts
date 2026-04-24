@@ -31,7 +31,7 @@ export interface WitnessEvent {
   witnessed_at: string;
 }
 
-// Upsert a domain on first CC, increment event count on subsequent ones.
+// Upsert a domain on first sealed email, increment event count on subsequent ones.
 export async function upsertDomain(domain: string): Promise<Domain> {
   const rows = await sql`
     INSERT INTO domains (domain, first_seen, event_count, updated_at)
@@ -285,7 +285,7 @@ export interface OpsStats {
   // Mutual edges — sender A sealed to sender B AND vice-versa. These
   // are the strongest trust signal in the graph and the only network
   // shape an attacker can't cheaply fake (requires both sides to be
-  // DKIM-signing, domain-owning, seal@-CCing senders).
+  // DKIM-signing, domain-owning senders who also seal their own outbound).
   mutualPairsTotal: number;
   mutualPairs: Array<{ a: string; b: string; events: number }>;
   // Anti-abuse visibility (Layer 0). Counts of events we refused to

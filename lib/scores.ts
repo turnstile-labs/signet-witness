@@ -4,7 +4,7 @@
 // Raw `domains.event_count` is the naive count of DKIM-valid emails
 // we've witnessed. It's a lousy quality signal on its own: an attacker
 // with a valid DKIM key can pump it trivially (before Layer 0) and,
-// even after Layer 0, can pad it by CCing real but low-value receivers
+// even after Layer 0, can pad it by sealing emails to real but low-value receivers
 // (free-mail accounts, their own sister domains) over and over.
 //
 // This module computes a *quality-adjusted* view of a sender:
@@ -15,11 +15,11 @@
 //   • counterparty_count      distinct receiver domains, all-time.
 //   • mutual_counterparties   the anti-fake signal. These are receivers
 //                             who are *themselves* senders and who have
-//                             CC'd this domain back as a receiver. A
+//                             sealed this domain back as a receiver. A
 //                             mutual edge requires the counterparty to
 //                             have (a) a DKIM-signing MTA, (b) its own
-//                             domain, and (c) incentive to CC seal@
-//                             on outbound mail — three things you can't
+//                             domain, and (c) incentive to add seal@
+//                             to outbound mail — three things you can't
 //                             manufacture cheaply.
 //   • diversity               1 − Gini(events_per_receiver). Prevents
 //                             "pump one friendly receiver 500 times."

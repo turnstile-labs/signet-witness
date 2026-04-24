@@ -2,7 +2,7 @@
 
 **The business record AI can't fake.**
 
-CC `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
+Bcc `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
 signature, records who you emailed and when, and discards everything else.
 Your domain builds a verified communication history — passively, permanently,
 and impossible to manufacture. When you need to prove you're real, the proof
@@ -31,24 +31,28 @@ matters: **how long has this entity actually been doing business?**
 
 **One action. No account. No setup.**
 
-Add `seal@witnessed.cc` to the CC field on any business email you send.
+Add `seal@witnessed.cc` to the Bcc field on any business email you send, or
+configure your mail provider to Bcc it automatically (Google Workspace,
+Microsoft 365, and the browser extension all do this in one click).
 
 Signet receives it, verifies the DKIM signature from your domain, records the
 sender domain, receiver domain, and timestamp. The email body and subject line
 are discarded immediately — never stored, never read.
 
 Your domain gets a pulse of verified activity. You go back to work and forget
-about it. Every email you CC makes the record stronger.
+about it. Every sealed email makes the record stronger.
 
-The receiver sees `seal@witnessed.cc` in the CC field. If they're curious,
-they search it and discover Signet. That's how the network grows — through the
-emails people are already sending.
+Because it's Bcc and not Cc, the recipient never sees the address — there's
+no awkward third party in the thread and no "what's this?" conversation. The
+data we need (From, To, DKIM, timestamp) reaches us regardless. Discovery
+happens through the embeddable badge in signatures, direct URL sharing, and
+the browser extension surfacing sender state inline in the inbox.
 
 ---
 
 ## What You Get
 
-### From the first CC — Your seal page
+### From the first sealed email — Your seal page
 
 Every domain gets a public page at `witnessed.cc/b/yourdomain` after the
 first witnessed email.
@@ -63,7 +67,7 @@ business is real.
 
 Every sender domain has a public **trust index** on a 0–100 scale, computed
 from five signals a legitimate business naturally accumulates: quality-adjusted
-activity, tenure, mutual counterparties (domains that CC each other —
+activity, tenure, mutual counterparties (domains that seal each other —
 bidirectional edges are the strongest anti-fake signal), counterparty
 diversity, and corroborating Certificate Transparency history.
 
@@ -123,9 +127,9 @@ identity cannot have is a past.
 **Discarded immediately:** email body, subject line, attachments, all personal
 content. Never stored. Never logged. No human at Signet can read your emails.
 
-**Consent model:** the CC is an explicit, voluntary act by the sender on each
-individual email. Nothing is collected without the user choosing to include
-Signet.
+**Consent model:** adding the address is an explicit, voluntary act by the
+sender — per email, or via a one-time mail-flow rule the sender configures
+themselves. Nothing is collected without the user choosing to include Signet.
 
 **Self-serve rights:** anyone who controls a domain — sender or receiver —
 can exercise GDPR rights at `witnessed.cc/rights` without contacting us.
@@ -141,10 +145,10 @@ pipeline re-checks the denylist on every email.
 
 Four signals feed the trust index automatically. No action from the user.
 
-**Mutual counterparties.** A receiver that's *itself* a sender who CCs
-`seal@` back is the strongest anti-fake edge: it requires the counterparty
-to run its own DKIM-signing MTA and its own record. The trust index weights
-mutuality at 25%.
+**Mutual counterparties.** A receiver that's *itself* a sender who seals
+its own outbound (including emails to this domain) is the strongest
+anti-fake edge: it requires the counterparty to run its own DKIM-signing
+MTA and maintain its own record. The trust index weights mutuality at 25%.
 
 **Diversity.** `1 − Gini(events per receiver)` — pumping one friendly
 counterparty 500 times yields near-zero diversity and a weak index.
@@ -163,10 +167,16 @@ by real-world history from day one.
 
 ## Discovery and Growth
 
-Two pull-based channels. No outbound spam.
+Pull-based channels. No outbound spam.
 
-**CC field.** Every CC'd email puts `seal@witnessed.cc` in front of the
-receiver. Curiosity does the rest.
+**Embeddable badge.** Every sealed domain gets a compact live badge it can
+paste into email signatures, Linktrees, and invoice footers. Every recipient
+who reads a signed email sees the badge and can one-click the full seal page.
+
+**Browser extension.** Gmail users see a tiny verified/on-record pill next
+to the sender on every inbox row — a passive discovery surface that turns
+"someone emailed me" into "this sender has a verifiable history." Clicking
+the pill opens the sender's seal page.
 
 **Domain search.** Anyone can search any domain on Signet. If a domain appears
 as a receiver in witnessed emails but hasn't started its own history:
@@ -189,13 +199,13 @@ billing mechanic.
 
 | Tier | Who it serves | Price | What they get |
 |---|---|---|---|
-| **Free** | Any domain owner | $0, forever | Seal page, default badge, email CC ingestion, GDPR rights, domain lookup |
+| **Free** | Any domain owner | $0, forever | Seal page, default badge, sealed-email ingestion, GDPR rights, domain lookup |
 | **Pro** | Serious domain owners | **$9 – 19 / mo** | Custom badge styling (brand colors, alternate layouts), PDF tenure certificate, anomaly alerts, owner analytics, higher API rate limits |
 | **API** | Platforms (KYB, marketplaces, procurement, ad networks) | **$99 – 999 / mo** usage-tiered | Bulk lookups, webhooks on state change, velocity/anomaly signals, historical deltas, SLA, dedicated support |
 
-The seal page and CC ingestion are free forever. Charging owners to
-participate would slow cache growth, which is the only thing that makes the
-API valuable.
+The seal page and sealed-email ingestion are free forever. Charging owners
+to participate would slow cache growth, which is the only thing that makes
+the API valuable.
 
 ### Revenue — Pro subscription ($9–19 / mo)
 
@@ -259,10 +269,12 @@ launching with them.
 
 ### Why free for senders
 
-Every business that CCs `seal@witnessed.cc` is adding a verified data point
-to the cache. The intake is the product. Charging for it would slow the
-accumulation that makes the API valuable. Free intake, paid premium and
-paid API — the model only works if the cache grows fast.
+Every business that seals its outbound email — by Bcc'ing `seal@witnessed.cc`
+or configuring a one-time mail-flow rule that does it automatically — is
+adding a verified data point to the cache. The intake is the product.
+Charging for it would slow the accumulation that makes the API valuable.
+Free intake, paid premium and paid API — the model only works if the cache
+grows fast.
 
 ### Phased rollout
 
@@ -284,7 +296,7 @@ domain owners, tokenization, per-query royalties) stays in v2 territory.
 
 ### Month 1 — Build, ship, and eat your own cooking
 
-CC `seal@witnessed.cc` on every outgoing business email from day one.
+Bcc `seal@witnessed.cc` on every outgoing business email from day one.
 Signet's own seal page at `witnessed.cc/b/witnessed.cc` becomes the first
 proof that the product works. Publish 2–3 pieces of content on the AI
 impersonation problem. No product pitch. Plant the thesis: "time is the only
@@ -294,16 +306,18 @@ thing AI can't fake."
 
 Direct, personal outreach to 50 founders and small business operators — indie
 SaaS founders, agency owners, consultants, freelancers with custom domains.
-The ask is low: "CC one address on emails you're already sending. See what
-happens." Goal: 200 domains actively CCing. First $9/month conversions from
-the subset that wants the badge in their email signature.
+The ask is low: "Bcc one address on emails you're already sending, or let
+the extension do it for you. See what happens." Goal: 200 domains actively
+sealing. First $9/month conversions from the subset that wants the badge in
+their email signature.
 
 ### Months 4–8 — Organic pull
 
-Seals circulate in email signatures. Recipients discover Signet by seeing the
-CC. The domain search creates pull for receiver domains who see themselves
-mentioned but unclaimed. First Verified badges (trust index ≥ 65 with ≥ 3
-mutual counterparties) create visible
+Seals circulate through badges in email signatures and through the browser
+extension's inbox pill — Gmail users literally see a colored dot next to
+every sender that seals its own mail. The domain search creates pull for
+receiver domains who see themselves mentioned but unclaimed. First Verified
+badges (trust index ≥ 65 with ≥ 3 mutual counterparties) create visible
 social proof. Target: 2,000 domains. Begin outreach to 3–5 B2B marketplaces
 and procurement platforms for early API partnership conversations.
 
@@ -324,33 +338,35 @@ years after Signet needs two years to have comparable depth.
 
 **On Big Tech:** Google has DKIM data for most business email already. But
 using it commercially means admitting they analyze email metadata at scale —
-a PR and regulatory disaster. Signet's advantage is the consent model. The CC
-is an explicit opt-in act. That's a structural difference, not a speed
-difference.
+a PR and regulatory disaster. Signet's advantage is the consent model:
+adding the address is an explicit, opt-in act by the sender. That's a
+structural difference, not a speed difference.
 
 ---
 
 ## Risks
 
-**Adoption.** The CC requires behavior change. If nobody starts, the cache is
-empty.
+**Adoption.** Sealing requires one behavior change (Bcc an address, once,
+or install a browser extension). If nobody starts, the cache is empty.
 *Mitigation:* The seal page and badge provide immediate, tangible value.
-Organic CC field discovery creates passive acquisition at zero cost.
+The extension reduces the behavior change to zero-click. Passive discovery
+through the inbox pill and email-signature badge creates acquisition at
+zero cost.
 
-**Gaming.** Networks of controlled domains CCing each other to build fake
-history.
+**Gaming.** Networks of controlled domains sealing each other to build
+fake history.
 *Mitigation:* Receiver domain age weighting makes young/suspicious domains
 ineffective as counterparties. Pattern analysis flags circular communication.
 Flagged domains are silently downgraded.
 
 **Regulatory.** Processing email metadata at scale may draw scrutiny.
-*Mitigation:* The CC is explicit per-email consent. Body is discarded. Only
-domain-level metadata is retained — no personal data. Hash-only storage is
-GDPR-compatible by design.
+*Mitigation:* Adding the address is explicit per-sender consent. Body is
+discarded. Only domain-level metadata is retained — no personal data.
+Hash-only storage is GDPR-compatible by design.
 
 ---
 
-*CC one address. History builds while you work. The proof is there when you
-need it.*
+*Bcc one address. History builds while you work. The proof is there when
+you need it.*
 
 **AI can fake everything except yesterday.**

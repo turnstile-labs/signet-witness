@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Witnessed — The business record AI can't fake",
   description:
-    "CC seal@witnessed.cc on your business emails. Build a verified communication history — passively, permanently, and impossible to manufacture.",
+    "Bcc seal@witnessed.cc on your business emails. Build a verified communication history — passively, permanently, and impossible to manufacture.",
   openGraph: {
     title: "Witnessed",
     description: "The business record AI can't fake.",

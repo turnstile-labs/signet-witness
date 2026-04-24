@@ -2,7 +2,7 @@
 
 **The business record AI can't fake.**
 
-CC `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
+Bcc `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
 signature, records who you emailed and when, and discards everything else.
 
 Live at **[witnessed.cc](https://witnessed.cc)**
@@ -18,7 +18,7 @@ A Next.js app that:
 3. Records the sender domain, receiver domain, and timestamp in Postgres
 4. Serves a public seal page at `/b/[domain]` plus a dynamic SVG/PNG badge at `/badge/[domain]`
 
-No auth. No payments. No setup required from users. The CC is the product.
+No auth. No payments. No setup required from users. The silent Bcc is the product.
 
 ---
 
@@ -30,8 +30,8 @@ No auth. No payments. No setup required from users. The CC is the product.
 - **Trust index** (`lib/scores.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
 - **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
-- **Inbound denylist gate** — any CC from or to an opted-out / erased domain is silently dropped
-- **Setup wizard** at `/setup` — one-time mail-flow rules for Google Workspace, Microsoft 365, and Outlook so "always CC seal@" becomes automatic
+- **Inbound denylist gate** — any sealed email from or to an opted-out / erased domain is silently dropped
+- **Setup wizard** at `/setup` — one-time mail-flow rules for Google Workspace, Microsoft 365, and Outlook so "always Bcc seal@" becomes automatic
 - **Ops dashboard** at `/ops/<STATS_TOKEN>` — activity, top senders (ranked by trust), receivers, anti-abuse throttles, denylist
 - **Admin CT warm-up** at `/api/admin/warm-ct` (auth: `STATS_TOKEN`) — batch backfill `first_cert_at` for stale rows in `domain_reputation_cache`
 - **Domain lookup** on the landing page
@@ -243,7 +243,7 @@ See `.env.example` for a copy-pasteable template.
 | Attachments | Discarded immediately |
 | Personal content | Never stored, never read |
 
-The CC is an explicit, voluntary act on each individual email.
+Adding the address is an explicit, voluntary act — per-email, or via a one-time mail-flow rule the sender configures themselves.
 
 ---
 
@@ -257,7 +257,7 @@ same trust primitive the rest of the service is built on.
 | Right | Endpoint | Effect |
 |---|---|---|
 | **Access** (Art 15) | `POST /api/rights/access` | Returns a full JSON dump of everything we hold about the domain |
-| **Opt out** (Art 21) | `POST /api/rights/opt-out` | Adds the domain to the denylist; future inbound CCs involving it are dropped |
+| **Opt out** (Art 21) | `POST /api/rights/opt-out` | Adds the domain to the denylist; future inbound sealed emails involving it are dropped |
 | **Erasure** (Art 17) | `POST /api/rights/erasure` | Hard-deletes the domain + every event where it appears as sender or receiver, then denylists it |
 
 All three require a DNS TXT record at `_witnessed.<domain>` containing

@@ -6,10 +6,12 @@ import CopyableEmail from "@/app/components/CopyableEmail";
 
 // /setup — the one-time-configuration page.
 //
-// Single job: turn "remember to CC seal@witnessed.cc" into "happens
+// Single job: turn "remember to Bcc seal@witnessed.cc" into "happens
 // automatically on every outbound email." Every recipe below is
 // self-serve — the user copies an address and a few settings into
-// their own mail provider. No account, no extension, no partnership.
+// their own mail provider. Google Workspace and Microsoft 365 get
+// proper Bcc rules; Outlook classic is the one holdout where the
+// rules engine still only exposes Cc as an action (documented below).
 //
 // Hero mirrors the landing page (centered title + CopyableEmail
 // hero button) so the primary visual — the accent-filled copy

@@ -16,7 +16,7 @@
     "refLabel": "ref:"
   },
   "copyableEmail": {
-    "caption": "Pon esta dirección en copia en tu próximo email de trabajo",
+    "caption": "Añade esta dirección en Cco en tu próximo email de trabajo",
     "copy": "Copiar",
     "copied": "Copiado ✓",
     "aria": "Copiar dirección del remitente"
@@ -47,8 +47,8 @@
     },
     "privacy": {
       "title": "Privado por diseño.",
-      "body1": "Tus emails contienen información sensible. Nunca la vemos. El CC llega hasta nosotros, verificamos al remitente, registramos la fecha y descartamos todo lo demás.",
-      "body2": "Tú eliges qué conversaciones cuentan. Nada se recopila sin un CC explícito tuyo — y puedes acceder, exportar o borrar lo que guardamos, cuando quieras.",
+      "body1": "Tus emails contienen información sensible. Nunca la vemos. La copia en Cco llega hasta nosotros, verificamos al remitente, registramos la fecha y descartamos todo lo demás.",
+      "body2": "Tú eliges qué conversaciones cuentan. Nada se recopila sin que añadas deliberadamente nuestra dirección — y puedes acceder, exportar o borrar lo que guardamos, cuando quieras.",
       "tableTitle": "Qué guardamos",
       "senderDomain": "Dominio del remitente",
       "recipientDomain": "Dominio del destinatario",
@@ -92,7 +92,7 @@
     "pathIndexCurrent": "estás en {current}",
     "pathMutualsItem": "{threshold} o más contrapartes mutuas",
     "pathMutualsCurrent": "tienes {current}",
-    "pathExplainer": "Una contraparte mutua es un dominio que puso a seal@witnessed.cc en copia en un email dirigido al tuyo — la señal anti-falsificación más fuerte, porque ambas partes tienen que sellar, cada una con su propia clave DKIM.",
+    "pathExplainer": "Una contraparte mutua es un dominio que también selló un email dirigido al tuyo — la señal anti-falsificación más fuerte, porque ambas partes tienen que sellar, cada una con su propia clave DKIM.",
     "trustLine": "Cada entrada se verificó en el momento del envío — no es autodeclarada. Este registro sólo crece hacia adelante.",
     "activityEyebrow": "Últimos 30 días",
     "barLegend": "cada barra = un día",
@@ -102,8 +102,8 @@
     "badgeEyebrow": "Insignia integrable",
     "badgeIntro": "Una forma compacta de esta página. Vive en las firmas de email y se actualiza a medida que crece el registro — cada clic abre aquí.",
     "unclaimed": {
-      "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}}. Otros negocios ya están enviando emails a este dominio y poniendo a Witnessed en copia — pero <d>{name}</d> aún no ha empezado a construir su propio registro de envíos.",
-      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Pon <e>{addr}</e> en copia en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
+      "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}}. Otros negocios ya están sellando sus emails con Witnessed — pero <d>{name}</d> aún no ha empezado a construir su propio registro de envíos.",
+      "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Añade <e>{addr}</e> en Cco en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
       "claimEyebrow": "Reclama esta página",
       "startEyebrow": "Empieza este registro",
       "orAutoLabel": "O sáltate el copiar y pegar —",
@@ -135,9 +135,9 @@
     "metaTitle": "Privacidad — Witnessed",
     "metaDescription": "Cómo trata Witnessed tus datos.",
     "shortTitle": "La versión corta",
-    "shortBody": "Registramos únicamente lo imprescindible para verificar que se envió un email de trabajo: el dominio del remitente, el dominio del destinatario, la marca de tiempo y un hash de la firma DKIM. Nunca vemos, guardamos ni procesamos el contenido de tus emails. El CC es un acto explícito y voluntario — no se recopila nada sin una acción deliberada por tu parte.",
+    "shortBody": "Registramos únicamente lo imprescindible para verificar que se envió un email de trabajo: el dominio del remitente, el dominio del destinatario, la marca de tiempo y un hash de la firma DKIM. Nunca vemos, guardamos ni procesamos el contenido de tus emails. Añadir la dirección es un acto explícito y voluntario — no se recopila nada sin una acción deliberada por tu parte.",
     "collectTitle": "Qué recopilamos",
-    "collectIntro": "Cuando pones <addr>seal@witnessed.cc</addr> en copia en un email, registramos:",
+    "collectIntro": "Cuando pones <addr>seal@witnessed.cc</addr> en Cco en un email, registramos:",
     "collectItems": [
       ["Dominio del remitente", "la parte de dominio de tu dirección From (p. ej. acme.com)"],
       ["Dominio del destinatario", "el dominio del destinatario principal"],
@@ -163,14 +163,14 @@
     ],
     "useFoot": "No vendemos datos, no los compartimos con terceros con fines publicitarios, ni los usamos para ningún otro propósito distinto de los anteriores.",
     "consentTitle": "Modelo de consentimiento",
-    "consentBody": "El CC es un acto explícito y voluntario en cada email individual. Tú tienes el control total sobre qué emails contribuyen a tu registro. No hay recopilación pasiva — Witnessed sólo recibe datos cuando incluyes deliberadamente la dirección en el campo CC.",
+    "consentBody": "Añadir la dirección es un acto explícito y voluntario en cada email individual (o mediante una regla de flujo de correo que tú configures una sola vez). Tú tienes el control total sobre qué emails contribuyen a tu registro. No hay recopilación pasiva — Witnessed sólo recibe datos cuando incluyes deliberadamente la dirección como destinatario.",
     "publicTitle": "Registros públicos",
-    "publicBody": "Estas páginas son públicas por diseño. El nombre del dominio, el número de eventos y la fecha del primer registro son visibles para cualquiera que visite la página en witnessed.cc/b/tudominio. Esa es la esencia del producto — la prueba pública de actividad empresarial. Si no quieres un registro público para tu dominio, no pongas la dirección en copia.",
+    "publicBody": "Estas páginas son públicas por diseño. El nombre del dominio, el número de eventos y la fecha del primer registro son visibles para cualquiera que visite la página en witnessed.cc/b/tudominio. Esa es la esencia del producto — la prueba pública de actividad empresarial. Si no quieres un registro público para tu dominio, no incluyas la dirección en ningún email.",
     "basisTitle": "Base jurídica del tratamiento",
     "basisIntro": "Conforme al Reglamento General de Protección de Datos (RGPD), nos amparamos en las siguientes bases:",
     "basisItems": [
       ["Interés legítimo (art. 6.1.f)", "construir y mantener un historial empresarial verificado que permita a los remitentes demostrar que su dominio ha estado operando a lo largo del tiempo, y a los destinatarios valorar esa prueba. Consideramos este interés proporcional porque solo almacenamos metadatos a nivel de dominio y ofrecemos una vía de oposición sin fricción."],
-      ["Acto explícito del remitente", "el CC es una acción deliberada y por email. Nada se recopila de forma pasiva."]
+      ["Acto explícito del remitente", "añadir la dirección es una acción deliberada (por email, o mediante una regla de flujo configurada una sola vez). Nada se recopila de forma pasiva."]
     ],
     "rightsTitle": "Tus derechos",
     "rightsIntro": "Si controlas un dominio que aparece en nuestros registros — como remitente o destinatario — puedes ejercer los siguientes derechos en cualquier momento, de forma autoservicio, en <link>witnessed.cc/rights</link>:",
@@ -209,7 +209,7 @@
     "metaDescription": "Añade Witnessed a cada email que envía tu dominio. Configuración única para Google Workspace, Microsoft 365 y Outlook.",
     "eyebrow": "Configuración",
     "title": "Configúralo una vez.",
-    "intro": "Witnessed solo ve los emails en los que lo pones en copia. Esta página convierte esa copia — de algo que tienes que recordar — en algo que ocurre solo, directamente dentro del proveedor de correo que ya usas.",
+    "intro": "Witnessed solo ve los emails en los que incluyes su dirección. Esta página convierte ese gesto — de algo que tienes que recordar — en una copia oculta (Cco) que ocurre sola, directamente dentro del proveedor de correo que ya usas.",
     "copyCaption": "Cópiala — pégala en la receta de abajo",
     "bestFor": "Ideal para",
     "workspace": {
@@ -246,10 +246,10 @@
         "Archivo → Administrar reglas y alertas → Nueva regla.",
         "En «Comenzar desde una regla en blanco» elige «Aplicar regla en los mensajes que envíe» → Siguiente.",
         "Deja todas las condiciones sin marcar para aplicar la regla a todos los envíos → Siguiente → Sí (confirmar).",
-        "Acciones: marca «Enviar una copia del mensaje a personas o grupo público». Haz clic en el enlace subrayado e introduce seal@witnessed.cc → Aceptar.",
-        "Salta las excepciones → Siguiente. Nombra la regla «Witnessed CC» → Finalizar."
+        "Acciones: marca «Enviar una copia del mensaje a personas o grupo público» (Outlook clásico no ofrece Cco en las reglas; CC funciona igual y el destinatario no ve ninguna página de confianza separada para nuestra dirección). Haz clic en el enlace subrayado e introduce seal@witnessed.cc → Aceptar.",
+        "Salta las excepciones → Siguiente. Nombra la regla «Witnessed seal» → Finalizar."
       ],
-      "outcome": "Outlook añade la copia automáticamente en cada email saliente. La regla vive en la máquina donde la creaste — repítela en cada dispositivo que uses."
+      "outcome": "Outlook añade seal@witnessed.cc en copia automáticamente en cada email saliente. La regla vive en la máquina donde la creaste — repítela en cada dispositivo que uses."
     }
   },
   "rightsPage": {
@@ -316,7 +316,7 @@
     "whyTxtTitle": "¿Por qué un registro DNS TXT?",
     "whyTxtBody": "El DNS es la prueba existente de quién controla un dominio. Si puedes publicar un registro bajo él, tienes control administrativo — justo lo que necesitamos para confiar en una solicitud de derechos. Witnessed nunca pide cuentas, así que esta es la forma más ligera de vincular una solicitud a un titular real.",
     "timingTitle": "¿Cuándo surten efecto?",
-    "timingBody": "La oposición y la supresión se aplican inmediatamente al verificar. Nuestro pipeline de entrada vuelve a consultar la lista de bloqueo en cada email, así que incluso un CC que llegue segundos después de la supresión se descartará. Las solicitudes de acceso devuelven el estado en vivo en el momento de la verificación.",
+    "timingBody": "La oposición y la supresión se aplican inmediatamente al verificar. Nuestro pipeline de entrada vuelve a consultar la lista de bloqueo en cada email, así que incluso un email sellado que llegue segundos después de la supresión se descartará. Las solicitudes de acceso devuelven el estado en vivo en el momento de la verificación.",
     "scopeTitle": "Qué cubre (y qué no) una solicitud",
     "scopeBody": "Una solicitud verificada cubre sólo el dominio indicado. Si controlas varios dominios, debes verificar cada uno por separado. La supresión elimina referencias al dominio verificado incluso en registros de otros remitentes; no borra las cuentas de esos remitentes ni revela nada sobre ellos.",
     "contactTitle": "¿Necesitas ayuda?",
@@ -327,13 +327,13 @@
     "metaTitle": "Términos — Witnessed",
     "metaDescription": "Términos del servicio de Witnessed.",
     "whatTitle": "Qué es Witnessed",
-    "whatBody": "Witnessed (<code>witnessed.cc</code>) es un servicio que construye un historial empresarial verificado para dominios de email. Cuando pones <addr>seal@witnessed.cc</addr> en copia en un email de trabajo, verificamos la firma DKIM, registramos los metadatos y los añadimos al registro público de prueba de actividad de tu dominio.",
+    "whatBody": "Witnessed (<code>witnessed.cc</code>) es un servicio que construye un historial empresarial verificado para dominios de email. Cuando pones <addr>seal@witnessed.cc</addr> en Cco en un email de trabajo, verificamos la firma DKIM, registramos los metadatos y los añadimos al registro público de prueba de actividad de tu dominio.",
     "acceptanceTitle": "Aceptación",
-    "acceptanceBody": "Al usar este servicio — ya sea poniendo nuestra dirección en copia, visitando una página en witnessed.cc/b/tudominio o usando la API de verificación — aceptas estos términos. Si no estás de acuerdo, no uses el servicio.",
+    "acceptanceBody": "Al usar este servicio — ya sea añadiendo nuestra dirección a cualquier email, visitando una página en witnessed.cc/b/tudominio o usando la API de verificación — aceptas estos términos. Si no estás de acuerdo, no uses el servicio.",
     "useTitle": "Uso aceptable",
     "useIntro": "Te comprometes a no usar Witnessed para:",
     "useItems": [
-      "Generar un historial empresarial falso o engañoso (p. ej. redes coordinadas de dominios que se ponen mutuamente en copia para fabricar credibilidad artificial)",
+      "Generar un historial empresarial falso o engañoso (p. ej. redes coordinadas de dominios que se sellan mutuamente para fabricar credibilidad artificial)",
       "Suplantar a otro negocio o dominio que no controlas",
       "Manipular, aplicar ingeniería inversa o alterar el sistema de verificación",
       "Abusar del servicio de forma que degrade el rendimiento para otros usuarios"
