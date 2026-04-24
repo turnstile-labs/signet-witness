@@ -182,15 +182,16 @@ main {
 }
 
 .legend .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
+/* Hollow ring to match the unclaimed pill rendered in Gmail. */
 .legend .dot.muted {
-  background: var(--muted-2);
-  opacity: 0.7;
+  background: transparent;
+  border: 1.5px solid #9ca3af;
 }
 
 /* Stat + refresh */

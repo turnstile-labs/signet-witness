@@ -34,7 +34,7 @@ import {
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.2.2";
+const BUILD_TAG = "v0.2.3";
 
 let injectEnabled = true;
 let statusEnabled = true;
@@ -44,23 +44,25 @@ let firstScanLogged = false;
  *  reveals exactly where each domain's pipeline stopped (extracted? looked
  *  up? pill inserted?). After N rows we fall silent unless the user flips
  *  `localStorage.witnessedDebug = '1'`. */
-const EXPLAIN_FIRST_N = 6;
+const EXPLAIN_FIRST_N = 12;
 let explained = 0;
 
-function explain(...args: unknown[]): void {
-  if (explained >= EXPLAIN_FIRST_N) return;
-  explained += 1;
-  console.info(LOG_PREFIX, ...args);
+function debugEnabled(): boolean {
+  try {
+    return localStorage.getItem("witnessedDebug") === "1";
+  } catch {
+    /* localStorage blocked in some sandboxes (rare); treat as off */
+    return false;
+  }
 }
 
-function debug(...args: unknown[]): void {
-  try {
-    if (localStorage.getItem("witnessedDebug") === "1") {
-      console.log(LOG_PREFIX, ...args);
-    }
-  } catch {
-    /* localStorage blocked in some sandboxes; fine */
-  }
+/** One-shot diagnostic log. Emits unconditionally for the first N calls so
+ *  a fresh reload reveals the full state of each feature, then falls silent
+ *  unless the user has flipped `localStorage.witnessedDebug = '1'`. */
+function explain(...args: unknown[]): void {
+  if (explained >= EXPLAIN_FIRST_N && !debugEnabled()) return;
+  explained += 1;
+  console.info(LOG_PREFIX, ...args);
 }
 
 function warn(...args: unknown[]): void {
@@ -91,29 +93,63 @@ function findUnprocessedComposes(): HTMLElement[] {
 }
 
 function expandBccRow(dialog: HTMLElement): void {
-  const alreadyVisible = dialog.querySelector<HTMLElement>(
-    'input[aria-label^="Bcc" i], textarea[aria-label^="Bcc" i], [name="bcc"]',
-  );
-  if (alreadyVisible) return;
+  if (findBccInput(dialog)) return;
 
-  const triggerSelectors = [
-    'span[aria-label*="Bcc" i]',
-    'button[aria-label*="Bcc" i]',
-    'span[role="link"]',
-  ];
-  for (const sel of triggerSelectors) {
-    const candidates = dialog.querySelectorAll<HTMLElement>(sel);
-    for (const candidate of candidates) {
-      const label = (candidate.getAttribute("aria-label") ?? candidate.textContent ?? "")
-        .trim()
-        .toLowerCase();
-      if (label === "bcc" || label.startsWith("add bcc")) {
-        candidate.click();
-        return;
-      }
-    }
+  // Pass 1: any clickable-looking element whose label or visible text is
+  // a "bcc"-looking affordance. Gmail has shipped each of these variants
+  // at different times: plain span with textContent "Bcc", a role=link
+  // span with aria-label "Add Bcc recipients", a span with aria-label
+  // "Bcc" plus a localised tooltip, and the compact "Bcc" button in the
+  // new Workspace compose header.
+  const candidates = dialog.querySelectorAll<HTMLElement>(
+    '[role="link"], [role="button"], span, button',
+  );
+  for (const candidate of candidates) {
+    const aria = (candidate.getAttribute("aria-label") ?? "").trim().toLowerCase();
+    const text = (candidate.textContent ?? "").trim().toLowerCase();
+    const matchesAria =
+      /^(add\s+)?bcc\b/.test(aria) || aria === "bcc" || aria.includes("bcc recipients");
+    const matchesText = text === "bcc";
+    if (!(matchesAria || matchesText)) continue;
+    // Guard: make sure we don't misclick the "Bcc" label on the expanded
+    // row itself (some Gmail builds keep a clickable label there too).
+    const inExpandedRow = candidate.closest('tr[role="presentation"]')?.querySelector(
+      'input[aria-label^="Bcc" i], textarea[aria-label^="Bcc" i]',
+    );
+    if (inExpandedRow) continue;
+    explain("compose: clicked Bcc trigger", {
+      aria: aria || null,
+      text: text || null,
+      tag: candidate.tagName.toLowerCase(),
+    });
+    candidate.click();
+    return;
   }
-  debug("no Bcc trigger found; will retry on next mutation");
+
+  // Pass 2: keyboard-shortcut fallback. Gmail's default shortcut for the
+  // Bcc field is Cmd/Ctrl+Shift+B, but it only fires if the user has
+  // enabled keyboard shortcuts. It's a cheap attempt — if it doesn't work
+  // the observer will keep retrying as the user types.
+  const subject = dialog.querySelector<HTMLElement>(
+    'input[name="subjectbox"], textarea[name="subjectbox"]',
+  );
+  if (subject) {
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+    subject.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "b",
+        code: "KeyB",
+        keyCode: 66,
+        which: 66,
+        ctrlKey: !isMac,
+        metaKey: isMac,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }
+  explain("compose: no Bcc trigger matched any selector — will retry");
 }
 
 function findBccInput(dialog: HTMLElement): HTMLInputElement | HTMLTextAreaElement | null {

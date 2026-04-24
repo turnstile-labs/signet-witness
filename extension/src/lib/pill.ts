@@ -20,10 +20,13 @@ import type { DomainState, PublicPayload } from "./types";
 
 const PILL_CLASS = "witnessed-pill";
 const TONE: Record<DomainState, { color: string; label: string }> = {
-  verified: { color: "#4ade80", label: "Verified on Witnessed" },
+  verified: { color: "#22c55e", label: "Verified on Witnessed" },
   onRecord: { color: "#f59e0b", label: "On record on Witnessed" },
   pending: { color: "#7c6af7", label: "Pending on Witnessed" },
-  unclaimed: { color: "#60607a", label: "Not on Witnessed yet" },
+  // `unclaimed` is visible but intentionally desaturated — most inbox
+  // rows will be unclaimed at first, so a hollow ring reads as "not yet"
+  // at a glance without turning the inbox into a sea of colour.
+  unclaimed: { color: "#9ca3af", label: "Not on Witnessed yet" },
   error: { color: "transparent", label: "" },
 };
 
@@ -37,26 +40,35 @@ export function ensureStylesheet(): void {
   if (document.getElementById(MARK)) return;
   const style = document.createElement("style");
   style.id = MARK;
+  // `!important` on size/display is a defence against Gmail's
+  // catch-all anchor styles (underline, padding, line-height) that can
+  // otherwise collapse a 10px flex dot into nothing.
   style.textContent = `
     .${PILL_CLASS} {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 8px;
-      height: 8px;
-      min-width: 8px;
-      border-radius: 50%;
-      margin: 0 6px 0 0;
-      vertical-align: middle;
+      display: inline-block !important;
+      width: 10px !important;
+      height: 10px !important;
+      min-width: 10px !important;
+      border-radius: 50% !important;
+      margin: 0 6px 0 0 !important;
+      padding: 0 !important;
+      vertical-align: middle !important;
+      text-decoration: none !important;
+      flex-shrink: 0;
       cursor: help;
-      transition: transform 120ms ease;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
     }
-    .${PILL_CLASS}:hover { transform: scale(1.35); }
-    .${PILL_CLASS}[data-witnessed-state="verified"] { box-shadow: 0 0 0 1px rgba(74,222,128,0.35); }
-    .${PILL_CLASS}[data-witnessed-state="onRecord"] { box-shadow: 0 0 0 1px rgba(245,158,11,0.35); }
-    .${PILL_CLASS}[data-witnessed-state="pending"]  { box-shadow: 0 0 0 1px rgba(124,106,247,0.4); }
-    .${PILL_CLASS}[data-witnessed-state="unclaimed"]{ box-shadow: 0 0 0 1px rgba(96,96,122,0.45); opacity: 0.7; }
-    .${PILL_CLASS}[data-witnessed-state="error"] { display: none; }
+    .${PILL_CLASS}:hover { transform: scale(1.3); }
+    .${PILL_CLASS}[data-witnessed-state="verified"]  { box-shadow: 0 0 0 1.5px rgba(34,197,94,0.45); }
+    .${PILL_CLASS}[data-witnessed-state="onRecord"]  { box-shadow: 0 0 0 1.5px rgba(245,158,11,0.45); }
+    .${PILL_CLASS}[data-witnessed-state="pending"]   { box-shadow: 0 0 0 1.5px rgba(124,106,247,0.5); }
+    .${PILL_CLASS}[data-witnessed-state="unclaimed"] {
+      background-color: transparent !important;
+      border: 1.5px solid #9ca3af;
+      box-shadow: none;
+    }
+    .${PILL_CLASS}[data-witnessed-state="error"]     { display: none !important; }
   `;
   (document.head || document.documentElement).appendChild(style);
 }
