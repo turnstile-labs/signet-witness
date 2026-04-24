@@ -19,12 +19,14 @@ don't hammer the API.
 
 ## Status
 
-**v0.3.1** — Gmail only. Write-side (auto-BCC on compose) and read-side
-(multi-domain popup list) both shipped. State palette unified with the
-site: traffic-light semantics across seal page, badge, popup (verified
-green / onRecord amber / pending yellow / unclaimed gray / error red),
-brand accent is a neutral trust blue — no purple anywhere. Firefox
-build and Outlook/Fastmail/Proton content scripts are v0.4 / v0.5.
+**v0.3.2** — Gmail only. Write-side (auto-BCC on compose) and read-side
+(multi-domain popup list) both shipped. Chrome Web Store submission is
+wired up: `homepage_url` declared, `externally_connectable` pinned to
+`witnessed.cc` so the site can probe install state, fonts are
+self-hosted (no more fetch to `fonts.gstatic.com` on popup open),
+first-install flow opens a welcome tab at
+`https://witnessed.cc/extension/welcome`. Firefox build and Outlook /
+Fastmail / Proton content scripts are v0.4 / v0.5.
 
 ## Why a popup, not an inbox injection?
 
@@ -96,23 +98,33 @@ npm run zip        # creates witnessed-extension.zip ready for upload
 Submit `witnessed-extension.zip` to the
 [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
 
+Listing copy, permission justifications, and the submission checklist
+live in [`store/listing.md`](./store/listing.md) — keep that file in
+sync with what's live on the store so we always have a
+version-controlled record of what reviewers see.
+
 ## Layout
 
 ```
 extension/
 ├── manifest.config.ts       # MV3 manifest, generated into dist/manifest.json
 ├── vite.config.ts           # Vite + @crxjs/vite-plugin
+├── store/listing.md         # Chrome Web Store listing copy + checklist
 ├── src/
-│   ├── background.ts        # service worker (seeds defaults on install)
+│   ├── background.ts        # service worker: seeds defaults, external PING,
+│   │                        # opens welcome page on first install
 │   ├── content/gmail.ts     # Gmail write-side injector + visible-domains probe
 │   ├── popup/               # toolbar popup (sender list + auto-seal toggle)
 │   └── lib/                 # API client, chrome.storage cache, types
-└── public/icons/            # 16/48/128 px PNG icons
+└── public/
+    ├── icons/               # 16/48/128 px PNG icons
+    └── fonts/               # self-hosted Inter / JetBrains Mono / Unbounded
+                             # (latin subset only, swap-display)
 ```
 
 ## Debugging
 
-Content scripts log a single `[witnessed] v0.3.1 booted` line on load.
+Content scripts log a single `[witnessed] v0.3.2 booted` line on load.
 For the full firehose, open Gmail's DevTools console and run:
 
 ```js
