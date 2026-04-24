@@ -34,7 +34,7 @@ import {
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.2.3";
+const BUILD_TAG = "v0.2.4";
 
 let injectEnabled = true;
 let statusEnabled = true;
@@ -265,17 +265,24 @@ function extractSenderDomain(row: HTMLElement): string | null {
 }
 
 function findPillAnchor(row: HTMLElement): HTMLElement | null {
-  // We want the pill to land immediately before the sender name. Gmail's
-  // sender cell is a nested flexbox; inserting into its first meaningful
-  // child survives the frequent re-renders Gmail does on hover.
+  // Insertion target matters more than it looks. Earlier builds inserted
+  // into `span.yP` (the direct parent of span[email]), which Gmail styles
+  // with `overflow: hidden; text-overflow: ellipsis` to truncate long
+  // sender names — so a 10px pill rendered there was silently clipped.
+  //
+  // We prefer `div.yW` (the flex container that holds the name span and
+  // any avatar/peer list): it sits outside the ellipsis-clipped region
+  // and survives Gmail's hover re-renders. Fall back to the `td.yX`
+  // sender cell or the row itself if the markup shifts.
   const senderCell =
     row.querySelector<HTMLElement>("td.yX") ??
     row.querySelector<HTMLElement>('[role="gridcell"]') ??
     row;
-  const nameSpan =
-    senderCell.querySelector<HTMLElement>("span[email]") ??
-    senderCell.querySelector<HTMLElement>(".yW span");
-  return nameSpan?.parentElement ?? senderCell;
+  return (
+    senderCell.querySelector<HTMLElement>("div.yW") ??
+    senderCell.querySelector<HTMLElement>(".yW") ??
+    senderCell
+  );
 }
 
 async function decorateRow(row: HTMLElement): Promise<void> {
@@ -316,10 +323,29 @@ async function decorateRow(row: HTMLElement): Promise<void> {
       return;
     }
     anchor.insertBefore(pill, anchor.firstChild);
-    explain("pill inserted", {
-      domain,
-      state: payload.state,
-      trust: payload.trustIndex,
+
+    // Post-insertion visibility probe. If the pill ends up 0×0, negative
+    // coords, or sits inside a `display:none` ancestor, the explain log
+    // tells us exactly what went wrong — saves another round of guessing.
+    requestAnimationFrame(() => {
+      const rect = pill.getBoundingClientRect();
+      const cs = getComputedStyle(pill);
+      const invisible =
+        rect.width < 2 ||
+        rect.height < 2 ||
+        cs.display === "none" ||
+        cs.visibility === "hidden" ||
+        Number(cs.opacity) < 0.1;
+      explain(invisible ? "pill inserted but not visible" : "pill inserted", {
+        domain,
+        state: payload.state,
+        trust: payload.trustIndex,
+        w: Math.round(rect.width),
+        h: Math.round(rect.height),
+        display: cs.display,
+        anchorTag: anchor.tagName.toLowerCase(),
+        anchorCls: anchor.className?.slice(0, 40) ?? "",
+      });
     });
   } catch (err) {
     explain("lookup threw", { domain, err: String(err) });

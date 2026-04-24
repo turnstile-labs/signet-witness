@@ -43,17 +43,27 @@ export function ensureStylesheet(): void {
   // `!important` on size/display is a defence against Gmail's
   // catch-all anchor styles (underline, padding, line-height) that can
   // otherwise collapse a 10px flex dot into nothing.
+  // `!important` guards defend against Gmail's anchor cascade
+  // (underline, padding, line-height) and against any parent with
+  // `overflow: hidden` — `position: relative; z-index: 1` lifts the pill
+  // above ellipsis clipping so it always renders.
   style.textContent = `
     .${PILL_CLASS} {
       display: inline-block !important;
+      position: relative !important;
+      z-index: 1 !important;
       width: 10px !important;
       height: 10px !important;
       min-width: 10px !important;
+      min-height: 10px !important;
       border-radius: 50% !important;
       margin: 0 6px 0 0 !important;
       padding: 0 !important;
       vertical-align: middle !important;
       text-decoration: none !important;
+      line-height: 1 !important;
+      font-size: 0 !important;
+      overflow: visible !important;
       flex-shrink: 0;
       cursor: help;
       transition: transform 120ms ease, box-shadow 120ms ease;
@@ -65,8 +75,8 @@ export function ensureStylesheet(): void {
     .${PILL_CLASS}[data-witnessed-state="pending"]   { box-shadow: 0 0 0 1.5px rgba(124,106,247,0.5); }
     .${PILL_CLASS}[data-witnessed-state="unclaimed"] {
       background-color: transparent !important;
-      border: 1.5px solid #9ca3af;
-      box-shadow: none;
+      border: 1.5px solid #9ca3af !important;
+      box-shadow: none !important;
     }
     .${PILL_CLASS}[data-witnessed-state="error"]     { display: none !important; }
   `;
