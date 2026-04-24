@@ -39,7 +39,8 @@ function daysActive(firstSeen: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-// Compact "on record" formatter — mirrors the landing mock.
+// Compact history formatter — mirrors the landing mock. Renders the
+// duration shown under the "History" stat on the seal page.
 function formatActiveHistory(days: number): string {
   if (days === 0) return "< 1 d";
   if (days < 30) return `${days} d`;
@@ -118,7 +119,10 @@ function Stat({
 //
 // Palette is traffic-light semantic:
 //   verified  → green   / ✓ check    / "Verified"
-//   onRecord  → amber   / ● dot      / "On record"
+//   onRecord  → amber   / ● dot      / "Building"    (sealed mail
+//                                                      exists, trust
+//                                                      bar not yet
+//                                                      reached)
 //   pending   → yellow  / ○ hollow   / "Warming up"  (warmer than
 //                                                      gray — still
 //                                                      live, still

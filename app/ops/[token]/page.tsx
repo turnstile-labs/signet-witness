@@ -61,7 +61,7 @@ function formatAge(iso: string | null | undefined): string {
   return `${years}y ago`;
 }
 
-type StatusLabel = "Verified" | "On record" | "Pending";
+type StatusLabel = "Verified" | "Building" | "Pending";
 
 function statusFor(row: {
   trust_index: number | null;
@@ -76,7 +76,7 @@ function statusFor(row: {
   ) {
     return "Verified";
   }
-  if ((row.verified_event_count ?? 0) > 0) return "On record";
+  if ((row.verified_event_count ?? 0) > 0) return "Building";
   return "Pending";
 }
 
@@ -277,7 +277,7 @@ export default async function OpsPage({
             <Legend
               items={[
                 { color: "bg-verified", label: "Verified" },
-                { color: "bg-amber", label: "On record" },
+                { color: "bg-amber", label: "Building" },
                 { color: "bg-pending", label: "Pending" },
               ]}
             />
@@ -587,7 +587,7 @@ function StatusBadge({ status }: { status: StatusLabel }) {
   const cls =
     status === "Verified"
       ? "bg-verified"
-      : status === "On record"
+      : status === "Building"
         ? "bg-amber"
         : "bg-pending";
   return (

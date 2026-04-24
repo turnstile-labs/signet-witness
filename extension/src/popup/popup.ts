@@ -36,7 +36,7 @@ const CHIP: Record<
     tint: "rgba(34,197,94,0.09)",
   },
   onRecord: {
-    label: "On record",
+    label: "Building",
     hint: "Sealing outbound mail; building reputation",
     dot: "#f59e0b",
     border: "rgba(245,158,11,0.40)",

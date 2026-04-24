@@ -19,7 +19,7 @@ import {
 //   [ icon ]  [ domain ]
 //
 // Verified: filled green pill, white check icon, white text.
-// OnRecord: filled amber pill, white dot icon, white text.
+// Building: filled amber pill, white dot icon, white text.
 // Pending : filled yellow pill, white hollow-ring icon, white text.
 //
 // No progress ring, no score readout. The badge answers the
@@ -97,7 +97,7 @@ const PALETTES: Record<BadgeState, Palette> = {
 function stateAria(state: BadgeState): string {
   switch (state) {
     case "verified": return "verified";
-    case "onRecord": return "on record";
+    case "onRecord": return "building";
     case "pending":  return "no record";
   }
 }
@@ -255,8 +255,9 @@ export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
 ): Record<string, string> {
-  // v9: `[icon] [domain]` state-colored pill; ring + N/100 removed.
-  const etag = `W/"${snapshot.state}-${format}-v9"`;
+  // v10: tier label renamed (On record → Building). Same pixels for
+  // sighted users, but the SVG aria-label changes, so bust caches.
+  const etag = `W/"${snapshot.state}-${format}-v10"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

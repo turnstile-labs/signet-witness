@@ -28,7 +28,7 @@ export default async function Home({
   const tSeal = await getTranslations("seal");
 
   // Mock numbers for the acmecorp.com preview seal. Tuned for the
-  // "On record, building toward verified" state — what most first-
+  // "Building, on the way to Verified" state — what most first-
   // time visitors see on their own page for weeks or months. Reads
   // as honest ("here's where you'll be after a few months"), not
   // aspirational ("here's the finish line"), and pairs with the
@@ -178,7 +178,7 @@ export default async function Home({
 
             {/* State block — structurally identical to the real
                 /b/<domain> StateBlock, scaled one step down to match
-                the preview-card typography. Amber "On record" tone
+                the preview-card typography. Amber "Building" tone
                 paired with the MOCK_TRUST subtitle so the preview
                 tells the "building toward verified" story at a
                 glance. If we ever add a fourth state or rename a

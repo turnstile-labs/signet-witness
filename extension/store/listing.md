@@ -158,7 +158,7 @@ Screenshot content, in order:
 
 1. **Popup over Gmail inbox** — the toolbar popup open on a Gmail
    tab, showing three sender rows with the three main states
-   (verified / on record / unclaimed) and the auto-seal toggle
+   (verified / building / unclaimed) and the auto-seal toggle
    visible at the bottom.
 2. **Auto-seal toggle close-up** — the popup scaled up so the
    `Auto-seal outgoing` card is the hero, with the

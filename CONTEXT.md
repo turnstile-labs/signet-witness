@@ -131,7 +131,7 @@ Trust has three active tiers plus a null state. They're resolved from `(domain, 
 | Tier | Criteria | Color | Icon | Label |
 |------|----------|-------|------|-------|
 | **Verified** | `trust_index ≥ 65 AND mutuals ≥ 3`, OR grandfathered | green (`#16a34a` / `--verified`) | ✓ check | "Verified" |
-| **On record** | has `verified_event_count > 0` but not verified | amber (`#d97706` / `--amber`) | ● filled dot | "On record" |
+| **Building** | has `verified_event_count > 0` but not verified | amber (`#d97706` / `--amber`) | ● filled dot | "Building" |
 | **Pending** | exists but no verified events yet | outline gray | ○ hollow circle | "Warming up" |
 | **Unclaimed** | no `domains` row at all | dim gray | ○ hollow circle | "No record yet" (different page) |
 
