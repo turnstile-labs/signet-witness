@@ -1,6 +1,10 @@
 /* Witnessed popup — mirrors the site palette so toggling between the seal
    page and the extension feels like the same product. Traffic-light state
-   colors, no purple anywhere — brand accent is a neutral trust blue. */
+   colors, no purple anywhere — brand accent is a neutral trust blue.
+   Dark is the default. Light is activated automatically when the OS /
+   browser reports `prefers-color-scheme: light`, or manually when a
+   caller sets `html.light` (same escape hatch the site uses). Values
+   here are kept 1:1 with app/globals.css so popup ↔ site can't drift. */
 
 :root {
   --bg: #0c0c0f;
@@ -18,6 +22,49 @@
   --pending: #eab308;
   --unclaimed: #9ca3af;
   --danger: #ef4444;
+}
+
+/* Manual override (e.g. matches what app/globals.css does when the site
+   user has picked light — if we ever sync that preference across the
+   extension boundary we can just toggle this class on <html>). */
+html.light {
+  --bg: #f8f8fc;
+  --surface: #ffffff;
+  --surface-2: #f0f0f8;
+  --border: #e0e0ec;
+  --border-h: #c8c8e0;
+  --txt: #18181e;
+  --muted: #5c5c7a;
+  --muted-2: #9090b0;
+  --accent: #2563eb;
+  --accent-2: #1e40af;
+  --verified: #16a34a;
+  --amber: #d97706;
+  --pending: #ca8a04;
+  --unclaimed: #6b7280;
+  --danger: #dc2626;
+}
+
+/* OS/browser-driven light mode. Guarded by :not(.dark) so a future
+   manual "force dark" opt-out would still win over the media query. */
+@media (prefers-color-scheme: light) {
+  html:not(.dark) {
+    --bg: #f8f8fc;
+    --surface: #ffffff;
+    --surface-2: #f0f0f8;
+    --border: #e0e0ec;
+    --border-h: #c8c8e0;
+    --txt: #18181e;
+    --muted: #5c5c7a;
+    --muted-2: #9090b0;
+    --accent: #2563eb;
+    --accent-2: #1e40af;
+    --verified: #16a34a;
+    --amber: #d97706;
+    --pending: #ca8a04;
+    --unclaimed: #6b7280;
+    --danger: #dc2626;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
