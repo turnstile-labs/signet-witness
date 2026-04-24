@@ -1,5 +1,11 @@
 import { SEAL_ADDRESS, WITNESSED_HOME } from "../lib/constants";
-import { getSettings, onSettingsChange, setEnabled } from "../lib/storage";
+import {
+  getSettings,
+  onSettingsChange,
+  setEnabled,
+  setTheme,
+  type ThemePref,
+} from "../lib/storage";
 import { lookupDomain } from "../lib/api";
 import type { DomainState, PublicPayload } from "../lib/types";
 
@@ -69,6 +75,59 @@ const sendersSub = $<HTMLElement>("senders-sub");
 const sendersEmpty = $<HTMLElement>("senders-empty");
 const sendersList = $<HTMLUListElement>("senders-list");
 const sendersMore = $<HTMLElement>("senders-more");
+const themeBtn = $<HTMLButtonElement>("theme-toggle");
+
+// ── Theme ─────────────────────────────────────────────────────
+// Resolution order: explicit user choice → prefers-color-scheme → dark.
+// Toggling from "auto" (null) flips to the OPPOSITE of what's currently
+// visible, so the user's first click always produces a visible change.
+
+type ActiveTheme = "dark" | "light";
+
+const SUN_SVG = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/>
+    <line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+const MOON_SVG = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+function systemTheme(): ActiveTheme {
+  return window.matchMedia("(prefers-color-scheme: light)").matches
+    ? "light"
+    : "dark";
+}
+
+function resolveTheme(pref: ThemePref): ActiveTheme {
+  return pref ?? systemTheme();
+}
+
+function applyTheme(theme: ActiveTheme): void {
+  const html = document.documentElement;
+  html.classList.toggle("light", theme === "light");
+  html.classList.toggle("dark", theme === "dark");
+  // Button shows the icon of the theme the user would be switching TO
+  // on click — same UX as the site's ThemeToggle.
+  themeBtn.innerHTML = theme === "dark" ? SUN_SVG : MOON_SVG;
+  // Mirror the active theme into localStorage so the inline bootstrap
+  // script in popup.html can apply it synchronously on the next open,
+  // avoiding a flash of the wrong theme.
+  try {
+    localStorage.setItem("witnessedTheme", theme);
+  } catch {
+    /* non-fatal — just means the next open may briefly flash */
+  }
+}
 
 // ── Senders list rendering ────────────────────────────────────
 
@@ -291,6 +350,24 @@ async function main(): Promise<void> {
   const initial = await getSettings();
   toggleInject.checked = initial.enabled;
 
+  // Apply the stored theme immediately, and keep tracking the system
+  // theme for users who've never set an explicit preference.
+  let themePref: ThemePref = initial.theme;
+  applyTheme(resolveTheme(themePref));
+
+  const osQuery = window.matchMedia("(prefers-color-scheme: light)");
+  osQuery.addEventListener?.("change", () => {
+    if (themePref === null) applyTheme(resolveTheme(null));
+  });
+
+  themeBtn.addEventListener("click", () => {
+    const nowVisible = resolveTheme(themePref);
+    const next: ActiveTheme = nowVisible === "dark" ? "light" : "dark";
+    themePref = next;
+    void setTheme(next);
+    applyTheme(next);
+  });
+
   toggleInject.addEventListener("change", () => {
     void setEnabled(toggleInject.checked);
   });
@@ -298,6 +375,10 @@ async function main(): Promise<void> {
   onSettingsChange((next) => {
     if (typeof next.enabled === "boolean") {
       toggleInject.checked = next.enabled;
+    }
+    if ("theme" in next) {
+      themePref = next.theme ?? null;
+      applyTheme(resolveTheme(themePref));
     }
   });
 

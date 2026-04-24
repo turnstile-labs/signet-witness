@@ -4,6 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Witnessed</title>
+    <!-- Runs before any stylesheet is parsed so the popup never flashes
+         the wrong theme. Mirrors the inline script used on the site (see
+         app/[locale]/layout.tsx). chrome.storage.sync is async so we
+         shadow its theme value into localStorage on every change. -->
+    <script>
+      try {
+        var t = localStorage.getItem("witnessedTheme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.classList.add(t);
+        }
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -21,7 +33,18 @@
         <a class="wordmark" href="https://witnessed.cc" target="_blank" rel="noopener">
           <span class="wm-main">WITNESSED</span><span class="wm-tld">.cc</span>
         </a>
-        <div class="tag">for Gmail</div>
+        <div class="head-right">
+          <span class="tag">for Gmail</span>
+          <button
+            type="button"
+            id="theme-toggle"
+            class="theme-btn"
+            aria-label="Toggle theme"
+            title="Toggle light / dark"
+          >
+            <!-- Icon is swapped at boot by popup.ts to match the active theme -->
+          </button>
+        </div>
       </header>
 
       <!-- Live "proof of business" list for every sender domain the

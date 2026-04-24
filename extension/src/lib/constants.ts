@@ -28,6 +28,7 @@ export const CACHE_TTL_MS = {
 export const STORAGE_KEYS = {
   enabled: "w.enabled",
   injected: "w.injectedCount",
+  theme: "w.theme",
 } as const;
 
 /** chrome.storage.local is not synced to the cloud — perfect for per-browser
