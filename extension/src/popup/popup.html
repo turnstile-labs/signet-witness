@@ -13,6 +13,61 @@
         <div class="tag">for Gmail</div>
       </header>
 
+      <!-- Live "proof of business" card for the sender in focus. Hidden
+           until the popup has queried the active tab. -->
+      <section class="sender" id="sender">
+        <div class="sender-empty" id="sender-empty">
+          <div class="sender-empty-title">No sender in focus</div>
+          <div class="sender-empty-sub">Open an email in Gmail and reopen this popup to verify the sender.</div>
+        </div>
+
+        <div class="sender-card" id="sender-card" hidden>
+          <div class="sender-head">
+            <div>
+              <div class="sender-domain" id="sender-domain">—</div>
+              <div class="sender-source" id="sender-source"></div>
+            </div>
+            <div class="state-chip" id="state-chip">
+              <span class="state-dot" id="state-dot"></span>
+              <span id="state-label">—</span>
+            </div>
+          </div>
+
+          <div class="trust" id="trust">
+            <div class="trust-row">
+              <div class="trust-label">Trust index</div>
+              <div class="trust-value" id="trust-value">—</div>
+            </div>
+            <div class="trust-bar"><div class="trust-fill" id="trust-fill"></div></div>
+          </div>
+
+          <div class="stats">
+            <div class="stat-mini">
+              <div class="stat-mini-num" id="stat-events">—</div>
+              <div class="stat-mini-label">sealed events</div>
+            </div>
+            <div class="stat-mini">
+              <div class="stat-mini-num" id="stat-mutual">—</div>
+              <div class="stat-mini-label">mutual domains</div>
+            </div>
+            <div class="stat-mini">
+              <div class="stat-mini-num" id="stat-receivers">—</div>
+              <div class="stat-mini-label">unique receivers</div>
+            </div>
+          </div>
+
+          <a class="sender-cta" id="sender-cta" href="#" target="_blank" rel="noopener">
+            View full record →
+          </a>
+        </div>
+
+        <div class="sender-loading" id="sender-loading" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <div>Checking <span id="sender-loading-domain">…</span></div>
+        </div>
+      </section>
+
+      <!-- Auto-BCC toggle. -->
       <section class="card">
         <div class="row">
           <div>
@@ -24,29 +79,6 @@
             <span class="slider" aria-hidden="true"></span>
           </label>
         </div>
-
-        <div class="divider"></div>
-
-        <div class="row">
-          <div>
-            <div class="row-label">Sender status pill</div>
-            <div class="row-sub">Shows a tiny dot on every inbox row indicating the sender's Witnessed state</div>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="toggle-status" />
-            <span class="slider" aria-hidden="true"></span>
-          </label>
-        </div>
-      </section>
-
-      <section class="legend" id="legend">
-        <div class="legend-title">Legend</div>
-        <ul>
-          <li><span class="dot" style="background:#4ade80"></span> <strong>Verified</strong> — composite score ≥ 65 and ≥ 3 mutual counterparties</li>
-          <li><span class="dot" style="background:#f59e0b"></span> <strong>On record</strong> — sealing but not yet at the verified bar</li>
-          <li><span class="dot" style="background:#7c6af7"></span> <strong>Pending</strong> — first seal only, still warming up</li>
-          <li><span class="dot muted"></span> <strong>Unclaimed</strong> — domain isn't sealing its own mail yet</li>
-        </ul>
       </section>
 
       <section class="stat-row">
@@ -54,7 +86,7 @@
           <div class="stat-num" id="count">0</div>
           <div class="stat-label">emails sealed from this browser</div>
         </div>
-        <button type="button" id="clear-cache" class="ghost">Refresh lookups</button>
+        <button type="button" id="clear-cache" class="ghost" title="Clear cached sender lookups">Refresh</button>
       </section>
 
       <footer class="links">

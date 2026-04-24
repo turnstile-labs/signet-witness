@@ -1,7 +1,7 @@
 {
   "name": "witnessed-extension",
-  "version": "0.2.5",
-  "description": "Auto-BCC seal@witnessed.cc into outbound Gmail so every business email builds your public record.",
+  "version": "0.3.0",
+  "description": "Auto-BCC seal@witnessed.cc on Gmail composes, and look up any sender's Witnessed proof-of-business record at a click.",
   "private": true,
   "type": "module",
   "scripts": {

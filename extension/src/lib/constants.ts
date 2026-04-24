@@ -1,7 +1,7 @@
 /**
- * Single source of truth for the seal address, homepage, and user-visible
- * product name. Updating the address here rewires every content script and
- * popup label on the next build.
+ * Single source of truth for the seal address, homepage, public API origin,
+ * and user-visible product name. Updating these here rewires every content
+ * script and popup label on the next build.
  */
 export const SEAL_ADDRESS = "seal@witnessed.cc";
 export const WITNESSED_HOME = "https://witnessed.cc";
@@ -12,14 +12,11 @@ export const PRODUCT_NAME = "Witnessed";
 /** Minimum milliseconds between repeated BCC injections on the same compose. */
 export const COMPOSE_DEBOUNCE_MS = 400;
 
-/** Debounce window for the inbox-row scanner — Gmail fires many mutations per scroll. */
-export const INBOX_DEBOUNCE_MS = 200;
-
-/** Per-domain cache TTLs for the read-side pill.
- *  Verified / onRecord states are sticky — a domain that's been verified
- *  won't flip back within a day, so we keep them a full day.
- *  Pending / unclaimed can upgrade on the next sealed email, so they
- *  cache shorter to give the UI a chance to catch an upgrade. */
+/** Per-domain cache TTLs for the popup's sender lookup.
+ *  Verified / onRecord states are sticky — a verified domain won't flip
+ *  back within a day, so we keep them a full day. Pending / unclaimed can
+ *  upgrade on the next sealed email, so they cache shorter to give the
+ *  popup a chance to surface an upgrade. */
 export const CACHE_TTL_MS = {
   verified: 24 * 60 * 60 * 1000,
   onRecord: 12 * 60 * 60 * 1000,
@@ -31,7 +28,6 @@ export const CACHE_TTL_MS = {
 /** chrome.storage.sync keys. Bump the prefix if the schema ever changes. */
 export const STORAGE_KEYS = {
   enabled: "w.enabled",
-  showStatus: "w.showStatus",
   injected: "w.injectedCount",
 } as const;
 

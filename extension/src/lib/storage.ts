@@ -1,16 +1,13 @@
 import { STORAGE_KEYS } from "./constants";
 
 export interface Settings {
-  /** BCC injection on outbound compose windows (v0.1). */
+  /** BCC injection on outbound compose windows. */
   enabled: boolean;
-  /** Read-side sender-status pill on inbox rows (v0.2). */
-  showStatus: boolean;
   injectedCount: number;
 }
 
 const DEFAULTS: Settings = {
   enabled: true,
-  showStatus: true,
   injectedCount: 0,
 };
 
@@ -22,7 +19,6 @@ const DEFAULTS: Settings = {
 export async function getSettings(): Promise<Settings> {
   const raw = await chrome.storage.sync.get([
     STORAGE_KEYS.enabled,
-    STORAGE_KEYS.showStatus,
     STORAGE_KEYS.injected,
   ]);
   return {
@@ -30,10 +26,6 @@ export async function getSettings(): Promise<Settings> {
       typeof raw[STORAGE_KEYS.enabled] === "boolean"
         ? (raw[STORAGE_KEYS.enabled] as boolean)
         : DEFAULTS.enabled,
-    showStatus:
-      typeof raw[STORAGE_KEYS.showStatus] === "boolean"
-        ? (raw[STORAGE_KEYS.showStatus] as boolean)
-        : DEFAULTS.showStatus,
     injectedCount:
       typeof raw[STORAGE_KEYS.injected] === "number"
         ? (raw[STORAGE_KEYS.injected] as number)
@@ -43,10 +35,6 @@ export async function getSettings(): Promise<Settings> {
 
 export async function setEnabled(enabled: boolean): Promise<void> {
   await chrome.storage.sync.set({ [STORAGE_KEYS.enabled]: enabled });
-}
-
-export async function setShowStatus(showStatus: boolean): Promise<void> {
-  await chrome.storage.sync.set({ [STORAGE_KEYS.showStatus]: showStatus });
 }
 
 export async function bumpInjectedCount(): Promise<void> {
@@ -71,9 +59,6 @@ export function onSettingsChange(
     const next: Partial<Settings> = {};
     if (STORAGE_KEYS.enabled in changes) {
       next.enabled = Boolean(changes[STORAGE_KEYS.enabled].newValue);
-    }
-    if (STORAGE_KEYS.showStatus in changes) {
-      next.showStatus = Boolean(changes[STORAGE_KEYS.showStatus].newValue);
     }
     if (STORAGE_KEYS.injected in changes) {
       next.injectedCount = Number(changes[STORAGE_KEYS.injected].newValue ?? 0);

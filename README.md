@@ -40,8 +40,8 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 - **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — ~30-line catch-all forwarder
 - **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
-- **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open, 5-min edge cache) returning `{state, trustIndex, mutualCounterparties, verifiedEventCount, firstSeen}` for any domain. Powers the extension's read-side pill; denylisted domains are rendered as `unclaimed` so opt-out never leaks
-- **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.2 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and the read-side (Verified / On record / Pending / Unclaimed pill on every inbox row, clickable through to the seal page). See [`extension/README.md`](extension/README.md)
+- **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open, 5-min edge cache) returning `{state, trustIndex, mutualCounterparties, verifiedEventCount, firstSeen}` for any domain. Powers the extension's sender-verification card, third-party integrations, and CLI checks; denylisted domains are rendered as `unclaimed` so opt-out never leaks
+- **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.3 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and a read-side toolbar popup that surfaces the Witnessed "proof of business" card (state, trust index, sealed events, mutual domains, deep link to `/b/<domain>`) for whichever sender is currently in focus in Gmail. See [`extension/README.md`](extension/README.md)
 
 ---
 

@@ -3,10 +3,10 @@ import pkg from "./package.json" with { type: "json" };
 
 export default defineManifest({
   manifest_version: 3,
-  name: "Witnessed — Auto-seal Gmail",
+  name: "Witnessed for Gmail",
   short_name: "Witnessed",
   description:
-    "Auto-BCC seal@witnessed.cc on every Gmail compose so your outbound mail builds a public, verifiable record.",
+    "Auto-BCC seal@witnessed.cc on every Gmail compose, and look up any sender's proof-of-business record at a click.",
   version: pkg.version,
 
   icons: {
@@ -39,7 +39,7 @@ export default defineManifest({
     },
   ],
 
-  permissions: ["storage"],
+  permissions: ["storage", "activeTab"],
   host_permissions: [
     "https://mail.google.com/*",
     "https://witnessed.cc/*",
