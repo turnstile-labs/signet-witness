@@ -17,6 +17,7 @@ import {
   SEAL_ADDRESS,
   COMPOSE_DEBOUNCE_MS,
   INBOX_DEBOUNCE_MS,
+  PRODUCT_NAME,
 } from "../lib/constants";
 import {
   bumpInjectedCount,
@@ -32,10 +33,12 @@ import {
 } from "../lib/pill";
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
-const LOG_PREFIX = "[witnessed]";
+const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
+const BUILD_TAG = "v0.2.1";
 
 let injectEnabled = true;
 let statusEnabled = true;
+let firstScanLogged = false;
 
 function debug(...args: unknown[]): void {
   try {
@@ -49,6 +52,12 @@ function debug(...args: unknown[]): void {
 
 function warn(...args: unknown[]): void {
   console.warn(LOG_PREFIX, ...args);
+}
+
+/** Logged once, unconditionally — lets the user confirm the new build is live
+ *  without needing to flip a localStorage debug flag. */
+function info(...args: unknown[]): void {
+  console.info(LOG_PREFIX, ...args);
 }
 
 // ── Write side ────────────────────────────────────────────────
@@ -162,17 +171,44 @@ function scanComposes(): void {
 // the site's public endpoint (cached in chrome.storage.local), and
 // append a small colored pill to the sender cell.
 
-function extractSenderDomain(row: HTMLElement): string | null {
-  // Primary selector: span[email="..."] is present in every list-view
-  // variant Gmail has shipped for years. Pick the first visible one —
-  // Gmail also renders avatar peers with the same attribute; the first
-  // is the canonical sender for the thread.
-  const el = row.querySelector<HTMLElement>("span[email]");
-  const addr = el?.getAttribute("email")?.trim().toLowerCase();
+function emailToDomain(raw: string | null | undefined): string | null {
+  const addr = raw?.trim().toLowerCase();
   if (!addr || !addr.includes("@")) return null;
   const domain = addr.split("@", 2)[1];
   if (!domain || !domain.includes(".")) return null;
   return domain;
+}
+
+function extractSenderDomain(row: HTMLElement): string | null {
+  // Gmail reshuffles the list-view DOM every few quarters. We try the most
+  // reliable stable markers first, then fall back to newer hovercard
+  // attributes, then (last resort) scrape any visible string that looks
+  // like an email. Each selector returns fast if Gmail hasn't migrated.
+
+  // 1) `span[email]` — the classic, present for years across densities.
+  const span = row.querySelector<HTMLElement>("span[email]");
+  const fromEmailAttr = emailToDomain(span?.getAttribute("email"));
+  if (fromEmailAttr) return fromEmailAttr;
+
+  // 2) Newer hovercard attributes. `data-hovercard-id` often holds an
+  //    email; sometimes it's a person ID, so we only accept it if it
+  //    parses cleanly as `local@domain`.
+  for (const attr of ["data-hovercard-id", "data-hovercard-owner-id"]) {
+    const el = row.querySelector<HTMLElement>(`[${attr}]`);
+    const v = emailToDomain(el?.getAttribute(attr));
+    if (v) return v;
+  }
+
+  // 3) Last resort: regex-scan the innerText of the sender cell. This is
+  //    slow and fragile, so it's only done when the structured attrs are
+  //    missing entirely.
+  const cell =
+    row.querySelector<HTMLElement>("td.yX") ??
+    row.querySelector<HTMLElement>('[role="gridcell"]');
+  const match = cell?.innerText.match(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/i);
+  if (match) return emailToDomain(match[0]);
+
+  return null;
 }
 
 function findPillAnchor(row: HTMLElement): HTMLElement | null {
@@ -219,6 +255,14 @@ function scanInboxRows(): void {
   const rows = document.querySelectorAll<HTMLElement>(
     `tr.zA:not([${ROW_PROCESSED_ATTR}])`,
   );
+  // First time we actually see rows, emit a visible confirmation so the
+  // user can tell the content script is wired up and the inbox is being
+  // scanned. We don't log on empty scans (too noisy: Gmail mutates a lot
+  // before the inbox renders). A one-shot latch keeps the console tidy.
+  if (!firstScanLogged && rows.length > 0) {
+    firstScanLogged = true;
+    info("inbox scan live", { rows: rows.length, build: BUILD_TAG });
+  }
   for (const row of rows) void decorateRow(row);
 }
 
@@ -261,6 +305,12 @@ async function boot(): Promise<void> {
   statusEnabled = settings.showStatus;
   ensureStylesheet();
 
+  info(`${BUILD_TAG} booted`, {
+    inject: injectEnabled,
+    status: statusEnabled,
+    href: location.pathname + location.hash,
+  });
+
   onSettingsChange((next) => {
     if (typeof next.enabled === "boolean") injectEnabled = next.enabled;
     if (typeof next.showStatus === "boolean") {
@@ -279,7 +329,14 @@ async function boot(): Promise<void> {
   scheduleComposeScan();
   scheduleInboxScan();
 
-  debug("content booted", { injectEnabled, statusEnabled });
+  // Gmail's inbox list is rendered asynchronously after document_idle.
+  // A handful of one-off retries in the first ~10s catches the case where
+  // the user lands directly on /mail/u/0/#inbox and there are no further
+  // mutations to fire the observer before rows appear.
+  const kickoffs = [500, 1200, 2500, 5000, 10000];
+  for (const ms of kickoffs) {
+    setTimeout(() => scheduleInboxScan(), ms);
+  }
 }
 
 boot().catch((err) => warn("boot failed", err));
