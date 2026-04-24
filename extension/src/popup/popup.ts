@@ -69,7 +69,6 @@ const sendersSub = $<HTMLElement>("senders-sub");
 const sendersEmpty = $<HTMLElement>("senders-empty");
 const sendersList = $<HTMLUListElement>("senders-list");
 const sendersMore = $<HTMLElement>("senders-more");
-const headTag = $<HTMLElement>("head-tag");
 
 // ── Senders list rendering ────────────────────────────────────
 
@@ -231,7 +230,6 @@ async function queryVisibleDomains(): Promise<LocalReply> {
 
 async function renderSenders(): Promise<void> {
   const { domains, context } = await queryVisibleDomains();
-  headTag.textContent = context === "thread" ? "Chat view" : context === "list" ? "Inbox view" : "for Gmail";
 
   if (domains.length === 0) {
     setEmpty(context);
