@@ -52,7 +52,7 @@ export default async function Home({
   const demoBadge = sizeBadge(DEMO_DOMAIN);
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg text-txt">
+    <div className="marketing flex flex-col min-h-screen bg-bg text-txt">
 
       <NavBar />
 

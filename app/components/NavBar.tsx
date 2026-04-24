@@ -12,7 +12,7 @@ export default function NavBar() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center">
         <Link href="/" aria-label={t("home")} className="flex items-baseline gap-0 select-none">
           <span className="font-brand text-txt text-sm">WITNESSED</span>
-          <span className="font-mono text-[0.6rem] text-accent font-normal tracking-tight leading-none relative top-px">.cc</span>
+          <span className="font-mono text-[0.6rem] text-brand font-normal tracking-tight leading-none relative top-px">.cc</span>
         </Link>
 
         <div className="ml-auto flex items-center gap-2">

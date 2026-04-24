@@ -18,6 +18,8 @@
   --color-muted-2:   var(--muted-2);
   --color-accent:    var(--accent);
   --color-accent-2:  var(--accent-2);
+  --color-brand:     var(--brand);
+  --color-brand-2:   var(--brand-2);
   --color-verified:  var(--verified);
   --color-amber:     var(--amber);
   --color-pending:   var(--pending);
@@ -38,11 +40,20 @@
 }
 
 /* ── Dark (default) ────────────────────────────────────────── */
-/* Palette follows traffic-light semantics for the four trust states
-   (verified → green, on-record → amber, pending → yellow, unclaimed →
-   neutral gray) plus a danger red for errors. The brand accent is a
-   neutral trust-blue — never a state color, so it can't be confused
-   with any tier. */
+/* Two accent systems live side-by-side on purpose:
+     --brand  (purple) is the *marketing* identity. It shows up on
+              the nav wordmark, the landing page, the setup flow,
+              and every legal / rights page — i.e. surfaces where
+              we're pitching the product.
+     --accent (blue)   is the *product* accent. It shows up on the
+              seal page, ops, and the extension popup — surfaces
+              where data is the point and the UI should feel
+              utilitarian rather than branded.
+   Both are decoupled from the state palette (verified green,
+   on-record amber, pending yellow, unclaimed gray, danger red) so
+   neither brand nor accent can ever collide with a trust tier.
+   Marketing pages opt into purple via the `.marketing` wrapper
+   (see below) which remaps --accent → --brand locally. */
 :root {
   --bg:        #0c0c0f;
   --surface:   #131316;
@@ -54,6 +65,8 @@
   --muted-2:   #60607a;
   --accent:    #3b82f6;
   --accent-2:  #60a5fa;
+  --brand:     #7c6af7;
+  --brand-2:   #a89cf8;
   --verified:  #22c55e;
   --amber:     #f59e0b;
   --pending:   #eab308;
@@ -73,11 +86,24 @@ html.light {
   --muted-2:   #9090b0;
   --accent:    #2563eb;
   --accent-2:  #1e40af;
+  --brand:     #6252e8;
+  --brand-2:   #4a38d6;
   --verified:  #16a34a;
   --amber:     #d97706;
   --pending:   #ca8a04;
   --unclaimed: #6b7280;
   --danger:    #dc2626;
+}
+
+/* Marketing wrapper — apply to the root element of any marketing
+   page (landing, setup, rights, privacy, terms) to paint every
+   `text-accent` / `bg-accent` / `border-accent` / `ring-accent`
+   inside in the purple brand tint instead. Product surfaces
+   (seal page, ops) just omit the class and stay on the blue
+   --accent, which is what a data-dense UI wants. */
+.marketing {
+  --accent:   var(--brand);
+  --accent-2: var(--brand-2);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
