@@ -15,8 +15,13 @@
   --txt: #e8e8f2;
   --muted: #9090b0;
   --muted-2: #60607a;
-  --accent: #3b82f6;
-  --accent-2: #60a5fa;
+  /* The popup is a brand surface (not a data-dense one), so --accent
+     here is the purple brand tint — same values the site uses for
+     --brand in app/globals.css. --brand is kept as an alias so the
+     wordmark, which explicitly renders in brand tone on every route,
+     keeps reading the same token as the site's NavBar. */
+  --accent: #7c6af7;
+  --accent-2: #a89cf8;
   --brand: #7c6af7;
   --brand-2: #a89cf8;
   --verified: #22c55e;
@@ -38,8 +43,8 @@ html.light {
   --txt: #18181e;
   --muted: #5c5c7a;
   --muted-2: #9090b0;
-  --accent: #2563eb;
-  --accent-2: #1e40af;
+  --accent: #6252e8;
+  --accent-2: #4a38d6;
   --brand: #6252e8;
   --brand-2: #4a38d6;
   --verified: #16a34a;
@@ -61,8 +66,8 @@ html.light {
     --txt: #18181e;
     --muted: #5c5c7a;
     --muted-2: #9090b0;
-    --accent: #2563eb;
-    --accent-2: #1e40af;
+    --accent: #6252e8;
+    --accent-2: #4a38d6;
     --brand: #6252e8;
     --brand-2: #4a38d6;
     --verified: #16a34a;
