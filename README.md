@@ -40,7 +40,8 @@ No auth. No payments. No setup required from users. The CC is the product.
 - **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — ~30-line catch-all forwarder
 - **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
-- **Browser extension** (`extension/`) — MV3 extension that auto-BCCs `seal@witnessed.cc` into every new Gmail compose. v0.1: Gmail only, write-side only. See [`extension/README.md`](extension/README.md)
+- **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open, 5-min edge cache) returning `{state, trustIndex, mutualCounterparties, verifiedEventCount, firstSeen}` for any domain. Powers the extension's read-side pill; denylisted domains are rendered as `unclaimed` so opt-out never leaks
+- **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.2 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and the read-side (Verified / On record / Pending / Unclaimed pill on every inbox row, clickable through to the seal page). See [`extension/README.md`](extension/README.md)
 
 ---
 
@@ -77,6 +78,7 @@ signet-witness/
 │   ├── api/
 │   │   ├── inbound/route.ts      # Email receiver + DKIM verify + anti-abuse gates + DB write + after-hooks
 │   │   ├── admin/warm-ct/route.ts # Admin batch CT-log backfill (auth: STATS_TOKEN)
+│   │   ├── public/domain/[domain]/route.ts # Public JSON state lookup (CORS-open, edge-cached) — powers the extension
 │   │   └── rights/
 │   │       ├── challenge/route.ts # Mint DNS-TXT challenge for (domain, action)
 │   │       ├── access/route.ts    # Art 15 — JSON export

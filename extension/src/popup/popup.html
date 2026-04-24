@@ -10,34 +10,56 @@
     <main>
       <header class="head">
         <div class="brand">WITNESSED</div>
-        <div class="tag">Auto-seal Gmail</div>
+        <div class="tag">for Gmail</div>
       </header>
 
-      <section class="toggle-row">
-        <div>
-          <div class="toggle-label">Seal new emails</div>
-          <div class="toggle-sub">Adds <code id="seal-addr">seal@witnessed.cc</code> to Bcc</div>
+      <section class="card">
+        <div class="row">
+          <div>
+            <div class="row-label">Auto-seal outgoing</div>
+            <div class="row-sub">Adds <code id="seal-addr">seal@witnessed.cc</code> to Bcc on every new compose</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-inject" />
+            <span class="slider" aria-hidden="true"></span>
+          </label>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="toggle" />
-          <span class="slider" aria-hidden="true"></span>
-        </label>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <div>
+            <div class="row-label">Sender status pill</div>
+            <div class="row-sub">Shows a tiny dot on every inbox row indicating the sender's Witnessed state</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-status" />
+            <span class="slider" aria-hidden="true"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="legend" id="legend">
+        <div class="legend-title">Legend</div>
+        <ul>
+          <li><span class="dot" style="background:#4ade80"></span> <strong>Verified</strong> — composite score ≥ 65 and ≥ 3 mutual counterparties</li>
+          <li><span class="dot" style="background:#f59e0b"></span> <strong>On record</strong> — sealing but not yet at the verified bar</li>
+          <li><span class="dot" style="background:#7c6af7"></span> <strong>Pending</strong> — first seal only, still warming up</li>
+          <li><span class="dot muted"></span> <strong>Unclaimed</strong> — domain isn't sealing its own mail yet</li>
+        </ul>
       </section>
 
       <section class="stat-row">
         <div class="stat">
           <div class="stat-num" id="count">0</div>
-          <div class="stat-label">sealed from this browser</div>
+          <div class="stat-label">emails sealed from this browser</div>
         </div>
-      </section>
-
-      <section class="tips" id="tips">
-        <p>Open Gmail. Every new compose gets <code>seal@witnessed.cc</code> in Bcc. Remove it on any individual email you don't want recorded.</p>
+        <button type="button" id="clear-cache" class="ghost">Refresh lookups</button>
       </section>
 
       <footer class="links">
         <a id="home" href="#" target="_blank" rel="noopener">witnessed.cc</a>
-        <span class="dot"></span>
+        <span class="dot-sep"></span>
         <a id="setup" href="#" target="_blank" rel="noopener">Setup guide</a>
       </footer>
     </main>

@@ -1,31 +1,42 @@
 /**
- * Gmail content script: watches for new compose dialogs and injects
- * seal@witnessed.cc into the Bcc field. Runs only on mail.google.com.
+ * Gmail content script.
  *
- * Strategy:
- *   1. MutationObserver on document.body picks up compose dialogs as they
- *      appear (both popup compose and fullscreen compose use role=dialog).
- *   2. For each unprocessed dialog, expand the Bcc row if collapsed, then
- *      insert the seal address via execCommand('insertText') so Gmail's
- *      internal Closure state sees a real keystroke and creates a chip.
- *   3. Mark the dialog with data-witnessed-processed so removing the chip
- *      manually on a given compose sticks — we never re-inject on a dialog
- *      we've already handled.
+ * Two responsibilities:
+ *   1. Write-side: watch for new compose dialogs and inject
+ *      seal@witnessed.cc into the Bcc field. (Shipped in v0.1.)
+ *   2. Read-side: watch the inbox list and render a small status pill
+ *      next to each sender's name indicating their current Witnessed
+ *      state (Verified / OnRecord / Pending / Unclaimed). (New in v0.2.)
  *
- * Everything is defensive: Gmail ships DOM tweaks often, so every selector
- * has a fallback and every failure is swallowed with a console.debug so the
- * user's mail flow is never interrupted.
+ * Everything is defensive: Gmail ships DOM tweaks often, every selector
+ * has a fallback, and every failure is swallowed with console.debug so
+ * the user's mail flow is never interrupted.
  */
 
-import { SEAL_ADDRESS, COMPOSE_DEBOUNCE_MS } from "../lib/constants";
-import { bumpInjectedCount, getSettings, onSettingsChange } from "../lib/storage";
+import {
+  SEAL_ADDRESS,
+  COMPOSE_DEBOUNCE_MS,
+  INBOX_DEBOUNCE_MS,
+} from "../lib/constants";
+import {
+  bumpInjectedCount,
+  getSettings,
+  onSettingsChange,
+} from "../lib/storage";
+import { lookupDomain } from "../lib/api";
+import {
+  buildPill,
+  ensureStylesheet,
+  PILL_CLASS_NAME,
+  ROW_PROCESSED_ATTR,
+} from "../lib/pill";
 
-const PROCESSED_ATTR = "data-witnessed-processed";
+const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = "[witnessed]";
 
-let enabled = true;
+let injectEnabled = true;
+let statusEnabled = true;
 
-/** Cheap log — silent by default, flip via `localStorage.witnessedDebug=1`. */
 function debug(...args: unknown[]): void {
   try {
     if (localStorage.getItem("witnessedDebug") === "1") {
@@ -40,14 +51,13 @@ function warn(...args: unknown[]): void {
   console.warn(LOG_PREFIX, ...args);
 }
 
-/**
- * Return all Gmail compose dialogs currently in the DOM that we haven't yet
- * attempted to process. A compose dialog is a role=dialog that contains the
- * subject input (Gmail's stable anchor across UI refreshes).
- */
+// ── Write side ────────────────────────────────────────────────
+// Auto-BCC seal@ into every new compose. Ported from v0.1 intact —
+// nothing changed here beyond module shape.
+
 function findUnprocessedComposes(): HTMLElement[] {
   const dialogs = document.querySelectorAll<HTMLElement>(
-    'div[role="dialog"]:not([' + PROCESSED_ATTR + '])',
+    `div[role="dialog"]:not([${COMPOSE_PROCESSED}])`,
   );
   const result: HTMLElement[] = [];
   for (const dialog of dialogs) {
@@ -58,11 +68,6 @@ function findUnprocessedComposes(): HTMLElement[] {
   return result;
 }
 
-/**
- * Expand the Bcc row if Gmail is hiding it. Gmail uses different markup in
- * popup vs fullscreen compose, so we try several selectors and click the
- * first trigger that looks right.
- */
 function expandBccRow(dialog: HTMLElement): void {
   const alreadyVisible = dialog.querySelector<HTMLElement>(
     'input[aria-label^="Bcc" i], textarea[aria-label^="Bcc" i], [name="bcc"]',
@@ -96,59 +101,47 @@ function findBccInput(dialog: HTMLElement): HTMLInputElement | HTMLTextAreaEleme
 }
 
 function sealAlreadyAdded(dialog: HTMLElement): boolean {
-  const bccRow = dialog.querySelector<HTMLElement>(
-    '[aria-label*="Bcc" i]',
-  )?.closest("tr, div");
+  const bccRow = dialog.querySelector<HTMLElement>('[aria-label*="Bcc" i]')?.closest("tr, div");
   const scope = bccRow ?? dialog;
   return scope.textContent?.includes(SEAL_ADDRESS) ?? false;
 }
 
-/**
- * Push the seal address into the Bcc field and commit it as a chip.
- * execCommand is deprecated per spec but remains the only reliable way to
- * fire a synthetic keystroke through Gmail's contenteditable/chip pipeline.
- */
-function insertSealChip(input: HTMLInputElement | HTMLTextAreaElement): boolean {
+function insertSealChip(input: HTMLInputElement | HTMLTextAreaElement): void {
   input.focus();
   const ok = document.execCommand("insertText", false, SEAL_ADDRESS);
   if (!ok) {
     input.value = SEAL_ADDRESS;
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  const commit = new KeyboardEvent("keydown", {
-    bubbles: true,
-    cancelable: true,
-    key: "Enter",
-    code: "Enter",
-    keyCode: 13,
-    which: 13,
-  });
-  input.dispatchEvent(commit);
+  input.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: "Enter",
+      code: "Enter",
+      keyCode: 13,
+      which: 13,
+    }),
+  );
   input.blur();
-  return true;
 }
 
-/**
- * Process a single compose dialog. Idempotent via the PROCESSED_ATTR marker.
- * Returns true if we successfully injected, false if we need to retry on a
- * later mutation (e.g. Bcc field not yet rendered).
- */
 function processCompose(dialog: HTMLElement): boolean {
-  if (!enabled) return true;
-  if (dialog.hasAttribute(PROCESSED_ATTR)) return true;
+  if (!injectEnabled) return true;
+  if (dialog.hasAttribute(COMPOSE_PROCESSED)) return true;
 
   expandBccRow(dialog);
   const input = findBccInput(dialog);
   if (!input) return false;
 
   if (sealAlreadyAdded(dialog)) {
-    dialog.setAttribute(PROCESSED_ATTR, "1");
+    dialog.setAttribute(COMPOSE_PROCESSED, "1");
     return true;
   }
 
   try {
     insertSealChip(input);
-    dialog.setAttribute(PROCESSED_ATTR, "1");
+    dialog.setAttribute(COMPOSE_PROCESSED, "1");
     void bumpInjectedCount();
     debug("sealed compose", dialog);
     return true;
@@ -158,36 +151,135 @@ function processCompose(dialog: HTMLElement): boolean {
   }
 }
 
-function scanAndProcess(): void {
-  const composes = findUnprocessedComposes();
-  for (const dialog of composes) {
-    processCompose(dialog);
+function scanComposes(): void {
+  for (const dialog of findUnprocessedComposes()) processCompose(dialog);
+}
+
+// ── Read side ─────────────────────────────────────────────────
+// Every inbox row in Gmail has a sender cell exposing the sender's
+// email via `span[email="..."]` — Gmail's own stable attribute for
+// display-name resolution. We extract the domain, look up state from
+// the site's public endpoint (cached in chrome.storage.local), and
+// append a small colored pill to the sender cell.
+
+function extractSenderDomain(row: HTMLElement): string | null {
+  // Primary selector: span[email="..."] is present in every list-view
+  // variant Gmail has shipped for years. Pick the first visible one —
+  // Gmail also renders avatar peers with the same attribute; the first
+  // is the canonical sender for the thread.
+  const el = row.querySelector<HTMLElement>("span[email]");
+  const addr = el?.getAttribute("email")?.trim().toLowerCase();
+  if (!addr || !addr.includes("@")) return null;
+  const domain = addr.split("@", 2)[1];
+  if (!domain || !domain.includes(".")) return null;
+  return domain;
+}
+
+function findPillAnchor(row: HTMLElement): HTMLElement | null {
+  // We want the pill to land immediately before the sender name. Gmail's
+  // sender cell is a nested flexbox; inserting into its first meaningful
+  // child survives the frequent re-renders Gmail does on hover.
+  const senderCell =
+    row.querySelector<HTMLElement>("td.yX") ??
+    row.querySelector<HTMLElement>('[role="gridcell"]') ??
+    row;
+  const nameSpan =
+    senderCell.querySelector<HTMLElement>("span[email]") ??
+    senderCell.querySelector<HTMLElement>(".yW span");
+  return nameSpan?.parentElement ?? senderCell;
+}
+
+async function decorateRow(row: HTMLElement): Promise<void> {
+  if (!statusEnabled) return;
+  if (row.getAttribute(ROW_PROCESSED_ATTR)) return;
+
+  const domain = extractSenderDomain(row);
+  if (!domain) return;
+
+  row.setAttribute(ROW_PROCESSED_ATTR, domain);
+
+  try {
+    const payload = await lookupDomain(domain);
+    // Row may have been re-rendered/removed between request and response.
+    // Guard against re-append into a detached node, and against stacking
+    // duplicate pills if Gmail resurrected the row.
+    if (!row.isConnected) return;
+    if (row.querySelector(`.${PILL_CLASS_NAME}`)) return;
+    const pill = buildPill(payload);
+    if (!pill) return;
+    const anchor = findPillAnchor(row);
+    anchor?.insertBefore(pill, anchor.firstChild);
+  } catch (err) {
+    debug("lookup failed", domain, err);
   }
 }
 
-/** Coalesce mutation bursts — Gmail fires hundreds during compose animations. */
-let pending = false;
-function scheduleScan(): void {
-  if (pending) return;
-  pending = true;
+function scanInboxRows(): void {
+  if (!statusEnabled) return;
+  const rows = document.querySelectorAll<HTMLElement>(
+    `tr.zA:not([${ROW_PROCESSED_ATTR}])`,
+  );
+  for (const row of rows) void decorateRow(row);
+}
+
+/** Remove every rendered pill from the page — wired to the popup toggle. */
+function stripAllPills(): void {
+  for (const pill of document.querySelectorAll(`.${PILL_CLASS_NAME}`)) {
+    pill.remove();
+  }
+  for (const row of document.querySelectorAll(`[${ROW_PROCESSED_ATTR}]`)) {
+    row.removeAttribute(ROW_PROCESSED_ATTR);
+  }
+}
+
+// ── Observer / bootstrap ──────────────────────────────────────
+
+let composePending = false;
+let inboxPending = false;
+
+function scheduleComposeScan(): void {
+  if (composePending) return;
+  composePending = true;
   setTimeout(() => {
-    pending = false;
-    scanAndProcess();
+    composePending = false;
+    scanComposes();
   }, COMPOSE_DEBOUNCE_MS);
+}
+
+function scheduleInboxScan(): void {
+  if (inboxPending) return;
+  inboxPending = true;
+  setTimeout(() => {
+    inboxPending = false;
+    scanInboxRows();
+  }, INBOX_DEBOUNCE_MS);
 }
 
 async function boot(): Promise<void> {
   const settings = await getSettings();
-  enabled = settings.enabled;
+  injectEnabled = settings.enabled;
+  statusEnabled = settings.showStatus;
+  ensureStylesheet();
 
   onSettingsChange((next) => {
-    if (typeof next.enabled === "boolean") enabled = next.enabled;
+    if (typeof next.enabled === "boolean") injectEnabled = next.enabled;
+    if (typeof next.showStatus === "boolean") {
+      const was = statusEnabled;
+      statusEnabled = next.showStatus;
+      if (was && !statusEnabled) stripAllPills();
+      if (!was && statusEnabled) scheduleInboxScan();
+    }
   });
 
-  const observer = new MutationObserver(scheduleScan);
+  const observer = new MutationObserver(() => {
+    scheduleComposeScan();
+    scheduleInboxScan();
+  });
   observer.observe(document.body, { childList: true, subtree: true });
-  scheduleScan();
-  debug("content script booted; enabled =", enabled);
+  scheduleComposeScan();
+  scheduleInboxScan();
+
+  debug("content booted", { injectEnabled, statusEnabled });
 }
 
 boot().catch((err) => warn("boot failed", err));

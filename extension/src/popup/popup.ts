@@ -7,7 +7,9 @@ import {
   getSettings,
   onSettingsChange,
   setEnabled,
+  setShowStatus,
 } from "../lib/storage";
+import { clearCache } from "../lib/cache";
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -15,23 +17,22 @@ const $ = <T extends HTMLElement>(id: string): T => {
   return el as T;
 };
 
-const toggle = $<HTMLInputElement>("toggle");
+const toggleInject = $<HTMLInputElement>("toggle-inject");
+const toggleStatus = $<HTMLInputElement>("toggle-status");
 const count = $<HTMLElement>("count");
-const tips = $<HTMLElement>("tips");
 const sealAddr = $<HTMLElement>("seal-addr");
 const home = $<HTMLAnchorElement>("home");
 const setup = $<HTMLAnchorElement>("setup");
+const clearBtn = $<HTMLButtonElement>("clear-cache");
 
-function render(enabled: boolean, injected: number): void {
-  toggle.checked = enabled;
+function render(
+  injectOn: boolean,
+  statusOn: boolean,
+  injected: number,
+): void {
+  toggleInject.checked = injectOn;
+  toggleStatus.checked = statusOn;
   count.textContent = String(injected);
-  if (enabled) {
-    tips.classList.remove("off");
-    tips.innerHTML = `Open Gmail. Every new compose gets <code>${SEAL_ADDRESS}</code> in Bcc. Remove it on any individual email you don't want recorded.`;
-  } else {
-    tips.classList.add("off");
-    tips.textContent = "Sealing is paused. Toggle it back on to resume.";
-  }
 }
 
 async function main(): Promise<void> {
@@ -40,16 +41,38 @@ async function main(): Promise<void> {
   setup.href = SETUP_URL;
 
   const initial = await getSettings();
-  render(initial.enabled, initial.injectedCount);
+  render(initial.enabled, initial.showStatus, initial.injectedCount);
 
-  toggle.addEventListener("change", () => {
-    void setEnabled(toggle.checked);
+  toggleInject.addEventListener("change", () => {
+    void setEnabled(toggleInject.checked);
+  });
+  toggleStatus.addEventListener("change", () => {
+    void setShowStatus(toggleStatus.checked);
+  });
+
+  clearBtn.addEventListener("click", async () => {
+    clearBtn.disabled = true;
+    const label = clearBtn.textContent ?? "Refresh lookups";
+    try {
+      await clearCache();
+      clearBtn.textContent = "Cleared";
+      clearBtn.classList.add("done");
+      setTimeout(() => {
+        clearBtn.textContent = label;
+        clearBtn.classList.remove("done");
+        clearBtn.disabled = false;
+      }, 1100);
+    } catch (err) {
+      console.warn("[witnessed] clear failed", err);
+      clearBtn.disabled = false;
+    }
   });
 
   onSettingsChange(async (next) => {
     const current = await getSettings();
     render(
       next.enabled ?? current.enabled,
+      next.showStatus ?? current.showStatus,
       next.injectedCount ?? current.injectedCount,
     );
   });

@@ -40,5 +40,8 @@ export default defineManifest({
   ],
 
   permissions: ["storage"],
-  host_permissions: ["https://mail.google.com/*"],
+  host_permissions: [
+    "https://mail.google.com/*",
+    "https://witnessed.cc/*",
+  ],
 });

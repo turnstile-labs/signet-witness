@@ -5,11 +5,19 @@ import { STORAGE_KEYS } from "./lib/constants";
  * opened, before any content script has had a chance to run.
  */
 chrome.runtime.onInstalled.addListener(async (details) => {
-  const existing = await chrome.storage.sync.get([STORAGE_KEYS.enabled]);
+  const existing = await chrome.storage.sync.get([
+    STORAGE_KEYS.enabled,
+    STORAGE_KEYS.showStatus,
+  ]);
+  const seed: Record<string, boolean | number> = {};
   if (typeof existing[STORAGE_KEYS.enabled] !== "boolean") {
-    await chrome.storage.sync.set({ [STORAGE_KEYS.enabled]: true });
+    seed[STORAGE_KEYS.enabled] = true;
+  }
+  if (typeof existing[STORAGE_KEYS.showStatus] !== "boolean") {
+    seed[STORAGE_KEYS.showStatus] = true;
   }
   if (details.reason === "install") {
-    await chrome.storage.sync.set({ [STORAGE_KEYS.injected]: 0 });
+    seed[STORAGE_KEYS.injected] = 0;
   }
+  if (Object.keys(seed).length > 0) await chrome.storage.sync.set(seed);
 });
