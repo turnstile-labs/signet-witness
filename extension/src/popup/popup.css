@@ -17,6 +17,8 @@
   --muted-2: #60607a;
   --accent: #3b82f6;
   --accent-2: #60a5fa;
+  --brand: #7c6af7;
+  --brand-2: #a89cf8;
   --verified: #22c55e;
   --amber: #f59e0b;
   --pending: #eab308;
@@ -38,6 +40,8 @@ html.light {
   --muted-2: #9090b0;
   --accent: #2563eb;
   --accent-2: #1e40af;
+  --brand: #6252e8;
+  --brand-2: #4a38d6;
   --verified: #16a34a;
   --amber: #d97706;
   --pending: #ca8a04;
@@ -59,6 +63,8 @@ html.light {
     --muted-2: #9090b0;
     --accent: #2563eb;
     --accent-2: #1e40af;
+    --brand: #6252e8;
+    --brand-2: #4a38d6;
     --verified: #16a34a;
     --amber: #d97706;
     --pending: #ca8a04;
@@ -121,7 +127,7 @@ main {
   font-size: 8px;
   letter-spacing: -0.01em;
   line-height: 1;
-  color: var(--accent);
+  color: var(--brand);
   position: relative;
   top: 1px;
 }
