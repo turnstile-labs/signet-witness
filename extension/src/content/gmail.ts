@@ -34,11 +34,24 @@ import {
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.2.1";
+const BUILD_TAG = "v0.2.2";
 
 let injectEnabled = true;
 let statusEnabled = true;
 let firstScanLogged = false;
+/** Counter of "explain-the-first-N-rows" diagnostic logs. We dump full
+ *  detail for the first handful of rows after boot so a one-shot reload
+ *  reveals exactly where each domain's pipeline stopped (extracted? looked
+ *  up? pill inserted?). After N rows we fall silent unless the user flips
+ *  `localStorage.witnessedDebug = '1'`. */
+const EXPLAIN_FIRST_N = 6;
+let explained = 0;
+
+function explain(...args: unknown[]): void {
+  if (explained >= EXPLAIN_FIRST_N) return;
+  explained += 1;
+  console.info(LOG_PREFIX, ...args);
+}
 
 function debug(...args: unknown[]): void {
   try {
@@ -141,10 +154,14 @@ function processCompose(dialog: HTMLElement): boolean {
 
   expandBccRow(dialog);
   const input = findBccInput(dialog);
-  if (!input) return false;
+  if (!input) {
+    explain("compose: Bcc field not yet visible, will retry on next mutation");
+    return false;
+  }
 
   if (sealAlreadyAdded(dialog)) {
     dialog.setAttribute(COMPOSE_PROCESSED, "1");
+    explain("compose: seal address already present, marked processed");
     return true;
   }
 
@@ -152,7 +169,7 @@ function processCompose(dialog: HTMLElement): boolean {
     insertSealChip(input);
     dialog.setAttribute(COMPOSE_PROCESSED, "1");
     void bumpInjectedCount();
-    debug("sealed compose", dialog);
+    explain("compose: seal injected", { address: SEAL_ADDRESS });
     return true;
   } catch (err) {
     warn("insert failed", err);
@@ -230,23 +247,46 @@ async function decorateRow(row: HTMLElement): Promise<void> {
   if (row.getAttribute(ROW_PROCESSED_ATTR)) return;
 
   const domain = extractSenderDomain(row);
-  if (!domain) return;
+  if (!domain) {
+    explain("row skipped — could not extract sender domain", {
+      rowPreview: row.innerText.slice(0, 80),
+    });
+    return;
+  }
 
   row.setAttribute(ROW_PROCESSED_ATTR, domain);
 
   try {
     const payload = await lookupDomain(domain);
-    // Row may have been re-rendered/removed between request and response.
-    // Guard against re-append into a detached node, and against stacking
-    // duplicate pills if Gmail resurrected the row.
-    if (!row.isConnected) return;
-    if (row.querySelector(`.${PILL_CLASS_NAME}`)) return;
+    if (!row.isConnected) {
+      explain("row detached before pill render", { domain });
+      return;
+    }
+    if (row.querySelector(`.${PILL_CLASS_NAME}`)) {
+      explain("pill already present, skipping", { domain });
+      return;
+    }
     const pill = buildPill(payload);
-    if (!pill) return;
+    if (!pill) {
+      explain("buildPill returned null (error state)", {
+        domain,
+        state: payload.state,
+      });
+      return;
+    }
     const anchor = findPillAnchor(row);
-    anchor?.insertBefore(pill, anchor.firstChild);
+    if (!anchor) {
+      explain("no anchor found for pill", { domain });
+      return;
+    }
+    anchor.insertBefore(pill, anchor.firstChild);
+    explain("pill inserted", {
+      domain,
+      state: payload.state,
+      trust: payload.trustIndex,
+    });
   } catch (err) {
-    debug("lookup failed", domain, err);
+    explain("lookup threw", { domain, err: String(err) });
   }
 }
 
