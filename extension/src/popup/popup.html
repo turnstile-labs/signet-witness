@@ -4,12 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Witnessed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Unbounded:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./popup.css" />
   </head>
   <body>
     <main>
       <header class="head">
-        <div class="brand">WITNESSED</div>
+        <!-- Mirrors the NavBar wordmark on witnessed.cc exactly: Unbounded
+             700 uppercase "WITNESSED" baseline-aligned with a small mono
+             ".cc" in the accent color. Same DOM shape → same brand. -->
+        <a class="wordmark" href="https://witnessed.cc" target="_blank" rel="noopener">
+          <span class="wm-main">WITNESSED</span><span class="wm-tld">.cc</span>
+        </a>
         <div class="tag" id="head-tag">for Gmail</div>
       </header>
 

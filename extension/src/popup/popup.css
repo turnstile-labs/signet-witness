@@ -45,12 +45,38 @@ main {
   gap: 8px;
 }
 
-.brand {
+/* Wordmark — identical typographic rules to app/components/NavBar.tsx so
+   the extension reads as the same product as the site. `.cc` sits in
+   the brand accent (trust-blue), nudged 1px down to sit flush with the
+   baseline of the uppercase Unbounded "WITNESSED". */
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  text-decoration: none;
+  user-select: none;
+  color: inherit;
+}
+
+.wm-main {
   font-family: "Unbounded", "Space Grotesk", Inter, sans-serif;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   font-size: 13px;
+  line-height: 1;
   color: var(--txt);
+}
+
+.wm-tld {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-weight: 400;
+  font-size: 8px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--accent);
+  position: relative;
+  top: 1px;
 }
 
 .tag { font-size: 11px; color: var(--muted); }
