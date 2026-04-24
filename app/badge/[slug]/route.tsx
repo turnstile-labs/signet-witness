@@ -20,7 +20,7 @@ import {
 //
 // Verified: filled green pill, white check icon, white text.
 // OnRecord: filled amber pill, white dot icon, white text.
-// Pending : outlined gray pill, outlined gray circle, muted text.
+// Pending : filled yellow pill, white hollow-ring icon, white text.
 //
 // No progress ring, no score readout. The badge answers the
 // categorical question ("has this domain been sealed?") via bg
@@ -86,11 +86,11 @@ const PALETTES: Record<BadgeState, Palette> = {
     iconBg: "#d97706",
   },
   pending: {
-    bg: "#ffffff",          // outline pill, light bg
-    border: "#c8c8d4",
-    text: "#5a5a68",
-    icon: "#9a9aaa",
-    iconBg: "#ffffff",
+    bg: "#ca8a04",          // solid yellow (traffic-light "building")
+    border: "#a16207",
+    text: "#ffffff",
+    icon: "#ffffff",
+    iconBg: "#ca8a04",
   },
 };
 

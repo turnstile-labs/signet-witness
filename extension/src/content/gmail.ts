@@ -26,7 +26,8 @@ import {
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.3.0";
+const BUILD_TAG = "v0.3.1";
+const MAX_VISIBLE_DOMAINS = 25;
 
 let injectEnabled = true;
 
@@ -198,47 +199,83 @@ function emailToDomain(raw: string | null | undefined): string | null {
   return domain;
 }
 
+export type VisibleContext = "thread" | "list" | "none";
+
+export interface VisibleDomainEntry {
+  domain: string;
+  source: "thread" | "row";
+}
+
+export interface VisibleDomainsReply {
+  domains: VisibleDomainEntry[];
+  context: VisibleContext;
+}
+
 /**
- * Returns the most meaningful "focused sender" the user is looking at:
- *   - If a conversation is open, the sender of the most recent message
- *     in that thread (the one currently shown in the header).
- *   - Otherwise, if the user has hovered a row recently, the hovered
- *     sender (Gmail leaves the selection on the list).
- *   - Otherwise, null — the popup will show a helpful hint.
+ * Returns every unique sender domain the user can see right now.
+ *
+ *   - If a conversation is open, returns the domain of every message
+ *     sender in that thread (one chat can involve several counterparties
+ *     — each one deserves its own "proof of business" chip).
+ *   - Otherwise (inbox list view), returns the sender domain of every
+ *     visible inbox row, in the order Gmail renders them.
+ *
+ * Results are de-duplicated and capped at MAX_VISIBLE_DOMAINS so an
+ * overfilled inbox doesn't make the popup slow to render.
  */
-function getFocusDomain(): { domain: string | null; source: string } {
-  // 1) Opened thread — Gmail renders the sender header under [role="main"]
-  //    with a span[email] per message. The last span[email] is the most
-  //    recent message's sender, which is what users want to verify.
+function getVisibleDomains(): VisibleDomainsReply {
+  const seen = new Map<string, VisibleDomainEntry>();
   const main = document.querySelector<HTMLElement>('[role="main"]');
+
+  // 1) Thread view — senders of the messages in the open conversation.
+  //    We identify them by `span[email]` inside the main pane that is
+  //    NOT inside an inbox row (`tr.zA`), so we don't accidentally
+  //    pick up list-row senders in split-pane layouts.
   if (main) {
     const emailSpans = main.querySelectorAll<HTMLElement>("span[email]");
-    if (emailSpans.length > 0) {
-      const last = emailSpans[emailSpans.length - 1];
-      const d = emailToDomain(last.getAttribute("email"));
-      if (d) return { domain: d, source: "thread" };
+    for (const el of emailSpans) {
+      if (el.closest("tr.zA")) continue;
+      const d = emailToDomain(el.getAttribute("email"));
+      if (d && !seen.has(d)) {
+        seen.set(d, { domain: d, source: "thread" });
+        if (seen.size >= MAX_VISIBLE_DOMAINS) break;
+      }
     }
-    // Some Gmail variants use data-hovercard-id on the sender header.
-    const hovercard = main.querySelector<HTMLElement>(
-      "h3 [data-hovercard-id], [role='heading'] [data-hovercard-id]",
-    );
-    const dh = emailToDomain(hovercard?.getAttribute("data-hovercard-id"));
-    if (dh) return { domain: dh, source: "thread" };
+    // Fallback: some Gmail variants carry the sender on the hovercard.
+    if (seen.size === 0) {
+      const cards = main.querySelectorAll<HTMLElement>(
+        "h3 [data-hovercard-id], [role='heading'] [data-hovercard-id]",
+      );
+      for (const el of cards) {
+        const d = emailToDomain(el.getAttribute("data-hovercard-id"));
+        if (d && !seen.has(d)) {
+          seen.set(d, { domain: d, source: "thread" });
+          if (seen.size >= MAX_VISIBLE_DOMAINS) break;
+        }
+      }
+    }
   }
 
-  // 2) Selected/hovered inbox row — when the user has clicked a row but
-  //    not opened it (e.g. keyboard-nav), Gmail sets `.zA.btb` on it.
-  const selected = document.querySelector<HTMLElement>(
-    "tr.zA.btb, tr.zA.byr",
-  );
-  if (selected) {
-    const d = emailToDomain(
-      selected.querySelector<HTMLElement>("span[email]")?.getAttribute("email"),
-    );
-    if (d) return { domain: d, source: "row" };
+  if (seen.size > 0) {
+    return { domains: Array.from(seen.values()), context: "thread" };
   }
 
-  return { domain: null, source: "none" };
+  // 2) Inbox list view — every visible row's sender domain, in document
+  //    order so the popup mirrors what the user is reading top-to-bottom.
+  const rows = document.querySelectorAll<HTMLElement>("tr.zA");
+  for (const row of rows) {
+    const span = row.querySelector<HTMLElement>("span[email]");
+    const d = emailToDomain(span?.getAttribute("email"));
+    if (d && !seen.has(d)) {
+      seen.set(d, { domain: d, source: "row" });
+      if (seen.size >= MAX_VISIBLE_DOMAINS) break;
+    }
+  }
+  if (seen.size > 0) {
+    return { domains: Array.from(seen.values()), context: "list" };
+  }
+
+  return { domains: [], context: "none" };
 }
 
 // ── Observer / message bridge ─────────────────────────────────
@@ -257,12 +294,12 @@ function scheduleComposeScan(): void {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (!msg || typeof msg !== "object") return false;
   const kind = (msg as { kind?: string }).kind;
-  if (kind === "GET_FOCUS_DOMAIN") {
+  if (kind === "GET_VISIBLE_DOMAINS") {
     try {
-      sendResponse(getFocusDomain());
+      sendResponse(getVisibleDomains());
     } catch (err) {
-      warn("focus probe failed", err);
-      sendResponse({ domain: null, source: "error" });
+      warn("visible-domains probe failed", err);
+      sendResponse({ domains: [], context: "none" });
     }
     return true; // keep channel open until sendResponse is called (sync here)
   }

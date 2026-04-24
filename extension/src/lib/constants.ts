@@ -5,7 +5,6 @@
  */
 export const SEAL_ADDRESS = "seal@witnessed.cc";
 export const WITNESSED_HOME = "https://witnessed.cc";
-export const SETUP_URL = "https://witnessed.cc/setup";
 export const API_BASE = "https://witnessed.cc";
 export const PRODUCT_NAME = "Witnessed";
 

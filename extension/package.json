@@ -1,7 +1,7 @@
 {
   "name": "witnessed-extension",
-  "version": "0.3.0",
-  "description": "Auto-BCC seal@witnessed.cc on Gmail composes, and look up any sender's Witnessed proof-of-business record at a click.",
+  "version": "0.3.1",
+  "description": "Auto-BCC seal@witnessed.cc on Gmail composes, and look up every visible sender's Witnessed proof-of-business record at a click.",
   "private": true,
   "type": "module",
   "scripts": {

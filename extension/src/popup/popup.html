@@ -10,61 +10,28 @@
     <main>
       <header class="head">
         <div class="brand">WITNESSED</div>
-        <div class="tag">for Gmail</div>
+        <div class="tag" id="head-tag">for Gmail</div>
       </header>
 
-      <!-- Live "proof of business" card for the sender in focus. Hidden
-           until the popup has queried the active tab. -->
-      <section class="sender" id="sender">
-        <div class="sender-empty" id="sender-empty">
-          <div class="sender-empty-title">No sender in focus</div>
-          <div class="sender-empty-sub">Open an email in Gmail and reopen this popup to verify the sender.</div>
+      <!-- Live "proof of business" list for every sender domain the
+           user can see in the active Gmail tab. Rendered dynamically
+           from the content script. -->
+      <section class="senders" id="senders">
+        <div class="senders-head">
+          <div class="senders-title" id="senders-title">Senders in view</div>
+          <div class="senders-sub" id="senders-sub">&nbsp;</div>
         </div>
 
-        <div class="sender-card" id="sender-card" hidden>
-          <div class="sender-head">
-            <div>
-              <div class="sender-domain" id="sender-domain">—</div>
-              <div class="sender-source" id="sender-source"></div>
-            </div>
-            <div class="state-chip" id="state-chip">
-              <span class="state-dot" id="state-dot"></span>
-              <span id="state-label">—</span>
-            </div>
+        <div class="senders-empty" id="senders-empty">
+          <div class="senders-empty-title">No senders in view</div>
+          <div class="senders-empty-sub">
+            Open Gmail to verify visible senders.
           </div>
-
-          <div class="trust" id="trust">
-            <div class="trust-row">
-              <div class="trust-label">Trust index</div>
-              <div class="trust-value" id="trust-value">—</div>
-            </div>
-            <div class="trust-bar"><div class="trust-fill" id="trust-fill"></div></div>
-          </div>
-
-          <div class="stats">
-            <div class="stat-mini">
-              <div class="stat-mini-num" id="stat-events">—</div>
-              <div class="stat-mini-label">sealed events</div>
-            </div>
-            <div class="stat-mini">
-              <div class="stat-mini-num" id="stat-mutual">—</div>
-              <div class="stat-mini-label">mutual domains</div>
-            </div>
-            <div class="stat-mini">
-              <div class="stat-mini-num" id="stat-receivers">—</div>
-              <div class="stat-mini-label">unique receivers</div>
-            </div>
-          </div>
-
-          <a class="sender-cta" id="sender-cta" href="#" target="_blank" rel="noopener">
-            View full record →
-          </a>
         </div>
 
-        <div class="sender-loading" id="sender-loading" hidden>
-          <div class="spinner" aria-hidden="true"></div>
-          <div>Checking <span id="sender-loading-domain">…</span></div>
-        </div>
+        <ul class="senders-list" id="senders-list" hidden></ul>
+
+        <div class="senders-more" id="senders-more" hidden></div>
       </section>
 
       <!-- Auto-BCC toggle. -->
@@ -72,7 +39,10 @@
         <div class="row">
           <div>
             <div class="row-label">Auto-seal outgoing</div>
-            <div class="row-sub">Adds <code id="seal-addr">seal@witnessed.cc</code> to Bcc on every new compose</div>
+            <div class="row-sub">
+              Adds <code id="seal-addr">seal@witnessed.cc</code> to Bcc on every
+              new compose
+            </div>
           </div>
           <label class="switch">
             <input type="checkbox" id="toggle-inject" />
@@ -80,20 +50,6 @@
           </label>
         </div>
       </section>
-
-      <section class="stat-row">
-        <div class="stat">
-          <div class="stat-num" id="count">0</div>
-          <div class="stat-label">emails sealed from this browser</div>
-        </div>
-        <button type="button" id="clear-cache" class="ghost" title="Clear cached sender lookups">Refresh</button>
-      </section>
-
-      <footer class="links">
-        <a id="home" href="#" target="_blank" rel="noopener">witnessed.cc</a>
-        <span class="dot-sep"></span>
-        <a id="setup" href="#" target="_blank" rel="noopener">Setup guide</a>
-      </footer>
     </main>
 
     <script type="module" src="./popup.ts"></script>

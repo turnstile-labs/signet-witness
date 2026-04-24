@@ -116,10 +116,14 @@ function Stat({
 // the same definitions. `dim` is a fourth tone used only on the
 // Unclaimed placeholder, where the state block reads as ghosted.
 //
-//   verified  → filled green  / ✓ check    / "Verified"
-//   onRecord  → filled amber  / ● dot      / "On record"
-//   pending   → outline gray  / ○ hollow   / "Warming up"
-//   dim       → outline gray  / ○ hollow   / "—" (Unclaimed only)
+// Palette is traffic-light semantic:
+//   verified  → green   / ✓ check    / "Verified"
+//   onRecord  → amber   / ● dot      / "On record"
+//   pending   → yellow  / ○ hollow   / "Warming up"  (warmer than
+//                                                      gray — still
+//                                                      live, still
+//                                                      building)
+//   dim       → gray    / ○ hollow   / "—" (Unclaimed only)
 //
 // Labels and subtitles are i18n-driven. Icon and color choices are
 // structural and constant across locales.
@@ -142,8 +146,8 @@ const STATE_TONE_CLASSES: Record<StateTone, {
     subtitle: "text-muted",
   },
   pending: {
-    frame: "border-border bg-surface/60",
-    title: "text-txt",
+    frame: "border-pending/40 bg-pending/10",
+    title: "text-pending",
     subtitle: "text-muted",
   },
   dim: {
@@ -179,6 +183,16 @@ function StateIcon({ tone }: { tone: StateTone }) {
         className="shrink-0 w-10 h-10 rounded-full bg-amber flex items-center justify-center"
       >
         <span className="w-2.5 h-2.5 rounded-full bg-bg" />
+      </span>
+    );
+  }
+  if (tone === "pending") {
+    return (
+      <span
+        aria-hidden
+        className="shrink-0 w-10 h-10 rounded-full border-2 border-pending flex items-center justify-center"
+      >
+        <span className="w-2.5 h-2.5 rounded-full bg-pending" />
       </span>
     );
   }

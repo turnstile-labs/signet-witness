@@ -277,8 +277,8 @@ export default async function OpsPage({
             <Legend
               items={[
                 { color: "bg-verified", label: "Verified" },
-                { color: "bg-accent", label: "On record" },
-                { color: "bg-amber", label: "Pending" },
+                { color: "bg-amber", label: "On record" },
+                { color: "bg-pending", label: "Pending" },
               ]}
             />
           }
@@ -588,8 +588,8 @@ function StatusBadge({ status }: { status: StatusLabel }) {
     status === "Verified"
       ? "bg-verified"
       : status === "On record"
-        ? "bg-accent"
-        : "bg-amber";
+        ? "bg-amber"
+        : "bg-pending";
   return (
     <span className="inline-flex items-center gap-2">
       <span

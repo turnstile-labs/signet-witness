@@ -1,10 +1,5 @@
-import {
-  SEAL_ADDRESS,
-  SETUP_URL,
-  WITNESSED_HOME,
-} from "../lib/constants";
+import { SEAL_ADDRESS, WITNESSED_HOME } from "../lib/constants";
 import { getSettings, onSettingsChange, setEnabled } from "../lib/storage";
-import { clearCache } from "../lib/cache";
 import { lookupDomain } from "../lib/api";
 import type { DomainState, PublicPayload } from "../lib/types";
 
@@ -15,8 +10,14 @@ const $ = <T extends HTMLElement>(id: string): T => {
 };
 
 // ── State chip palette ────────────────────────────────────────
-// Mirrors the colours used on /b/<domain> so the popup reads as the
+// Traffic-light semantics — mirrors `globals.css` and the seal
+// page so the popup, the badge, and /b/<domain> all read as the
 // same product.
+//   verified  → green
+//   onRecord  → amber
+//   pending   → yellow
+//   unclaimed → neutral gray
+//   error     → red
 const CHIP: Record<
   DomainState,
   { label: string; hint: string; dot: string; border: string; tint: string }
@@ -25,199 +26,284 @@ const CHIP: Record<
     label: "Verified",
     hint: "Trusted — meets the verified bar",
     dot: "#22c55e",
-    border: "rgba(34,197,94,0.4)",
+    border: "rgba(34,197,94,0.40)",
     tint: "rgba(34,197,94,0.09)",
   },
   onRecord: {
     label: "On record",
     hint: "Sealing outbound mail; building reputation",
     dot: "#f59e0b",
-    border: "rgba(245,158,11,0.4)",
+    border: "rgba(245,158,11,0.40)",
     tint: "rgba(245,158,11,0.08)",
   },
   pending: {
     label: "Pending",
     hint: "First seal only — not warmed up yet",
-    dot: "#7c6af7",
-    border: "rgba(124,106,247,0.4)",
-    tint: "rgba(124,106,247,0.09)",
+    dot: "#eab308",
+    border: "rgba(234,179,8,0.40)",
+    tint: "rgba(234,179,8,0.09)",
   },
   unclaimed: {
     label: "Unclaimed",
     hint: "No sealed outbound mail from this domain yet",
     dot: "#9ca3af",
-    border: "rgba(156,163,175,0.4)",
-    tint: "rgba(156,163,175,0.09)",
+    border: "rgba(156,163,175,0.40)",
+    tint: "rgba(156,163,175,0.08)",
   },
   error: {
     label: "Unavailable",
-    hint: "Couldn't reach witnessed.cc — try Refresh",
+    hint: "Couldn't reach witnessed.cc — try again in a moment",
     dot: "#ef4444",
-    border: "rgba(239,68,68,0.4)",
+    border: "rgba(239,68,68,0.40)",
     tint: "rgba(239,68,68,0.09)",
   },
 };
 
+const MAX_ITEMS = 25;
+
 const toggleInject = $<HTMLInputElement>("toggle-inject");
-const count = $<HTMLElement>("count");
 const sealAddr = $<HTMLElement>("seal-addr");
-const home = $<HTMLAnchorElement>("home");
-const setup = $<HTMLAnchorElement>("setup");
-const clearBtn = $<HTMLButtonElement>("clear-cache");
 
-const senderCard = $<HTMLElement>("sender-card");
-const senderEmpty = $<HTMLElement>("sender-empty");
-const senderLoading = $<HTMLElement>("sender-loading");
-const senderLoadingDomain = $<HTMLElement>("sender-loading-domain");
-const senderDomain = $<HTMLElement>("sender-domain");
-const senderSource = $<HTMLElement>("sender-source");
-const senderCta = $<HTMLAnchorElement>("sender-cta");
-const stateChip = $<HTMLElement>("state-chip");
-const stateDot = $<HTMLElement>("state-dot");
-const stateLabel = $<HTMLElement>("state-label");
-const trust = $<HTMLElement>("trust");
-const trustValue = $<HTMLElement>("trust-value");
-const trustFill = $<HTMLElement>("trust-fill");
-const statEvents = $<HTMLElement>("stat-events");
-const statMutual = $<HTMLElement>("stat-mutual");
-const statReceivers = $<HTMLElement>("stat-receivers");
+const sendersTitle = $<HTMLElement>("senders-title");
+const sendersSub = $<HTMLElement>("senders-sub");
+const sendersEmpty = $<HTMLElement>("senders-empty");
+const sendersList = $<HTMLUListElement>("senders-list");
+const sendersMore = $<HTMLElement>("senders-more");
+const headTag = $<HTMLElement>("head-tag");
 
-function setSenderView(view: "empty" | "loading" | "card"): void {
-  senderEmpty.hidden = view !== "empty";
-  senderLoading.hidden = view !== "loading";
-  senderCard.hidden = view !== "card";
+// ── Senders list rendering ────────────────────────────────────
+
+type VisibleContext = "thread" | "list" | "none" | "not-gmail" | "no-content";
+
+interface VisibleDomainEntry {
+  domain: string;
+  source: "thread" | "row";
 }
 
-function renderSenderCard(payload: PublicPayload, source: string): void {
+interface VisibleDomainsReply {
+  domains: VisibleDomainEntry[];
+  context: "thread" | "list" | "none";
+}
+
+interface LocalReply {
+  domains: VisibleDomainEntry[];
+  context: VisibleContext;
+}
+
+function contextCopy(ctx: VisibleContext, count: number): {
+  title: string;
+  sub: string;
+} {
+  if (ctx === "thread") {
+    return {
+      title: count === 1 ? "Sender in this chat" : "Senders in this chat",
+      sub: count === 1 ? "1 domain" : `${count} domains`,
+    };
+  }
+  if (ctx === "list") {
+    return {
+      title: "Senders in view",
+      sub: count === 1 ? "1 domain in your inbox list" : `${count} domains in your inbox list`,
+    };
+  }
+  if (ctx === "not-gmail") {
+    return {
+      title: "Not a Gmail tab",
+      sub: "Switch to a Gmail tab and reopen this popup.",
+    };
+  }
+  if (ctx === "no-content") {
+    return {
+      title: "Gmail not ready yet",
+      sub: "Reload the Gmail tab and reopen this popup.",
+    };
+  }
+  return { title: "No senders in view", sub: " " };
+}
+
+function setEmpty(ctx: VisibleContext): void {
+  sendersList.hidden = true;
+  sendersList.innerHTML = "";
+  sendersMore.hidden = true;
+  const { title, sub } = contextCopy(ctx, 0);
+  sendersTitle.textContent = title;
+  sendersSub.textContent = sub;
+  sendersEmpty.hidden = false;
+  // Switch empty copy based on context
+  const sub1 = sendersEmpty.querySelector<HTMLElement>(
+    ".senders-empty-sub",
+  );
+  const title1 = sendersEmpty.querySelector<HTMLElement>(
+    ".senders-empty-title",
+  );
+  if (title1) title1.textContent = title;
+  if (sub1) sub1.textContent = sub;
+}
+
+function createItem(entry: VisibleDomainEntry): HTMLLIElement {
+  const li = document.createElement("li");
+  const a = document.createElement("a");
+  a.className = "sender-item loading";
+  a.href = `${WITNESSED_HOME}/b/${encodeURIComponent(entry.domain)}`;
+  a.target = "_blank";
+  a.rel = "noopener";
+
+  const main = document.createElement("div");
+  main.className = "sender-main";
+
+  const dom = document.createElement("div");
+  dom.className = "sender-domain";
+  dom.textContent = entry.domain;
+
+  const meta = document.createElement("div");
+  meta.className = "sender-meta";
+  const source = document.createElement("span");
+  source.textContent = entry.source === "thread" ? "in chat" : "inbox row";
+  const sep = document.createElement("span");
+  sep.className = "sep";
+  const trust = document.createElement("span");
+  trust.className = "sender-trust";
+  trust.textContent = "—";
+  trust.dataset.field = "trust";
+  meta.append(source, sep, trust);
+
+  main.append(dom, meta);
+
+  const state = document.createElement("span");
+  state.className = "sender-state";
+  state.dataset.field = "state";
+  const dot = document.createElement("span");
+  dot.className = "state-dot";
+  const label = document.createElement("span");
+  label.textContent = "checking…";
+  state.append(dot, label);
+
+  a.append(main, state);
+  li.appendChild(a);
+  return li;
+}
+
+function paintItem(li: HTMLLIElement, payload: PublicPayload): void {
+  const a = li.querySelector<HTMLAnchorElement>(".sender-item");
+  if (!a) return;
+  a.classList.remove("loading");
+
   const chip = CHIP[payload.state];
-  senderDomain.textContent = payload.domain;
-  senderSource.textContent =
-    source === "thread"
-      ? "from the open conversation"
-      : source === "row"
-        ? "from the selected row"
-        : "";
-
-  stateLabel.textContent = chip.label;
-  stateDot.style.background = chip.dot;
-  stateChip.style.borderColor = chip.border;
-  stateChip.style.backgroundColor = chip.tint;
-  stateChip.title = chip.hint;
-
-  const ti = payload.trustIndex;
-  if (ti === null) {
-    trust.style.display = "none";
-  } else {
-    trust.style.display = "";
-    trustValue.textContent = `${ti} / 100`;
-    trustFill.style.width = `${Math.max(2, Math.min(100, ti))}%`;
-    trustFill.style.background = chip.dot;
+  const state = li.querySelector<HTMLElement>('[data-field="state"]');
+  if (state) {
+    state.style.borderColor = chip.border;
+    state.style.backgroundColor = chip.tint;
+    state.title = chip.hint;
+    const dot = state.querySelector<HTMLElement>(".state-dot");
+    if (dot) dot.style.background = chip.dot;
+    const label = state.querySelector<HTMLElement>("span:not(.state-dot)");
+    if (label) label.textContent = chip.label;
   }
 
-  statEvents.textContent = String(payload.verifiedEventCount ?? 0);
-  statMutual.textContent = String(payload.mutualCounterparties ?? 0);
-  statReceivers.textContent = String(payload.uniqueReceivers ?? 0);
-
-  senderCta.href = `${WITNESSED_HOME}/b/${encodeURIComponent(payload.domain)}`;
-
-  setSenderView("card");
+  const trust = li.querySelector<HTMLElement>('[data-field="trust"]');
+  if (trust) {
+    const ti = payload.trustIndex;
+    trust.textContent = ti == null ? "—" : `${ti}/100`;
+  }
 }
 
-interface FocusReply {
-  domain: string | null;
-  source: string;
-}
-
-async function queryFocusDomain(): Promise<FocusReply> {
+async function queryVisibleDomains(): Promise<LocalReply> {
   const [tab] = await chrome.tabs.query({
     active: true,
     currentWindow: true,
   });
   if (!tab?.id || !tab.url?.startsWith("https://mail.google.com/")) {
-    return { domain: null, source: "not-gmail" };
+    return { domains: [], context: "not-gmail" };
   }
   try {
     const reply = (await chrome.tabs.sendMessage(tab.id, {
-      kind: "GET_FOCUS_DOMAIN",
-    })) as FocusReply | undefined;
-    return reply ?? { domain: null, source: "none" };
+      kind: "GET_VISIBLE_DOMAINS",
+    })) as VisibleDomainsReply | undefined;
+    if (!reply) return { domains: [], context: "no-content" };
+    return reply;
   } catch (err) {
     // Content script not injected yet (cold Gmail tab, or Gmail under a
-    // different URL variant). We treat this the same as "no focus".
-    console.warn("[witnessed] focus query failed", err);
-    return { domain: null, source: "no-content" };
+    // different URL variant).
+    console.warn("[witnessed] visible-domains query failed", err);
+    return { domains: [], context: "no-content" };
   }
 }
 
-async function refreshSender(): Promise<void> {
-  const { domain, source } = await queryFocusDomain();
-  if (!domain) {
-    setSenderView("empty");
+async function renderSenders(): Promise<void> {
+  const { domains, context } = await queryVisibleDomains();
+  headTag.textContent = context === "thread" ? "Chat view" : context === "list" ? "Inbox view" : "for Gmail";
+
+  if (domains.length === 0) {
+    setEmpty(context);
     return;
   }
-  senderLoadingDomain.textContent = domain;
-  setSenderView("loading");
-  try {
-    const payload = await lookupDomain(domain);
-    renderSenderCard(payload, source);
-  } catch (err) {
-    console.warn("[witnessed] lookup failed", err);
-    renderSenderCard(
-      {
-        domain,
-        state: "error",
-        trustIndex: null,
-        verifiedEventCount: 0,
-        mutualCounterparties: 0,
-        uniqueReceivers: 0,
-        inboundCount: null,
-        firstSeen: null,
-        updatedAt: new Date().toISOString(),
-      },
-      source,
-    );
+
+  sendersEmpty.hidden = true;
+  sendersList.hidden = false;
+  sendersList.innerHTML = "";
+
+  const visible = domains.slice(0, MAX_ITEMS);
+  const { title, sub } = contextCopy(context, domains.length);
+  sendersTitle.textContent = title;
+  sendersSub.textContent = sub;
+
+  // Build rows + render immediately in loading state so the popup
+  // paints without waiting on the network.
+  const items = visible.map((entry) => ({
+    entry,
+    node: createItem(entry),
+  }));
+  for (const item of items) sendersList.appendChild(item.node);
+
+  if (domains.length > visible.length) {
+    sendersMore.hidden = false;
+    sendersMore.textContent = `+ ${domains.length - visible.length} more not shown`;
+  } else {
+    sendersMore.hidden = true;
   }
+
+  // Kick off lookups in parallel. lookupDomain is cache-aware and
+  // dedups in-flight requests, so a busy inbox doesn't fan out.
+  await Promise.all(
+    items.map(async ({ entry, node }) => {
+      try {
+        const payload = await lookupDomain(entry.domain);
+        paintItem(node, payload);
+      } catch (err) {
+        console.warn("[witnessed] lookup failed", entry.domain, err);
+        paintItem(node, {
+          domain: entry.domain,
+          state: "error",
+          trustIndex: null,
+          verifiedEventCount: 0,
+          mutualCounterparties: 0,
+          uniqueReceivers: 0,
+          inboundCount: null,
+          firstSeen: null,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+    }),
+  );
 }
 
 async function main(): Promise<void> {
   sealAddr.textContent = SEAL_ADDRESS;
-  home.href = WITNESSED_HOME;
-  setup.href = SETUP_URL;
 
   const initial = await getSettings();
   toggleInject.checked = initial.enabled;
-  count.textContent = String(initial.injectedCount);
 
   toggleInject.addEventListener("change", () => {
     void setEnabled(toggleInject.checked);
   });
 
-  clearBtn.addEventListener("click", async () => {
-    clearBtn.disabled = true;
-    const label = clearBtn.textContent ?? "Refresh";
-    try {
-      await clearCache();
-      clearBtn.textContent = "Cleared";
-      clearBtn.classList.add("done");
-      await refreshSender();
-      setTimeout(() => {
-        clearBtn.textContent = label;
-        clearBtn.classList.remove("done");
-        clearBtn.disabled = false;
-      }, 1100);
-    } catch (err) {
-      console.warn("[witnessed] clear failed", err);
-      clearBtn.disabled = false;
+  onSettingsChange((next) => {
+    if (typeof next.enabled === "boolean") {
+      toggleInject.checked = next.enabled;
     }
   });
 
-  onSettingsChange(async (next) => {
-    const current = await getSettings();
-    toggleInject.checked = next.enabled ?? current.enabled;
-    count.textContent = String(next.injectedCount ?? current.injectedCount);
-  });
-
-  await refreshSender();
+  await renderSenders();
 }
 
 void main();
