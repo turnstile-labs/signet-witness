@@ -3,21 +3,29 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
 import CopyableEmail from "@/app/components/CopyableEmail";
+import InstallState from "@/app/components/InstallState";
 
-// /setup — the one-time-configuration page.
+// /setup — the one page that answers "how do I use this?".
 //
-// Single job: turn "remember to Bcc seal@witnessed.cc" into "happens
-// automatically on every outbound email." Every recipe below is
-// self-serve — the user copies an address and a few settings into
-// their own mail provider. Google Workspace and Microsoft 365 get
-// proper Bcc rules; Outlook classic is the one holdout where the
-// rules engine still only exposes Cc as an action (documented below).
+// Every recipe here turns "remember to Bcc seal@witnessed.cc" into
+// something that happens without user effort, scoped to the tool the
+// user already has:
 //
-// Hero mirrors the landing page (centered title + CopyableEmail
-// hero button) so the primary visual — the accent-filled copy
-// action — is consistent across the site. Below the hero, recipe
-// content switches to the left-aligned editorial rhythm shared with
-// the seal / privacy / terms / rights pages.
+//   1. Chrome extension  — personal Gmail, one click
+//   2. Google Workspace  — admin, one rule, entire org
+//   3. Microsoft 365     — admin, one transport rule, entire org
+//   4. Outlook desktop   — individual, local client rule
+//   5. Manual BCC        — universal fallback, any provider
+//
+// Ordering is attention-first: the extension is the lowest-friction
+// setup for the single largest audience (personal Gmail), so it leads.
+// Admin recipes follow for teams that can act at the server level.
+// Outlook desktop and Manual BCC cover everyone else, ending with the
+// universal fallback.
+//
+// Hero mirrors the landing page (centered title + CopyableEmail hero
+// button) so the primary visual — the accent-filled copy action — is
+// consistent across the site.
 
 export async function generateMetadata({
   params,
@@ -42,9 +50,11 @@ export default async function SetupPage({
 
   const t = await getTranslations("setupPage");
 
+  const extensionSteps = t.raw("extension.steps") as string[];
   const workspaceSteps = t.raw("workspace.steps") as string[];
   const m365Steps = t.raw("m365.steps") as string[];
   const outlookSteps = t.raw("outlook.steps") as string[];
+  const manualSteps = t.raw("manual.steps") as string[];
 
   return (
     <div className="marketing flex flex-col min-h-screen bg-bg">
@@ -73,6 +83,24 @@ export default async function SetupPage({
 
         {/* ── Recipes — editorial, left-aligned ─────────────────── */}
         <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+          {/* ── Chrome extension (personal Gmail) ──────────────── */}
+          <Recipe
+            eyebrow={t("extension.eyebrow")}
+            tag={t("bestFor")}
+            tagBody={t("extension.bestFor")}
+            action={
+              <InstallState
+                installedLabel={t("extension.installed")}
+                installedSub={t("extension.installedSub")}
+                installLabel={t("extension.install")}
+                comingSoonLabel={t("extension.comingSoon")}
+                comingSoonSub={t("extension.comingSoonSub")}
+              />
+            }
+            steps={extensionSteps}
+            outcome={t("extension.outcome")}
+          />
+
           {/* ── Google Workspace admin ─────────────────────────── */}
           <Recipe
             eyebrow={t("workspace.eyebrow")}
@@ -99,6 +127,15 @@ export default async function SetupPage({
             steps={outlookSteps}
             outcome={t("outlook.outcome")}
           />
+
+          {/* ── Manual BCC (universal fallback) ────────────────── */}
+          <Recipe
+            eyebrow={t("manual.eyebrow")}
+            tag={t("bestFor")}
+            tagBody={t("manual.bestFor")}
+            steps={manualSteps}
+            outcome={t("manual.outcome")}
+          />
         </div>
       </main>
 
@@ -117,19 +154,22 @@ function EyebrowLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// A single provider recipe. Each one renders identically so a user
-// scanning the page sees the same landmarks (intro → numbered steps
-// → outcome) regardless of which provider they actually use.
+// A single provider recipe. Every recipe renders identically so a
+// user scanning the page sees the same landmarks regardless of which
+// path they take: eyebrow → best-for → optional action (e.g. install
+// button) → numbered steps → outcome.
 function Recipe({
   eyebrow,
   tag,
   tagBody,
+  action,
   steps,
   outcome,
 }: {
   eyebrow: string;
   tag: string;
   tagBody: string;
+  action?: React.ReactNode;
   steps: string[];
   outcome: string;
 }) {
@@ -142,6 +182,8 @@ function Recipe({
         </span>
         {tagBody}
       </p>
+
+      {action && <div className="mt-6 max-w-xl">{action}</div>}
 
       <ol className="mt-6 space-y-3 text-sm text-txt leading-relaxed max-w-xl">
         {steps.map((step, i) => (

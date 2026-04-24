@@ -5,8 +5,6 @@
   },
   "footer": {
     "setup": "Setup",
-    "extension": "Extension",
-    "integrations": "Integrations",
     "privacy": "Privacy",
     "terms": "Terms",
     "rights": "Your rights"
@@ -67,9 +65,7 @@
       "sub": "Free forever. No account needed."
     },
     "orAutoLabel": "Or skip the copy-paste —",
-    "orAutoLink": "set it up once, automatically →",
-    "orExtensionLabel": "On Gmail?",
-    "orExtensionLink": "install the Chrome extension →"
+    "orAutoLink": "set it up once, automatically →"
   },
   "seal": {
     "eyebrow": "Proof of business",
@@ -210,12 +206,27 @@
   },
   "setupPage": {
     "metaTitle": "Set it up once — Witnessed",
-    "metaDescription": "Add Witnessed to every email your domain sends. One-time configuration for Google Workspace, Microsoft 365, and Outlook.",
-    "eyebrow": "Proof setup",
+    "metaDescription": "Every way to get Witnessed working on your outbound email: Chrome extension, Google Workspace, Microsoft 365, Outlook, or a single BCC.",
+    "eyebrow": "Setup",
     "title": "Set it up once.",
-    "intro": "Witnessed only sees the emails where you include our address. This page turns that from a thing you remember into a thing that happens automatically — a silent Bcc added inside the mail provider your domain already uses.",
+    "intro": "Witnessed only sees the emails where you include our address. Pick the path that fits your setup — a one-click extension, a server rule, or a single Bcc. All of them feed the same public record.",
     "copyCaption": "Copy this — paste it into the recipe below",
     "bestFor": "Best for",
+    "extension": {
+      "eyebrow": "Chrome extension · personal Gmail",
+      "bestFor": "anyone using Gmail on Chrome. One install, no configuration, works on every new compose until you turn it off.",
+      "install": "Install from the Chrome Web Store",
+      "installed": "Installed ✓",
+      "installedSub": "You're all set. Open Gmail and start composing — the Bcc is added for you.",
+      "comingSoon": "Coming soon to the Chrome Web Store",
+      "comingSoonSub": "The extension is in final review. Until it's live, the manual Bcc recipe at the bottom of this page works everywhere.",
+      "steps": [
+        "Install the extension from the Chrome Web Store.",
+        "Open Gmail and click Compose. seal@witnessed.cc appears in the Bcc row automatically.",
+        "Click the Witnessed icon in the toolbar on any Gmail tab to see a proof-of-business chip for every visible sender."
+      ],
+      "outcome": "Every outbound Gmail compose is silently sealed from this browser. Remove the Bcc on any individual email if you ever need to — the extension won't re-add it on a thread you've already touched."
+    },
     "workspace": {
       "eyebrow": "Google Workspace · admin",
       "bestFor": "teams on Google Workspace with a custom domain. One rule covers every employee, no per-user installs.",
@@ -254,6 +265,16 @@
         "Skip exceptions → Next. Name the rule \"Witnessed seal\" → Finish."
       ],
       "outcome": "Outlook copies seal@witnessed.cc on every outbound email you send. The rule only runs on the machine where it was created — repeat once on each device you use."
+    },
+    "manual": {
+      "eyebrow": "Manual Bcc · any provider",
+      "bestFor": "Proton, Fastmail, Apple Mail, iOS / Android mail apps, or anything else with a Bcc field. Always works, every client.",
+      "steps": [
+        "Compose a business email in your usual client.",
+        "Paste seal@witnessed.cc into the Bcc field. Most clients save it for next time — after a few sends it autocompletes on its own.",
+        "Send the email. Your record on witnessed.cc grows the moment it arrives."
+      ],
+      "outcome": "Per-message control, zero configuration, any provider. The fallback that works everywhere — and the right choice if you only want specific emails on record."
     }
   },
   "rightsPage": {
@@ -360,29 +381,6 @@
     "contactTitle": "Contact",
     "contactIntro": "Questions about these terms:"
   },
-  "extensionPage": {
-    "metaTitle": "Witnessed for Gmail — browser extension",
-    "metaDescription": "One-click Witnessed inside Gmail: auto-BCC every outbound email and verify any sender at a glance.",
-    "eyebrow": "Browser extension",
-    "title": "Witnessed, inside Gmail.",
-    "intro": "Two jobs in one small extension: auto-BCC seal@witnessed.cc on every Gmail compose, and verify any sender's proof of business with one click on the toolbar icon.",
-    "install": "Install from Chrome Web Store",
-    "installed": "Installed ✓",
-    "installedSub": "You're all set. Open Gmail and start composing — the Bcc is added for you.",
-    "comingSoon": "Coming soon to the Chrome Web Store",
-    "comingSoonSub": "The extension is in final review. In the meantime you can build from source — see the repo README.",
-    "featureWriteTitle": "Auto-seal outgoing mail",
-    "featureWriteBody": "Every new compose gets seal@witnessed.cc silently added to Bcc. Remove it per-message if you ever need to — we never re-inject on a thread you've already touched.",
-    "featureReadTitle": "Verify any sender in one click",
-    "featureReadBody": "Open the popup on any Gmail tab and see a Witnessed proof-of-business chip for every sender domain in view — each one deep-links to the full public page.",
-    "privacyTitle": "Private by design",
-    "privacyBody": "The extension is fully local. No OAuth, no server-side mail access, no tracking. It only talks to witnessed.cc for public domain lookups, cached on your device for up to 24 hours per domain.",
-    "privacyLink": "Read our privacy policy →",
-    "altSetup": "Admin for a whole team?",
-    "altSetupLink": "Set it up server-side for every employee →",
-    "altManual": "Not on Gmail?",
-    "altManualLink": "Use the manual BCC recipe on your provider →"
-  },
   "extensionWelcomePage": {
     "metaTitle": "Welcome — Witnessed for Gmail",
     "metaDescription": "Thanks for installing. Here's what happens now.",
@@ -399,69 +397,5 @@
     "toggleBody": "The toolbar popup has an Auto-seal switch. Turn it off to keep the sender-verification feature without the auto-BCC.",
     "openPopupHint": "Click the Witnessed icon in the toolbar (top-right of Chrome) to open the popup.",
     "goHome": "Back to witnessed.cc →"
-  },
-  "integrationsPage": {
-    "metaTitle": "Integrations — Witnessed",
-    "metaDescription": "Every way to get Witnessed working on your outbound email. Server-side rules, browser extension, or a single BCC.",
-    "eyebrow": "How mail reaches us",
-    "title": "One pipeline. Many ways in.",
-    "intro": "Witnessed is provider-agnostic. Whichever route you pick, the same public record grows on witnessed.cc/b/yourdomain. Admin-level server rules are the most durable; the Chrome extension is the easiest if you only run one Gmail account; a manual Bcc works anywhere.",
-    "liveEyebrow": "Available now",
-    "soonEyebrow": "Coming soon",
-    "adminBestFor": "Best for",
-    "channels": {
-      "workspace": {
-        "name": "Google Workspace",
-        "bestFor": "teams on a custom domain",
-        "body": "One compliance rule covers every employee — no per-user install, no browser needed.",
-        "linkLabel": "Admin recipe →",
-        "linkHref": "/setup"
-      },
-      "m365": {
-        "name": "Microsoft 365",
-        "bestFor": "teams on Exchange Online",
-        "body": "One transport rule covers the organization. External mail only; internal is untouched.",
-        "linkLabel": "Admin recipe →",
-        "linkHref": "/setup"
-      },
-      "outlook": {
-        "name": "Outlook desktop",
-        "bestFor": "individuals without admin access",
-        "body": "A local client rule that copies seal@witnessed.cc on every outbound email from this machine.",
-        "linkLabel": "Client recipe →",
-        "linkHref": "/setup"
-      },
-      "gmailExt": {
-        "name": "Gmail · Chrome extension",
-        "bestFor": "personal Gmail on Chrome",
-        "body": "Auto-BCC on every compose plus a popup that verifies any sender at a glance.",
-        "linkLabel": "Install the extension →",
-        "linkHref": "/extension"
-      },
-      "manual": {
-        "name": "Manual BCC",
-        "bestFor": "any provider, anywhere",
-        "body": "Paste seal@witnessed.cc into Bcc on any business email. Works in every mail client ever made.",
-        "linkLabel": "Copy the address →",
-        "linkHref": "/"
-      },
-      "firefoxExt": {
-        "name": "Firefox extension",
-        "bestFor": "Gmail users on Firefox",
-        "body": "Same behavior as the Chrome build, ported to the WebExtensions API."
-      },
-      "thunderbird": {
-        "name": "Thunderbird add-on",
-        "bestFor": "desktop IMAP on Windows / macOS / Linux",
-        "body": "Auto-BCC at compose time, without touching the server."
-      },
-      "outlookWeb": {
-        "name": "Outlook Web add-in",
-        "bestFor": "Microsoft 365 users without admin access",
-        "body": "Same story as the Chrome extension, on the other enterprise webmail."
-      }
-    },
-    "closingTitle": "Not sure which to pick?",
-    "closingBody": "If you control the DNS for your domain, an admin rule (Workspace or M365) is the most reliable. If you don't, the Chrome extension or a manual Bcc reach the same finish line."
   }
 }

@@ -8,9 +8,9 @@
  * of blowing up. Fill it in after the first accepted submission.
  *
  * The store URL follows the `chromewebstore.google.com/detail/<slug>/<id>`
- * shape. Without the ID it falls back to the Developer Dashboard's public
- * search URL so the user can at least find us, and the `/extension` landing
- * page knows to render "coming soon" copy instead of an Install button.
+ * shape. Without the ID we leave this null; the extension recipe on
+ * `/setup` inspects that and renders "coming soon" copy instead of a
+ * dead Install button.
  */
 
 /** Chrome Web Store extension ID — populated once the listing is approved. */

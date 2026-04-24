@@ -24,7 +24,7 @@ stable for the life of the listing. Store URL once published will be
 `https://chromewebstore.google.com/detail/iaicdleiecpkmdnbhpaknphegkchpgaj`.
 Do **not** paste this into `lib/extension.ts` until the listing is
 approved and live — until then the URL 404s, which would break the
-Install button on `/extension`.
+Install button on `/setup` (where the extension recipe renders).
 
 ## Short summary (≤132 chars)
 
@@ -100,11 +100,11 @@ submission.
 - **`host_permissions: https://witnessed.cc/*`** — Fetches
   `/api/public/domain/<domain>` for each sender domain the popup
   displays. Public, CORS-enabled JSON endpoint; no credentials sent.
-- **`externally_connectable: https://witnessed.cc/*`** — Lets the
-  witnessed.cc landing page ask the extension "are you installed?"
-  via `chrome.runtime.sendMessage`, so the site can show a correct
-  "Installed ✓" badge instead of a dead Install button. Scoped
-  narrowly to our own origin.
+- **`externally_connectable: https://witnessed.cc/*`** — Lets
+  witnessed.cc/setup ask the extension "are you installed?" via
+  `chrome.runtime.sendMessage`, so the extension recipe on that page
+  renders a correct "Installed ✓" badge instead of a dead Install
+  button. Scoped narrowly to our own origin.
 
 ## Single-purpose statement
 
@@ -189,7 +189,8 @@ composition are designed so a 1:1 drop-in of real screenshots at
       eval / Function / innerHTML from remote sources).
 - [ ] Privacy policy URL resolves (`https://witnessed.cc/privacy`).
 - [ ] `EXTENSION_ID` in `lib/extension.ts` updated once Chrome
-      assigns it (enables the "Installed ✓" swap on /extension).
+      assigns it (enables the "Installed ✓" swap on /setup's
+      extension recipe).
 
 ## Review timeline
 

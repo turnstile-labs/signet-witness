@@ -53,10 +53,10 @@ export default defineManifest({
 
   // Lets witnessed.cc (and only witnessed.cc) talk to the extension
   // from regular page script via `chrome.runtime.sendMessage`. This
-  // powers the site's "Installed ✓" / "Install" swap on the /extension
-  // landing page without needing to inject a content script into our
-  // own marketing pages. Reviewers see one targeted origin, not a
-  // blanket opt-in.
+  // powers the site's "Installed ✓" / "Install" swap on the extension
+  // recipe inside /setup without needing to inject a content script
+  // into our own marketing pages. Reviewers see one targeted origin,
+  // not a blanket opt-in.
   externally_connectable: {
     matches: ["https://witnessed.cc/*"],
   },

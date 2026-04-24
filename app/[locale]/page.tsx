@@ -84,16 +84,6 @@ export default async function Home({
                 {t("orAutoLink")}
               </Link>
             </p>
-            <p className="mt-2 text-xs text-muted-2">
-              {t("orExtensionLabel")}{" "}
-              <Link
-                href="/extension"
-                className="font-semibold text-accent hover:text-accent-2 transition-colors"
-              >
-                {t("orExtensionLink")}
-              </Link>
-            </p>
-
           </div>
         </section>
 
@@ -330,15 +320,6 @@ export default async function Home({
                 className="font-semibold text-accent hover:text-accent-2 transition-colors"
               >
                 {t("orAutoLink")}
-              </Link>
-            </p>
-            <p className="mt-2 text-xs text-muted-2">
-              {t("orExtensionLabel")}{" "}
-              <Link
-                href="/extension"
-                className="font-semibold text-accent hover:text-accent-2 transition-colors"
-              >
-                {t("orExtensionLink")}
               </Link>
             </p>
           </div>

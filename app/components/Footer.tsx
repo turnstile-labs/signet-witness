@@ -12,15 +12,6 @@ export default function Footer() {
           <Link href="/setup" className="hover:text-muted transition-colors">
             {t("setup")}
           </Link>
-          <Link href="/extension" className="hover:text-muted transition-colors">
-            {t("extension")}
-          </Link>
-          <Link
-            href="/integrations"
-            className="hover:text-muted transition-colors"
-          >
-            {t("integrations")}
-          </Link>
           <Link href="/privacy" className="hover:text-muted transition-colors">
             {t("privacy")}
           </Link>
