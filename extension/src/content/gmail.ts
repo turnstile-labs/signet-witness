@@ -34,7 +34,7 @@ import {
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.2.4";
+const BUILD_TAG = "v0.2.5";
 
 let injectEnabled = true;
 let statusEnabled = true;
@@ -285,30 +285,38 @@ function findPillAnchor(row: HTMLElement): HTMLElement | null {
   );
 }
 
+/** Rows currently being decorated — prevents duplicate pills when two
+ *  scans race for the same row during a burst of Gmail mutations. */
+const decorating = new WeakSet<HTMLElement>();
+
 async function decorateRow(row: HTMLElement): Promise<void> {
   if (!statusEnabled) return;
-  if (row.getAttribute(ROW_PROCESSED_ATTR)) return;
-
-  const domain = extractSenderDomain(row);
-  if (!domain) {
-    explain("row skipped — could not extract sender domain", {
-      rowPreview: row.innerText.slice(0, 80),
-    });
-    return;
-  }
-
-  row.setAttribute(ROW_PROCESSED_ATTR, domain);
+  // Idempotency guard: if the pill is already there, nothing to do. This
+  // replaces the old ROW_PROCESSED_ATTR "one-shot" gate so that when Gmail
+  // re-renders the sender cell and wipes our pill, the next scan reattaches
+  // it instead of leaving the row bare.
+  if (row.querySelector(`.${PILL_CLASS_NAME}`)) return;
+  if (decorating.has(row)) return;
+  decorating.add(row);
 
   try {
+    const domain = extractSenderDomain(row);
+    if (!domain) {
+      explain("row skipped — could not extract sender domain", {
+        rowPreview: row.innerText.slice(0, 80),
+      });
+      return;
+    }
+
+    row.setAttribute(ROW_PROCESSED_ATTR, domain);
+
     const payload = await lookupDomain(domain);
     if (!row.isConnected) {
       explain("row detached before pill render", { domain });
       return;
     }
-    if (row.querySelector(`.${PILL_CLASS_NAME}`)) {
-      explain("pill already present, skipping", { domain });
-      return;
-    }
+    if (row.querySelector(`.${PILL_CLASS_NAME}`)) return;
+
     const pill = buildPill(payload);
     if (!pill) {
       explain("buildPill returned null (error state)", {
@@ -324,9 +332,6 @@ async function decorateRow(row: HTMLElement): Promise<void> {
     }
     anchor.insertBefore(pill, anchor.firstChild);
 
-    // Post-insertion visibility probe. If the pill ends up 0×0, negative
-    // coords, or sits inside a `display:none` ancestor, the explain log
-    // tells us exactly what went wrong — saves another round of guessing.
     requestAnimationFrame(() => {
       const rect = pill.getBoundingClientRect();
       const cs = getComputedStyle(pill);
@@ -348,24 +353,35 @@ async function decorateRow(row: HTMLElement): Promise<void> {
       });
     });
   } catch (err) {
-    explain("lookup threw", { domain, err: String(err) });
+    explain("lookup threw", { err: String(err) });
+  } finally {
+    decorating.delete(row);
   }
 }
 
 function scanInboxRows(): void {
   if (!statusEnabled) return;
-  const rows = document.querySelectorAll<HTMLElement>(
-    `tr.zA:not([${ROW_PROCESSED_ATTR}])`,
-  );
-  // First time we actually see rows, emit a visible confirmation so the
-  // user can tell the content script is wired up and the inbox is being
-  // scanned. We don't log on empty scans (too noisy: Gmail mutates a lot
-  // before the inbox renders). A one-shot latch keeps the console tidy.
+  // Scan *every* row, not just unprocessed ones. Gmail rebuilds the sender
+  // cell on hover/selection/new-mail and our pill vanishes with it; the
+  // only reliable recovery is to re-attach whenever we notice it's gone.
+  // Cheap: the querySelector below short-circuits on decorated rows and
+  // lookupDomain hits the per-domain cache after the first call.
+  const rows = document.querySelectorAll<HTMLElement>("tr.zA");
+  let missing = 0;
+  for (const row of rows) {
+    if (!row.querySelector(`.${PILL_CLASS_NAME}`)) {
+      missing += 1;
+      void decorateRow(row);
+    }
+  }
   if (!firstScanLogged && rows.length > 0) {
     firstScanLogged = true;
-    info("inbox scan live", { rows: rows.length, build: BUILD_TAG });
+    info("inbox scan live", {
+      rows: rows.length,
+      missingPills: missing,
+      build: BUILD_TAG,
+    });
   }
-  for (const row of rows) void decorateRow(row);
 }
 
 /** Remove every rendered pill from the page — wired to the popup toggle. */
