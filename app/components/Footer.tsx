@@ -8,9 +8,18 @@ export default function Footer() {
     <footer className="border-t border-border mt-auto">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-xs text-muted-2 font-mono">
         <p>© {new Date().getFullYear()} Witnessed</p>
-        <nav className="flex items-center gap-5">
+        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <Link href="/setup" className="hover:text-muted transition-colors">
             {t("setup")}
+          </Link>
+          <Link href="/extension" className="hover:text-muted transition-colors">
+            {t("extension")}
+          </Link>
+          <Link
+            href="/integrations"
+            className="hover:text-muted transition-colors"
+          >
+            {t("integrations")}
           </Link>
           <Link href="/privacy" className="hover:text-muted transition-colors">
             {t("privacy")}

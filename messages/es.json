@@ -5,6 +5,8 @@
   },
   "footer": {
     "setup": "Configuración",
+    "extension": "Extensión",
+    "integrations": "Integraciones",
     "privacy": "Privacidad",
     "terms": "Términos",
     "rights": "Tus derechos"
@@ -65,7 +67,9 @@
       "sub": "Gratis para siempre. Sin necesidad de cuenta."
     },
     "orAutoLabel": "O sáltate el copiar y pegar —",
-    "orAutoLink": "configúralo una vez, en automático →"
+    "orAutoLink": "configúralo una vez, en automático →",
+    "orExtensionLabel": "¿Usas Gmail?",
+    "orExtensionLink": "instala la extensión de Chrome →"
   },
   "seal": {
     "eyebrow": "Prueba de negocio",
@@ -355,5 +359,109 @@
     "changesBody": "Podemos actualizar estos términos de vez en cuando. Actualizaremos la fecha en la parte superior de esta página. El uso continuado del servicio tras los cambios implica la aceptación de los nuevos términos.",
     "contactTitle": "Contacto",
     "contactIntro": "¿Preguntas sobre estos términos?"
+  },
+  "extensionPage": {
+    "metaTitle": "Witnessed para Gmail — extensión de navegador",
+    "metaDescription": "Witnessed dentro de Gmail, en un clic: Cco automático en cada email y verificación del remitente a la vista.",
+    "eyebrow": "Extensión de navegador",
+    "title": "Witnessed, dentro de Gmail.",
+    "intro": "Dos funciones en una extensión pequeña: Cco automático a seal@witnessed.cc en cada email que redactes, y verificación en un clic de la prueba de negocio de cualquier remitente desde el icono de la barra.",
+    "install": "Instalar desde Chrome Web Store",
+    "installed": "Instalada ✓",
+    "installedSub": "Todo listo. Abre Gmail y empieza a escribir — el Cco se añade solo.",
+    "comingSoon": "Próximamente en Chrome Web Store",
+    "comingSoonSub": "La extensión está en revisión final. Mientras tanto, puedes compilarla desde el código — consulta el README del repo.",
+    "featureWriteTitle": "Sellado automático del correo saliente",
+    "featureWriteBody": "Cada nuevo borrador añade seal@witnessed.cc en Cco de forma silenciosa. Puedes quitarlo en un email concreto si lo necesitas — no volvemos a inyectar en un hilo que ya tocaste.",
+    "featureReadTitle": "Verifica cualquier remitente en un clic",
+    "featureReadBody": "Abre el popup en cualquier pestaña de Gmail y verás un distintivo Witnessed de prueba de negocio para cada dominio remitente a la vista — cada uno enlaza a la página pública completa.",
+    "privacyTitle": "Privada por diseño",
+    "privacyBody": "La extensión es completamente local. Sin OAuth, sin acceso al correo desde el servidor, sin tracking. Sólo habla con witnessed.cc para consultas públicas de dominios, que se cachean en tu dispositivo hasta 24 h por dominio.",
+    "privacyLink": "Lee nuestra política de privacidad →",
+    "altSetup": "¿Administras un equipo?",
+    "altSetupLink": "Configúralo en el servidor para toda la empresa →",
+    "altManual": "¿No usas Gmail?",
+    "altManualLink": "Usa la receta manual de Cco en tu proveedor →"
+  },
+  "extensionWelcomePage": {
+    "metaTitle": "Bienvenido — Witnessed para Gmail",
+    "metaDescription": "Gracias por instalar. Esto es lo que pasa ahora.",
+    "eyebrow": "Listo",
+    "title": "La extensión ya está activa.",
+    "intro": "Desde tu próximo borrador en Gmail, seal@witnessed.cc se añade en Cco de forma silenciosa. Cada email de trabajo saliente se suma a tu registro público en witnessed.cc/b/tudominio.",
+    "stepsEyebrow": "Qué probar ahora",
+    "steps": [
+      "Abre Gmail y pulsa Redactar. Verás seal@witnessed.cc ya en Cco.",
+      "Envía un email normal de trabajo a una contraparte real. Tu registro empieza a llenarse.",
+      "Pulsa el icono de Witnessed en la barra sobre cualquier pestaña de Gmail — el popup muestra un distintivo de prueba de negocio para cada remitente visible."
+    ],
+    "toggleEyebrow": "¿Cambiaste de opinión?",
+    "toggleBody": "El popup de la barra tiene un interruptor de sellado automático. Apágalo para conservar la verificación de remitentes sin el Cco automático.",
+    "openPopupHint": "Pulsa el icono de Witnessed en la barra (arriba a la derecha de Chrome) para abrir el popup.",
+    "goHome": "Volver a witnessed.cc →"
+  },
+  "integrationsPage": {
+    "metaTitle": "Integraciones — Witnessed",
+    "metaDescription": "Todas las formas de tener Witnessed funcionando en tu correo saliente. Reglas en servidor, extensión de navegador o un simple Cco.",
+    "eyebrow": "Cómo nos llega el correo",
+    "title": "Una sola pipeline. Muchas entradas.",
+    "intro": "Witnessed es independiente del proveedor. Elijas la ruta que elijas, el mismo registro público crece en witnessed.cc/b/tudominio. Las reglas de servidor a nivel admin son las más duraderas; la extensión de Chrome es la más fácil si sólo usas una cuenta de Gmail; un Cco manual funciona en cualquier sitio.",
+    "liveEyebrow": "Disponible ahora",
+    "soonEyebrow": "Próximamente",
+    "adminBestFor": "Ideal para",
+    "channels": {
+      "workspace": {
+        "name": "Google Workspace",
+        "bestFor": "equipos con dominio propio",
+        "body": "Una regla de cumplimiento cubre a todos los empleados — sin instalar nada por usuario, sin navegador.",
+        "linkLabel": "Receta de admin →",
+        "linkHref": "/setup"
+      },
+      "m365": {
+        "name": "Microsoft 365",
+        "bestFor": "equipos en Exchange Online",
+        "body": "Una regla de transporte cubre la organización. Sólo correo externo; el interno queda intacto.",
+        "linkLabel": "Receta de admin →",
+        "linkHref": "/setup"
+      },
+      "outlook": {
+        "name": "Outlook de escritorio",
+        "bestFor": "individuos sin acceso de admin",
+        "body": "Una regla local que copia seal@witnessed.cc en cada email saliente desde esta máquina.",
+        "linkLabel": "Receta de cliente →",
+        "linkHref": "/setup"
+      },
+      "gmailExt": {
+        "name": "Gmail · extensión de Chrome",
+        "bestFor": "Gmail personal en Chrome",
+        "body": "Cco automático en cada borrador más un popup que verifica cualquier remitente a la vista.",
+        "linkLabel": "Instalar la extensión →",
+        "linkHref": "/extension"
+      },
+      "manual": {
+        "name": "Cco manual",
+        "bestFor": "cualquier proveedor, en cualquier sitio",
+        "body": "Pega seal@witnessed.cc en Cco en cualquier email de trabajo. Funciona en todo cliente de correo que haya existido.",
+        "linkLabel": "Copiar la dirección →",
+        "linkHref": "/"
+      },
+      "firefoxExt": {
+        "name": "Extensión de Firefox",
+        "bestFor": "usuarios de Gmail en Firefox",
+        "body": "Mismo comportamiento que la versión de Chrome, portado a la API WebExtensions."
+      },
+      "thunderbird": {
+        "name": "Complemento de Thunderbird",
+        "bestFor": "IMAP de escritorio en Windows / macOS / Linux",
+        "body": "Cco automático en el momento de redactar, sin tocar el servidor."
+      },
+      "outlookWeb": {
+        "name": "Complemento web de Outlook",
+        "bestFor": "usuarios de Microsoft 365 sin acceso de admin",
+        "body": "La misma historia que la extensión de Chrome, en el otro webmail empresarial."
+      }
+    },
+    "closingTitle": "¿No estás seguro de cuál elegir?",
+    "closingBody": "Si controlas el DNS de tu dominio, una regla de admin (Workspace o M365) es lo más fiable. Si no, la extensión de Chrome o un Cco manual llegan al mismo sitio."
   }
 }
