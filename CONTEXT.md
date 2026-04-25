@@ -126,18 +126,19 @@ Discovery happens through direct URL sharing (`witnessed.cc/b/acme.com`), the em
 
 ### Canonical trust-state system
 
-Trust has three active tiers plus a null state. They're resolved from `(domain, score)` by `lib/scores.ts#trustTierFromScore()` and then rendered identically everywhere — seal page, landing mock, badge, ops — so state can't drift between surfaces. One definition, one palette, one icon per tier:
+Public surfaces are binary: `Verified | Building`. They're resolved from `(domain, score)` by `lib/scores.ts#trustTierFromScore()` and rendered identically everywhere — seal page, landing mock, badge, public API, extension popup — so state can't drift between surfaces. One definition, one palette, one icon per tier:
 
 | Tier | Criteria | Color | Icon | Label |
 |------|----------|-------|------|-------|
 | **Verified** | `trust_index ≥ 65 AND mutuals ≥ 3`, OR grandfathered | green (`#16a34a` / `--verified`) | ✓ check | "Verified" |
-| **Building** | has `verified_event_count > 0` but not verified | amber (`#d97706` / `--amber`) | ● filled dot | "Building" |
-| **Pending** | exists but no verified events yet | outline gray | ○ hollow circle | "Warming up" |
+| **Building** | exists but not verified (any `verified_event_count`, including 0) | amber (`#d97706` / `--amber`) | ● filled dot | "Building" |
 | **Unclaimed** | no `domains` row at all | dim gray | ○ hollow circle | "No record yet" (different page) |
 
-Unclaimed is rendered on its own page (the Unclaimed flow that turns receiver-only activity into a sign-up). The other three live on `/b/[domain]`.
+Unclaimed is rendered on its own page (the Unclaimed flow that turns receiver-only activity into a sign-up). The other two live on `/b/[domain]`.
 
-On why only three active states and no "red": a newly-registered domain with zero history is not *dangerous*, it's *unknown*. Red would scare users away from every legitimate domain on its first day. Green / amber / gray honestly maps to "trust / building / too early." That's the correct shape of our data.
+`/ops` adds a third operator-only sub-bucket — **Inactive** — that splits Building into "has produced ≥1 DKIM-verified event" (Building) vs "has produced 0" (Inactive). It's a diagnostic for spotting DKIM problems and dev junk; public surfaces never see it.
+
+On why only two public states and no "red": a newly-registered domain with zero history is not *dangerous*, it's *unknown*. Red would scare users away from every legitimate domain on its first day. Green / amber / gray honestly maps to "trust / building / too early." That's the correct shape of our data.
 
 ### Seal-page hero is a state block, not a score
 
@@ -151,7 +152,7 @@ The hero on `/b/[domain]` is `StateBlock` — a colored frame + icon + label + o
 [ icon ]  [ STATE WORD ]  ·  [ domain ]
 ```
 
-State *is* the badge's identity, but the literal word carries it: a verified domain renders a **solid green pill** with a bold "Verified" and a white check, Building is **solid amber** with a bold "Building" and a white dot, Pending is a **transparent pill** with a gray outline, gray "Pending" and a hollow ring. Color + icon alone are ambiguous to strangers (an amber pill with a dot can read as "also approved" to someone with no Witnessed mental model); the state word removes the guesswork, and Pending's outline treatment keeps earned-trust tiers (Verified, Building) visually distinct from the "on the record, nothing earned yet" tier. No progress ring, no 0–100 readout, no theme variance — the color + word do all the work, and the badge reads on any email client bg, light or dark. The precise 0–100 number lives on the seal page where there's room for the detail.
+State *is* the badge's identity, but the literal word carries it: a verified domain renders a **solid green pill** with a bold "Verified" and a white check; Building is **solid amber** with a bold "Building" and a white dot. Color + icon alone are ambiguous to strangers (an amber pill with a dot can read as "also approved" to someone with no Witnessed mental model); the state word removes the guesswork. No progress ring, no 0–100 readout, no theme variance — the color + word do all the work, and the badge reads on any email client bg, light or dark. The precise 0–100 number lives on the seal page where there's room for the detail.
 
 Canvas is a **constant 224×32 px Split Pill** (v13): state-tinted LEFT half (icon + state word) + neutral slate RIGHT half (the immutable `witnessed.cc` wordmark). The embedded domain text was dropped — the URL still encodes the domain (`/badge/acme.com.png`) but the rendered output is identical-size for every domain, so a pasted `<img>` tag never reflows on tier transitions and signature layouts that mix multiple badges line up cleanly. Dimension constants live in `lib/badge-dimensions.ts` and are shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. State resolution lives in `lib/badge-state.ts#resolveSnapshot` so tests can import it without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, format, layout-version)` — the only thing that changes the pixels now is a real state transition, so cache hit rates are effectively perfect per domain until the state moves. The `?preview=verified|building` query short-circuits the DB lookup for marketing surfaces; it never mutates data.
 

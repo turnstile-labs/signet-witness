@@ -73,7 +73,7 @@ function formatAge(iso: string | null | undefined): string {
   return `${years}y ago`;
 }
 
-type StatusLabel = "Verified" | "Building" | "Pending";
+type StatusLabel = "Verified" | "Building" | "Inactive";
 
 function statusFor(row: {
   trust_index: number | null;
@@ -89,7 +89,7 @@ function statusFor(row: {
     return "Verified";
   }
   if ((row.verified_event_count ?? 0) > 0) return "Building";
-  return "Pending";
+  return "Inactive";
 }
 
 function humanReason(reason: string): string {
@@ -296,7 +296,7 @@ export default async function OpsPage({
       {/* Trust funnel — population shape across every registered
           sender. The single number that answers "is the invite loop
           working?": Building grows first, then Verified follows.
-          Pending (zero DKIM-verified events) is an operator-only
+          Inactive (zero DKIM-verified events) is an operator-only
           sub-bucket; public surfaces collapse it into Building. */}
       <TrustFunnel tiers={stats.senderTiers} total={stats.domains} />
 
@@ -345,7 +345,7 @@ export default async function OpsPage({
               items={[
                 { color: "bg-verified", label: "Verified" },
                 { color: "bg-amber", label: "Building" },
-                { color: "bg-pending", label: "Pending" },
+                { color: "bg-inactive", label: "Inactive" },
               ]}
             />
           }
@@ -661,7 +661,7 @@ function StatusBadge({ status }: { status: StatusLabel }) {
       ? "bg-verified"
       : status === "Building"
         ? "bg-amber"
-        : "bg-pending";
+        : "bg-inactive";
   return (
     <span className="inline-flex items-center gap-2">
       <span
@@ -740,7 +740,7 @@ function TrustFormula() {
 // Compact horizontal stacked bar + counts + percentages. Single
 // "is the invite loop working?" read in one glance.
 //
-// Order Verified → Building → Pending so the bar reads left-to-right
+// Order Verified → Building → Inactive so the bar reads left-to-right
 // as "best to worst" health. Each segment carries its absolute count
 // directly under the label so operators don't need to mental-math
 // percentages back to numbers.
@@ -748,10 +748,10 @@ function TrustFunnel({
   tiers,
   total,
 }: {
-  tiers: { verified: number; building: number; pending: number };
+  tiers: { verified: number; building: number; inactive: number };
   total: number;
 }) {
-  const sum = tiers.verified + tiers.building + tiers.pending;
+  const sum = tiers.verified + tiers.building + tiers.inactive;
   if (total === 0 || sum === 0) {
     return (
       <section
@@ -766,7 +766,7 @@ function TrustFunnel({
   const pct = (n: number) =>
     sum === 0 ? 0 : Math.round((n / sum) * 1000) / 10;
   const segments: Array<{
-    key: "verified" | "building" | "pending";
+    key: "verified" | "building" | "inactive";
     label: string;
     count: number;
     bg: string;
@@ -787,10 +787,10 @@ function TrustFunnel({
       fg: "text-amber",
     },
     {
-      key: "pending",
-      label: "Pending",
-      count: tiers.pending,
-      bg: "bg-pending/70",
+      key: "inactive",
+      label: "Inactive",
+      count: tiers.inactive,
+      bg: "bg-inactive/70",
       fg: "text-muted",
     },
   ];

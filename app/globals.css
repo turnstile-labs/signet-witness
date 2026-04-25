@@ -22,7 +22,7 @@
   --color-brand-2:   var(--brand-2);
   --color-verified:  var(--verified);
   --color-amber:     var(--amber);
-  --color-pending:   var(--pending);
+  --color-inactive:  var(--inactive);
   --color-unclaimed: var(--unclaimed);
   --color-danger:    var(--danger);
 
@@ -52,8 +52,10 @@
               data density is the point and the UI should feel
               utilitarian rather than branded.
    Both are decoupled from the state palette (verified green,
-   building amber, pending yellow, unclaimed gray, danger red) so
+   building amber, inactive yellow, unclaimed gray, danger red) so
    neither brand nor accent can ever collide with a trust tier.
+   "inactive" is operator-only (the /ops sub-bucket of building with
+   zero DKIM-verified events) — public surfaces never render it.
    Public-facing pages opt into purple via the `.marketing` wrapper
    (see below) which remaps --accent → --brand locally. */
 :root {
@@ -71,7 +73,7 @@
   --brand-2:   #a89cf8;
   --verified:  #22c55e;
   --amber:     #f59e0b;
-  --pending:   #eab308;
+  --inactive:  #eab308;
   --unclaimed: #9ca3af;
   --danger:    #ef4444;
 }
@@ -92,7 +94,7 @@ html.light {
   --brand-2:   #4a38d6;
   --verified:  #16a34a;
   --amber:     #d97706;
-  --pending:   #ca8a04;
+  --inactive:  #ca8a04;
   --unclaimed: #6b7280;
   --danger:    #dc2626;
 }

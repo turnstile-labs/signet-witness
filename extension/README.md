@@ -141,7 +141,7 @@ icon → **Inspect popup**.
   mainly a polyfill + manifest tweak).
 - **v0.5** — Outlook.com / Fastmail / Proton content scripts.
 - **v0.6** — compose-time nudge: when drafting to a high-trust
-  counterparty whose own domain is only Pending, suggest they also
+  counterparty whose own domain is only Building, suggest they also
   seal replies.
 
 Native add-ons (Google Workspace Marketplace, Microsoft AppSource)
