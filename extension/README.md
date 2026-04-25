@@ -58,8 +58,8 @@ competes with Gmail's rendering.
   CORS, 5-minute edge cache) and paints a compact row: domain, context
   (in chat / inbox row), state chip, trust index. Each row is a deep
   link to the full seal page.
-- Uses `chrome.storage.local` as a TTL cache (24h for verified/onRecord,
-  1h for pending/unclaimed) so repeated popup opens on the same senders
+- Uses `chrome.storage.local` as a TTL cache (24h for verified, 12h for building,
+  1h for unclaimed) so repeated popup opens on the same senders
   return instantly. In-flight requests for the same domain are dedup'd,
   so a busy inbox doesn't fan out.
 

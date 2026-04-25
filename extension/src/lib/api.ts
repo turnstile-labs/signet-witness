@@ -14,7 +14,7 @@ import type { DomainState, PublicPayload } from "./types";
 
 const VALID_STATES: ReadonlySet<DomainState> = new Set([
   "verified",
-  "onRecord",
+  "building",
   "unclaimed",
   "error",
 ]);

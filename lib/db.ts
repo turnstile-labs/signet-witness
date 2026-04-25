@@ -275,7 +275,7 @@ export interface OpsStats {
   // Canonical-state split across every registered sender. Sums to
   // `domains`; used on ops to show the shape of the population, not
   // just the leaderboard head.
-  senderTiers: { verified: number; onRecord: number; pending: number };
+  senderTiers: { verified: number; building: number; pending: number };
   // Mutual edges — sender A sealed to sender B AND vice-versa. These
   // are the strongest trust signal in the graph and the only network
   // shape an attacker can't cheaply fake (requires both sides to be
@@ -383,11 +383,16 @@ async function topSendersWithScores(): Promise<OpsSenderRow[]> {
 }
 
 // Population shape across every registered sender: how many are
-// Verified / On-record / Pending. Same predicates as lib/scores.ts
+// Verified / Building / Pending. Same predicates as lib/scores.ts
 // (trustTierFromScore) — duplicated in SQL for a one-shot count.
+//
+// "building" matches the public TrustTier exactly. "pending" is an
+// operator-only sub-bucket of "building" (zero verified events vs ≥1)
+// surfaced on /ops to spot DKIM problems early. Public surfaces never
+// see "pending"; they show "building" for both rows.
 async function senderTierCounts(): Promise<{
   verified: number;
-  onRecord: number;
+  building: number;
   pending: number;
 }> {
   try {
@@ -402,7 +407,7 @@ async function senderTierCounts(): Promise<{
             d.grandfathered_verified
             OR (s.trust_index >= 65 AND s.mutual_counterparties >= 3)
           ) AND COALESCE(s.verified_event_count, 0) > 0
-        )::int AS on_record,
+        )::int AS building,
         COUNT(*) FILTER (
           WHERE NOT (
             d.grandfathered_verified
@@ -413,19 +418,19 @@ async function senderTierCounts(): Promise<{
       LEFT JOIN domain_scores s ON s.domain_id = d.id
     `) as unknown as Array<{
       verified: number;
-      on_record: number;
+      building: number;
       pending: number;
     }>;
     return {
       verified: rows[0]?.verified ?? 0,
-      onRecord: rows[0]?.on_record ?? 0,
+      building: rows[0]?.building ?? 0,
       pending: rows[0]?.pending ?? 0,
     };
   } catch (err) {
     const code = (err as { code?: string }).code;
     const msg = (err as Error).message ?? "";
     if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
-    return { verified: 0, onRecord: 0, pending: 0 };
+    return { verified: 0, building: 0, pending: 0 };
   }
 }
 

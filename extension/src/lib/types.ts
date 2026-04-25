@@ -6,14 +6,17 @@
  * transient `error` state so the cache can remember that a lookup
  * failed recently without conflating it with an actual product state.
  *
- * The legacy `pending` tier was collapsed into `onRecord` on every
+ * Token names match the user-visible labels exactly ("Verified",
+ * "Building") so the codebase and the UI never drift apart.
+ *
+ * The legacy `pending` tier was collapsed into `building` on every
  * public surface in v12 — the API and seal page never emit it, so the
  * popup never sees it either.
  */
 
 export type DomainState =
   | "verified"
-  | "onRecord"
+  | "building"
   | "unclaimed"
   | "error";
 

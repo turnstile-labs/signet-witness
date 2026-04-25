@@ -20,7 +20,7 @@ const $ = <T extends HTMLElement>(id: string): T => {
 // page so the popup, the badge, and /b/<domain> all read as the
 // same product.
 //   verified  → green
-//   onRecord  → amber  (absorbs the legacy "pending" tier — the
+//   building  → amber  (absorbs the legacy "pending" tier — the
 //                       public surface stays binary)
 //   unclaimed → neutral gray
 //   error     → red
@@ -35,7 +35,7 @@ const CHIP: Record<
     border: "rgba(34,197,94,0.40)",
     tint: "rgba(34,197,94,0.09)",
   },
-  onRecord: {
+  building: {
     label: "Building",
     hint: "Sealing outbound mail; building reputation",
     dot: "#f59e0b",

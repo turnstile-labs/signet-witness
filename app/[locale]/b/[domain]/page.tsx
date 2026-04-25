@@ -111,7 +111,7 @@ function Stat({
 // ── Trust state visuals ──────────────────────────────────────
 //
 // Canonical state taxonomy lives in `lib/scores.ts#trustTierFromScore`
-// and returns one of `verified | onRecord`. This file maps each tier
+// and returns one of `verified | building`. This file maps each tier
 // to one Tailwind palette and one icon so every surface on the seal
 // page (hero, landing replica) reads from the same definitions.
 // `dim` is a third tone used only on the Unclaimed placeholder, where
@@ -119,7 +119,7 @@ function Stat({
 //
 // Palette is traffic-light semantic:
 //   verified  → green   / ✓ check    / "Verified"
-//   onRecord  → amber   / ● dot      / "Building"    (sealed mail
+//   building  → amber   / ● dot      / "Building"    (sealed mail
 //                                                      exists, trust
 //                                                      bar not yet
 //                                                      reached — this
@@ -146,7 +146,7 @@ const STATE_TONE_CLASSES: Record<StateTone, {
     title: "text-verified",
     subtitle: "text-muted",
   },
-  onRecord: {
+  building: {
     frame: "border-amber/40 bg-amber/10",
     title: "text-amber",
     subtitle: "text-muted",
@@ -177,7 +177,7 @@ function StateIcon({ tone }: { tone: StateTone }) {
       </span>
     );
   }
-  if (tone === "onRecord") {
+  if (tone === "building") {
     return (
       <span
         aria-hidden
@@ -459,7 +459,7 @@ export default async function SealPage({ params }: Props) {
           </div>
           <Sparkline data={daily} days={30} height={56} />
           <p className="mt-5 text-sm text-muted leading-relaxed">
-            {t("onRecordSince", { date: firstSeenLabel })}{" "}
+            {t("firstSealedSince", { date: firstSeenLabel })}{" "}
             {t("activitySummary", { count: recent30 })}
           </p>
         </section>

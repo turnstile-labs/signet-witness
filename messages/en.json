@@ -72,7 +72,7 @@
     "noRecordPill": "No record yet",
     "state": {
       "verifiedTitle": "Verified",
-      "onRecordTitle": "Building",
+      "buildingTitle": "Building",
       "unclaimedTitle": "No record yet",
       "subtitleVerified": "Trust index {index} / 100",
       "subtitleBuilding": "Trust index {index} / 100 · building toward {threshold}",
@@ -96,7 +96,7 @@
     "barLegend": "each bar = one day",
     "sparklineAria": "{count} verified emails in the last {days} days",
     "activitySummary": "{count, plural, =0 {No verified emails in the last 30 days.} =1 {# verified email in the last 30 days.} other {# verified emails in the last 30 days.}}",
-    "onRecordSince": "First sealed {date}.",
+    "firstSealedSince": "First sealed {date}.",
     "badgeEyebrow": "Embeddable badge",
     "badgeIntro": "A compact form of this page. Lives in email signatures and updates as the record grows — every click opens here.",
     "unclaimed": {

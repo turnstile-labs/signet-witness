@@ -52,7 +52,7 @@
               data density is the point and the UI should feel
               utilitarian rather than branded.
    Both are decoupled from the state palette (verified green,
-   on-record amber, pending yellow, unclaimed gray, danger red) so
+   building amber, pending yellow, unclaimed gray, danger red) so
    neither brand nor accent can ever collide with a trust tier.
    Public-facing pages opt into purple via the `.marketing` wrapper
    (see below) which remaps --accent → --brand locally. */

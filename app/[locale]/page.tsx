@@ -34,7 +34,7 @@ export default async function Home({
   // aspirational ("here's the finish line"), and pairs with the
   // signature-badge mock above (acme.studio, Verified) to tell a
   // two-persona story: one domain already verified and advertising
-  // it in signatures, another on-record and building.
+  // it in signatures, another building toward verified.
   const MOCK_DOMAIN = "acmecorp.com";
   const MOCK_TRUST = 58;
   const MOCK_EVENTS = 412;
@@ -194,7 +194,7 @@ export default async function Home({
                 </span>
                 <div className="min-w-0">
                   <p className="text-lg sm:text-xl font-bold text-amber leading-none">
-                    {tSeal("state.onRecordTitle")}
+                    {tSeal("state.buildingTitle")}
                   </p>
                   <p className="text-[0.7rem] sm:text-xs text-muted mt-1">
                     {tSeal("state.subtitleBuilding", {

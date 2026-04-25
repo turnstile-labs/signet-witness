@@ -6,9 +6,9 @@ import type { DomainState, PublicPayload } from "./types";
  *
  * Cache entries are keyed `w.cache:<domain>` so we can list/clear them
  * cheaply without walking the entire store, and each entry carries its
- * own expiry so TTL is state-dependent: verified/onRecord stick for a
- * full day; pending/unclaimed expire faster so the pill picks up an
- * upgrade within an hour of the sender getting verified.
+ * own expiry so TTL is state-dependent: verified/building stick for a
+ * full day; unclaimed expires faster so the popup picks up an upgrade
+ * within an hour of the sender getting verified.
  */
 
 export interface CacheEntry {
