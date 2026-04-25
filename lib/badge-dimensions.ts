@@ -48,8 +48,15 @@ import type { BadgeState } from "@/lib/badge-state";
 //
 // Width is constant. Height stays at 32px so the badge remains
 // signature-compatible (the standard email signature line height).
+//
+// v14 tightened the canvas from 224×32 (7:1) to 204×32 (~6.4:1).
+// The 7:1 ratio rendered as a banner inside Gmail compose; 6.4:1
+// reads as a stamp, which is what a signature mark should feel like.
+// The savings come entirely from dead space on the LEFT half — the
+// state word slot was over-provisioned. RIGHT half kept its breathing
+// room around the wordmark.
 export const BADGE_HEIGHT = 32;
-export const BADGE_WIDTH = 224;
+export const BADGE_WIDTH = 204;
 
 // ── Half widths ──────────────────────────────────────────────
 //
@@ -58,7 +65,7 @@ export const BADGE_WIDTH = 224;
 // wordmark "witnessed.cc". The split point is hard-coded — there
 // is no responsive behaviour because nothing in the rendered output
 // depends on per-domain text length anymore.
-export const LEFT_W = 108;
+export const LEFT_W = 96;
 export const RIGHT_W = BADGE_WIDTH - LEFT_W;
 
 // ── Inner layout ─────────────────────────────────────────────
@@ -67,7 +74,7 @@ export const RIGHT_W = BADGE_WIDTH - LEFT_W;
 // is rendered with a fixed-width slot wide enough for any tier's
 // label, so a "Verified" badge and a "Building" badge produce the
 // exact same canvas — no reflow on graduation.
-export const PAD_L = 12;     // outer left pad on LEFT half
+export const PAD_L = 10;     // outer left pad on LEFT half
 export const PAD_R = 12;     // outer right pad on RIGHT half
 export const ICON_D = 14;    // icon diameter (px)
 export const GAP_ICON_TEXT = 8; // gap between icon and state word

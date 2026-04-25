@@ -91,9 +91,18 @@ const PALETTES: Record<BadgeState, Palette> = {
   },
 };
 
-const RIGHT_BG = "#0f172a";    // slate-900
-const RIGHT_FG = "#f1f5f9";    // slate-100
-const BORDER   = "#020617";    // slate-950 (subtle outer + divider)
+// v14 — warm-neutral dark for the right half.
+//
+// The previous slate-900 (#0f172a) was a cool blue-black that fought
+// both state colours: it pulled the eye away from the warm amber
+// (Building) and crushed against the cool emerald (Verified). Stone-900
+// is a warm-neutral charcoal — no blue, no green, no purple — so it
+// sits underneath whichever state half is paired with it without
+// clashing. Same role as the slate it replaces: the immutable platform
+// half. Just calibrated to sit in the brand's palette properly.
+const RIGHT_BG = "#1c1917";    // stone-900 (warm charcoal)
+const RIGHT_FG = "#f5f5f4";    // stone-100
+const BORDER   = "#0c0a09";    // stone-950 (subtle outer + divider)
 
 function stateAria(state: BadgeState): string {
   switch (state) {
@@ -290,13 +299,17 @@ type Snapshot = BadgeSnapshot;
 //
 // The ETag is keyed on `(state, format, layout-version)`. State is the
 // only variable now; the layout version moves only on a real visual
-// redesign. v13 = Split Pill (state half + neutral platform half, no
-// embedded domain text).
+// redesign.
+//   v13 = Split Pill (state half + neutral platform half, no embedded
+//         domain text).
+//   v14 = Tightened canvas (224→204) and warm-neutral dark for the
+//         right half (slate-900 → stone-900). Same shape, calibrated
+//         proportions and palette for email-client rendering.
 export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
 ): Record<string, string> {
-  const etag = `W/"${snapshot.state}-${format}-v13"`;
+  const etag = `W/"${snapshot.state}-${format}-v14"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
