@@ -1,135 +1,83 @@
 import { describe, it, expect } from "vitest";
 import {
   BADGE_HEIGHT,
-  BADGE_MIN_WIDTH,
-  BADGE_MAX_WIDTH,
-  DOMAIN_MAX_CHARS,
+  BADGE_WIDTH,
+  GAP_ICON_TEXT,
   ICON_D,
-  GAP_ICON_DOMAIN,
-  SEP_W,
-  STATE_WORDS,
+  LEFT_W,
+  PAD_L,
+  PAD_R,
+  PLATFORM_LABEL,
+  RIGHT_W,
   STATE_W_RESERVED,
-  computeBadgeWidth,
+  STATE_WORDS,
   sizeBadge,
-  truncateDomainForBadge,
 } from "@/lib/badge-dimensions";
 
-describe("badge-dimensions", () => {
+describe("badge-dimensions (v13 Split Pill)", () => {
   describe("constants", () => {
-    it("exports stable layout primitives", () => {
+    it("exposes a stable, constant canvas", () => {
       expect(BADGE_HEIGHT).toBe(32);
+      expect(BADGE_WIDTH).toBeGreaterThan(0);
+      // The two halves account for the entire canvas — no slack space.
+      expect(LEFT_W + RIGHT_W).toBe(BADGE_WIDTH);
+    });
+
+    it("ships sane inner-layout primitives", () => {
       expect(ICON_D).toBeGreaterThan(0);
-      expect(GAP_ICON_DOMAIN).toBeGreaterThan(0);
-      // v11: state word + separator are reserved at fixed widths so
-      // the badge canvas stays stable across state transitions.
-      expect(STATE_W_RESERVED).toBeGreaterThan(0);
-      expect(SEP_W).toBeGreaterThan(0);
-      expect(DOMAIN_MAX_CHARS).toBeGreaterThan(10);
-    });
-
-    it("exposes a state word per public tier", () => {
-      // Two-state public surface (v12+). The legacy "pending" tier was
-      // collapsed into "onRecord" — see lib/scores.ts for the rationale.
-      expect(STATE_WORDS.verified).toBe("Verified");
-      expect(STATE_WORDS.onRecord).toBe("Building");
-      expect(Object.keys(STATE_WORDS)).toHaveLength(2);
-    });
-
-    it("reserves enough space for the longest state word", () => {
-      // STATE_W_RESERVED is derived from max-of-all-state-words, so
-      // shortening one word (e.g. renaming "Building" to "New") must
-      // never narrow the reserved slot below the widest other word.
+      expect(GAP_ICON_TEXT).toBeGreaterThan(0);
+      expect(PAD_L).toBeGreaterThan(0);
+      expect(PAD_R).toBeGreaterThan(0);
+      // The state-word slot must be wide enough for the longest state
+      // label, otherwise a future label rename could overflow into the
+      // divider.
       const longest = Math.max(
         ...Object.values(STATE_WORDS).map((w) => w.length),
       );
-      // The derivation uses DOMAIN_CHAR_W (7.8); we just assert the
-      // reservation is at least as wide as the longest word rendered
-      // at a conservative 6px/char, which is always ≤ the true width.
       expect(STATE_W_RESERVED).toBeGreaterThanOrEqual(longest * 6);
     });
+
+    it("exposes one state word per public tier", () => {
+      // Two-state public surface (v12+). Token names match the labels
+      // exactly so the codebase and the UI never drift.
+      expect(STATE_WORDS.verified).toBe("Verified");
+      expect(STATE_WORDS.building).toBe("Building");
+      expect(Object.keys(STATE_WORDS)).toHaveLength(2);
+    });
+
+    it("uses witnessed.cc as the immutable platform wordmark", () => {
+      // The right half is the brand mark; renaming this token here is
+      // the single source of truth for every badge in the wild.
+      expect(PLATFORM_LABEL).toBe("witnessed.cc");
+    });
+
+    it("reserves room for the wordmark on the right half", () => {
+      // The right half must fit "witnessed.cc" + outer pads at the
+      // monospace metric used by the renderer (≤ 7.8 px/char).
+      const wordmarkW = PLATFORM_LABEL.length * 7.8;
+      expect(RIGHT_W).toBeGreaterThanOrEqual(wordmarkW + PAD_R);
+    });
   });
 
-  describe("truncateDomainForBadge", () => {
-    it("returns short domains unchanged", () => {
-      expect(truncateDomainForBadge("acme.com")).toBe("acme.com");
+  describe("sizeBadge", () => {
+    it("returns the constant canvas regardless of domain length", () => {
+      // The whole point of v13: the rendered output no longer depends
+      // on the embedded domain, so width/height are stable. Pasted
+      // <img width=…> tags stay accurate forever.
+      const a = sizeBadge("acme.com");
+      const b = sizeBadge("very-long-company-name.studio");
+      const c = sizeBadge("");
+      expect(a).toEqual({ width: BADGE_WIDTH, height: BADGE_HEIGHT });
+      expect(a).toEqual(b);
+      expect(b).toEqual(c);
     });
 
-    it("ellipsises overlong domains and keeps them within the cap", () => {
-      const long = "a".repeat(DOMAIN_MAX_CHARS + 20) + ".com";
-      const truncated = truncateDomainForBadge(long);
-      expect(truncated.length).toBeLessThanOrEqual(DOMAIN_MAX_CHARS);
-      expect(truncated.endsWith("…")).toBe(true);
-    });
-
-    it("handles a 1-char over the cap without crashing", () => {
-      const boundary = "a".repeat(DOMAIN_MAX_CHARS + 1);
-      expect(truncateDomainForBadge(boundary)).toMatch(/…$/);
-    });
-  });
-
-  describe("computeBadgeWidth / sizeBadge", () => {
-    it("never drops below the minimum", () => {
-      // v11: with the state word + separator reserved, "a.io" no
-      // longer hits the floor organically — width now sits well
-      // above BADGE_MIN_WIDTH. The floor still matters as a defensive
-      // lower bound, so we just assert the clamp invariant.
-      expect(computeBadgeWidth("a.io")).toBeGreaterThanOrEqual(
-        BADGE_MIN_WIDTH,
-      );
-    });
-
-    it("clamps the min floor when fed a pathologically short input", () => {
-      // Empty string isn't a realistic domain, but the defensive
-      // min clamp exists for exactly this shape of degenerate input.
-      // Exercising it keeps the Math.max branch covered.
-      expect(computeBadgeWidth("")).toBe(BADGE_MIN_WIDTH);
-    });
-
-    it("clamps above the maximum", () => {
-      const w = computeBadgeWidth("a".repeat(200));
-      expect(w).toBe(BADGE_MAX_WIDTH);
-    });
-
-    it("grows monotonically with domain length", () => {
-      const short = computeBadgeWidth("acme.com");
-      const longer = computeBadgeWidth("very-long-company-name.studio");
-      expect(longer).toBeGreaterThanOrEqual(short);
-    });
-
-    it("includes the state-word + separator reservation in its width", () => {
-      // The new layout always budgets space for the widest state word
-      // and the separator, regardless of which tier ends up rendering.
-      // Without that reservation, a 12-char domain like witnessed.cc
-      // would size identically to the old formula (icon + domain only);
-      // with it, the canvas is materially wider.
-      const newW = computeBadgeWidth("witnessed.cc");
-      const icon = ICON_D;
-      const domainOnlyW = 12 * 7.8; // 12 chars at DOMAIN_CHAR_W
-      const padOnly = 12 + 14; // PAD_L + PAD_R
-      const gapOnly = GAP_ICON_DOMAIN;
-      const iconPlusDomainW = Math.ceil(
-        padOnly + icon + gapOnly + domainOnlyW,
-      );
-      expect(newW).toBeGreaterThan(iconPlusDomainW);
-    });
-
-    it("sizeBadge returns display text, width, and height tied to constants", () => {
-      const r = sizeBadge("acme.com");
-      expect(r.display).toBe("acme.com");
-      expect(r.height).toBe(BADGE_HEIGHT);
-      expect(r.width).toBeGreaterThanOrEqual(BADGE_MIN_WIDTH);
-      expect(r.width).toBeLessThanOrEqual(BADGE_MAX_WIDTH);
-    });
-
-    it("state-agnostic width: same canvas across Building → Verified", () => {
+    it("state-agnostic: same canvas across Building → Verified", () => {
       // Crucial invariant for email signatures — a pasted <img width=…>
       // must stay in lockstep with the rendered PNG even after the
-      // domain graduates from Building to Verified. Since
-      // computeBadgeWidth() takes only the domain, it cannot diverge
-      // by state; this test documents that guarantee.
-      const a = computeBadgeWidth("witnessed.cc");
-      const b = computeBadgeWidth("witnessed.cc");
-      expect(a).toBe(b);
+      // domain graduates from Building to Verified. sizeBadge takes
+      // only the domain; this test pins the contract.
+      expect(sizeBadge("witnessed.cc")).toEqual(sizeBadge("witnessed.cc"));
     });
   });
 });

@@ -74,7 +74,7 @@ diversity, and corroborating Certificate Transparency history.
 A domain earns the **Verified** badge when the trust index crosses 65 *and*
 it has at least 3 mutual counterparties. The badge renders at `/badge/[domain]`
 in SVG or PNG as a single state-colored pill — green for verified, amber for
-on-record, outline gray for pending:
+building, neutral slate for the immutable witnessed.cc wordmark:
 
 > `[ ✓ acme.com ]`  ← solid green pill, white text
 
@@ -173,7 +173,7 @@ Pull-based channels. No outbound spam.
 paste into email signatures, Linktrees, and invoice footers. Every recipient
 who reads a signed email sees the badge and can one-click the full seal page.
 
-**Browser extension.** Gmail users see a tiny verified/on-record pill next
+**Browser extension.** Gmail users see a tiny verified/building pill next
 to the sender on every inbox row — a passive discovery surface that turns
 "someone emailed me" into "this sender has a verifiable history." Clicking
 the pill opens the sender's seal page.
