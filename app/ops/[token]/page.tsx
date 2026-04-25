@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { timingSafeEqual } from "crypto";
 import type { Metadata } from "next";
 import { getOpsStats, type OpsStats } from "@/lib/db";
+import OpsThemeToggle from "./OpsThemeToggle";
 import {
   ACTIVITY_WEIGHT,
   MUTUAL_WEIGHT,
@@ -159,6 +160,26 @@ export default async function OpsPage({
   const avg30d =
     stats.events30d > 0 ? Math.round(stats.events30d / 30) : 0;
 
+  // Verified share — denominator is every registered sender. Floor
+  // to 1% if there's any verified at all so it doesn't disappear to
+  // 0% on small populations.
+  const verifiedPct =
+    stats.domains > 0
+      ? Math.max(
+          stats.verifiedDomains > 0 ? 1 : 0,
+          Math.round((stats.verifiedDomains / stats.domains) * 100),
+        )
+      : 0;
+
+  // Rejection rate — share of inbound that anti-abuse blocked. The
+  // absolute count alone doesn't say if the filter is calibrated;
+  // the rate does. Null when there's no 7d traffic baseline.
+  const inbound7d = stats.events7d + stats.throttled7d;
+  const rejectionRatePct =
+    inbound7d > 0
+      ? Math.round((stats.throttled7d / inbound7d) * 1000) / 10
+      : null;
+
   return (
     <main className="max-w-6xl mx-auto px-6 py-8 font-mono text-sm text-txt bg-bg min-h-screen">
       {/* Header ·································· */}
@@ -171,15 +192,25 @@ export default async function OpsPage({
             Live view. Fresh DB query on every load.
           </p>
         </div>
-        <p className="text-[0.65rem] text-muted-2 tabular-nums text-right leading-relaxed">
-          {now}
-          <br />
-          {env} · {commit}
-          {stats.dbSize ? ` · ${stats.dbSize}` : ""}
-        </p>
+        <div className="flex items-start gap-3">
+          <p className="text-[0.65rem] text-muted-2 tabular-nums text-right leading-relaxed">
+            {now}
+            <br />
+            {env} · {commit}
+            {stats.dbSize ? ` · ${stats.dbSize}` : ""}
+          </p>
+          <OpsThemeToggle />
+        </div>
       </header>
 
-      {/* KPI strip — 4 tiles, one glance = full health read ······· */}
+      {/* KPI strip — 4 tiles, one glance = full health read ·······
+          Tiles answer the three operator questions:
+            1. Alive?         Emails · 24h
+            2. Going wrong?   Rejected · 7d
+            3. Growing?       Verified · domains  +  New domains · 7d
+          The previous "Emails · 7d" tile was redundant with the 24h
+          tile (which already shows 7d avg as its hint), so it was
+          replaced with the headline product metric — Verified. */}
       <section
         aria-label="pulse"
         className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
@@ -205,9 +236,15 @@ export default async function OpsPage({
           }
         />
         <Kpi
-          label="Emails · 7d"
-          value={stats.events7d.toLocaleString()}
-          hint={avg7d > 0 ? `${avg7d.toLocaleString()}/day avg` : "—"}
+          label="Verified · domains"
+          value={stats.verifiedDomains.toLocaleString()}
+          tone={stats.verifiedDomains > 0 ? "good" : "muted"}
+          hint={
+            stats.domains > 0
+              ? `${verifiedPct}% of ${stats.domains.toLocaleString()} registered`
+              : "no domains registered"
+          }
+          hintTone={stats.verifiedDomains > 0 ? "good" : "muted"}
         />
         <Kpi
           label="Rejected · 7d"
@@ -216,7 +253,9 @@ export default async function OpsPage({
           hint={
             stats.throttled7d === 0
               ? "all clean"
-              : `${stats.throttled24h.toLocaleString()} in last 24h`
+              : rejectionRatePct !== null
+                ? `${rejectionRatePct}% of 7d inbound`
+                : `${stats.throttled24h.toLocaleString()} in last 24h`
           }
           hintTone={stats.throttled7d > 0 ? "warn" : "good"}
         />
@@ -231,16 +270,20 @@ export default async function OpsPage({
         />
       </section>
 
-      {/* Totals ribbon — less urgent scale numbers ················ */}
+      {/* Totals ribbon — less urgent scale numbers.
+          Verified moved up to the KPI strip (it's the headline product
+          metric, not a ribbon scale-stat). Mutual edges replaces it
+          here so the strongest anti-fake signal is visible at the
+          top-of-page glance. */}
       <section
         aria-label="scale"
-        className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 mb-6 rounded-md border border-border bg-surface/30 text-xs tabular-nums"
+        className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 mb-3 rounded-md border border-border bg-surface/30 text-xs tabular-nums"
       >
         <Stat label="Registered domains" value={stats.domains} />
         <Stat
-          label="Verified"
-          value={stats.verifiedDomains}
-          accent="verified"
+          label="Mutual edges"
+          value={stats.mutualPairsTotal}
+          accent={stats.mutualPairsTotal > 0 ? "verified" : undefined}
         />
         <Stat label="Total emails" value={stats.events} />
         <Stat
@@ -249,6 +292,13 @@ export default async function OpsPage({
           accent={stats.denylistTotal > 0 ? "warn" : undefined}
         />
       </section>
+
+      {/* Trust funnel — population shape across every registered
+          sender. The single number that answers "is the invite loop
+          working?": Building grows first, then Verified follows.
+          Pending (zero DKIM-verified events) is an operator-only
+          sub-bucket; public surfaces collapse it into Building. */}
+      <TrustFunnel tiers={stats.senderTiers} total={stats.domains} />
 
       {/* Activity panel — chart + side stats ······················ */}
       <section className="grid md:grid-cols-[1fr_13rem] gap-6 mb-8 p-5 rounded-md border border-border bg-surface/30">
@@ -312,7 +362,7 @@ export default async function OpsPage({
                   <th className="py-2 pr-3 font-normal text-right">
                     Emails
                   </th>
-                  <th className="py-2 pr-3 font-normal text-right">Trust</th>
+                  <th className="py-2 pr-3 font-normal text-right">Index</th>
                   <th className="py-2 font-normal text-right">Seen</th>
                 </tr>
               </thead>
@@ -345,12 +395,70 @@ export default async function OpsPage({
         </Panel>
       </div>
 
+      {/* Mutual edges — full width, prominent placement.
+          A mutual edge means domain A sealed to domain B AND B sealed
+          back to A. Both sides are DKIM-signing senders that bothered
+          to BCC us — the only network shape an attacker can't cheaply
+          fake. After the archive-probe finding (mailing lists destroy
+          DKIM body hashes for third parties), this is THE metric that
+          distinguishes the product from any DKIM verifier. The first
+          mutual edge is the first product-market-fit signal. */}
+      <div className="mb-8">
+        <Panel
+          title="Mutual edges"
+          legend={
+            <span className="text-[0.6rem] text-muted-2 tabular-nums">
+              {stats.mutualPairsTotal === 0
+                ? "anti-fake signal"
+                : `${stats.mutualPairsTotal.toLocaleString()} total`}
+            </span>
+          }
+        >
+          {stats.mutualPairsTotal === 0 ? (
+            <Empty>
+              No mutual edges yet — the first reciprocal seal between
+              two registered senders is the first signal the invite
+              loop is working.
+            </Empty>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
+                  <th className="py-2 pr-3 font-normal">Pair</th>
+                  <th className="py-2 font-normal text-right">
+                    Combined emails
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {stats.mutualPairs.map((p) => (
+                  <tr key={`${p.a}↔${p.b}`}>
+                    <td className="py-2.5 pr-3 truncate max-w-[28rem]">
+                      <span className="text-txt">{p.a}</span>
+                      <span className="text-muted-2 mx-2">↔</span>
+                      <span className="text-txt">{p.b}</span>
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums">
+                      {p.events.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+
       {/* Ops grid — anti-abuse + denylist side-by-side ············ */}
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <Panel
           title="Anti-abuse"
           legend={
-            <span className="text-[0.6rem] text-muted-2">last 7 days</span>
+            <span className="text-[0.6rem] text-muted-2 tabular-nums">
+              {rejectionRatePct !== null
+                ? `${rejectionRatePct}% of 7d inbound`
+                : "last 7 days"}
+            </span>
           }
         >
           {stats.throttled7d === 0 ? (
@@ -454,15 +562,17 @@ function Kpi({
   label: string;
   value: string;
   hint?: string;
-  tone?: "default" | "muted" | "warn";
+  tone?: "default" | "muted" | "warn" | "good";
   hintTone?: "muted" | "good" | "warn";
 }) {
   const valueClass =
     tone === "warn"
       ? "text-amber"
-      : tone === "muted"
-        ? "text-muted-2"
-        : "text-txt";
+      : tone === "good"
+        ? "text-verified"
+        : tone === "muted"
+          ? "text-muted-2"
+          : "text-txt";
   const hintClass =
     hintTone === "good"
       ? "text-verified"
@@ -626,6 +736,108 @@ function TrustFormula() {
   );
 }
 
+// Trust funnel — population shape across every registered sender.
+// Compact horizontal stacked bar + counts + percentages. Single
+// "is the invite loop working?" read in one glance.
+//
+// Order Verified → Building → Pending so the bar reads left-to-right
+// as "best to worst" health. Each segment carries its absolute count
+// directly under the label so operators don't need to mental-math
+// percentages back to numbers.
+function TrustFunnel({
+  tiers,
+  total,
+}: {
+  tiers: { verified: number; building: number; pending: number };
+  total: number;
+}) {
+  const sum = tiers.verified + tiers.building + tiers.pending;
+  if (total === 0 || sum === 0) {
+    return (
+      <section
+        aria-label="trust-funnel"
+        className="px-4 py-3 mb-6 rounded-md border border-border bg-surface/30 text-xs text-muted-2"
+      >
+        No registered senders yet — funnel will populate once domains
+        start sealing.
+      </section>
+    );
+  }
+  const pct = (n: number) =>
+    sum === 0 ? 0 : Math.round((n / sum) * 1000) / 10;
+  const segments: Array<{
+    key: "verified" | "building" | "pending";
+    label: string;
+    count: number;
+    bg: string;
+    fg: string;
+  }> = [
+    {
+      key: "verified",
+      label: "Verified",
+      count: tiers.verified,
+      bg: "bg-verified/80",
+      fg: "text-verified",
+    },
+    {
+      key: "building",
+      label: "Building",
+      count: tiers.building,
+      bg: "bg-amber/80",
+      fg: "text-amber",
+    },
+    {
+      key: "pending",
+      label: "Pending",
+      count: tiers.pending,
+      bg: "bg-pending/70",
+      fg: "text-muted",
+    },
+  ];
+  return (
+    <section
+      aria-label="trust-funnel"
+      className="px-4 py-3 mb-6 rounded-md border border-border bg-surface/30"
+    >
+      <div className="flex items-baseline justify-between mb-2">
+        <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+          Trust funnel
+        </p>
+        <p className="text-[0.6rem] text-muted-2 tabular-nums">
+          {sum.toLocaleString()} senders
+        </p>
+      </div>
+      <div className="flex h-1.5 rounded-full overflow-hidden bg-border mb-2.5">
+        {segments.map((s) =>
+          s.count === 0 ? null : (
+            <div
+              key={s.key}
+              className={s.bg}
+              style={{ width: `${pct(s.count)}%` }}
+              title={`${s.label}: ${s.count.toLocaleString()} (${pct(s.count)}%)`}
+            />
+          ),
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs tabular-nums">
+        {segments.map((s) => (
+          <span key={s.key} className="inline-flex items-baseline gap-2">
+            <span className="text-[0.6rem] uppercase tracking-widest text-muted-2">
+              {s.label}
+            </span>
+            <span className={`font-semibold ${s.fg}`}>
+              {s.count.toLocaleString()}
+            </span>
+            <span className="text-muted-2">
+              {pct(s.count)}%
+            </span>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Legend({
   items,
 }: {
@@ -698,7 +910,7 @@ function Chart({
               key={b.day}
               title={`${b.day}: ${b.count} email${b.count === 1 ? "" : "s"}`}
               className={`flex-1 rounded-sm ${
-                b.count === 0 ? "bg-border" : "bg-accent/70 hover:bg-accent"
+                b.count === 0 ? "bg-border" : "bg-brand/70 hover:bg-brand"
               }`}
               style={{ height: `${h}px` }}
             />
