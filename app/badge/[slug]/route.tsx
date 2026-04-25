@@ -5,6 +5,9 @@ import {
   ICON_D,
   PAD_L,
   PAD_R,
+  SEP_W,
+  STATE_WORDS,
+  STATE_W_RESERVED,
   sizeBadge,
 } from "@/lib/badge-dimensions";
 import {
@@ -16,19 +19,25 @@ import {
 // Badge canvas — width adapts to the domain, height stays fixed so
 // the badge stays signature-compatible. Layout:
 //
-//   [ icon ]  [ domain ]
+//   [ icon ]  [ STATE WORD ]  ·  [ domain ]
 //
-// Verified: filled green pill, white check icon, white text.
-// Building: filled amber pill, white dot icon, white text.
-// Pending : filled yellow pill, white hollow-ring icon, white text.
+// Verified: filled green pill, white check icon, bold "Verified", white domain.
+// Building: filled amber pill, white dot icon,   bold "Building", white domain.
+// Pending : transparent pill, gray outline, gray hollow-ring icon, gray "Pending" + domain.
 //
-// No progress ring, no score readout. The badge answers the
-// categorical question ("has this domain been sealed?") via bg
-// color and icon; the precise 0–100 trust index lives on the seal
-// page where there's room for detail.
+// The state word (added in v11) is the glossary. Color + icon alone
+// are ambiguous to strangers: an amber pill with a filled dot can
+// read as "also approved" to a recipient who has no Witnessed mental
+// model, which devalues Verified. The literal word removes the
+// guesswork — Verified says "Verified", Building says "Building",
+// Pending says "Pending". Pending also drops from filled yellow to
+// an outlined gray pill in the same release so it no longer
+// squats in the visual space reserved for earned-trust tiers; it
+// reads as "on the record, but hasn't earned badge-weight yet."
 //
-// No theme param: the state color is the badge's identity across
-// every email client's bg, dark or light.
+// No progress ring, no score readout, no theme param. The color +
+// state word do all the work, and the badge's identity stays stable
+// on any email client bg, dark or light.
 const H = BADGE_HEIGHT;
 const R = BADGE_HEIGHT / 2; // pill (rounded-full)
 
@@ -59,9 +68,9 @@ function esc(s: string): string {
 }
 
 interface Palette {
-  bg: string;        // pill fill
+  bg: string;        // pill fill ("transparent" for outline variants)
   border: string;    // pill stroke
-  text: string;      // domain color
+  text: string;      // state word + domain color
   icon: string;      // icon color (stroke / fill)
   iconBg: string;    // inner fill for filled-icon variants (bg notch)
 }
@@ -86,11 +95,14 @@ const PALETTES: Record<BadgeState, Palette> = {
     iconBg: "#d97706",
   },
   pending: {
-    bg: "#ca8a04",          // solid yellow (traffic-light "building")
-    border: "#a16207",
-    text: "#ffffff",
-    icon: "#ffffff",
-    iconBg: "#ca8a04",
+    // Outline variant — no fill, mid-gray border + text. Reads on any
+    // email client bg, light or dark, and crucially reads as "different
+    // family" from the two filled trust-colored tiers above.
+    bg: "transparent",
+    border: "#94a3b8",       // slate-400
+    text: "#64748b",         // slate-500
+    icon: "#64748b",
+    iconBg: "transparent",
   },
 };
 
@@ -98,23 +110,35 @@ function stateAria(state: BadgeState): string {
   switch (state) {
     case "verified": return "verified";
     case "onRecord": return "building";
-    case "pending":  return "no record";
+    case "pending":  return "pending";
   }
 }
 
 function renderSvg(domain: string, state: BadgeState): string {
   const p = PALETTES[state];
   const { display, width: W } = sizeBadge(domain);
+  const stateWord = STATE_WORDS[state];
 
   const iconCX = PAD_L + ICON_D / 2;
   const iconCY = H / 2;
   const iconR = ICON_D / 2;
-  const domainX = PAD_L + ICON_D + GAP_ICON_DOMAIN;
+
+  // Three-column text layout anchored at fixed x offsets so the
+  // domain starts at the same x across every state. Stable vertical
+  // column = stable pixel width across Pending → Building → Verified
+  // transitions.
+  const stateX = PAD_L + ICON_D + GAP_ICON_DOMAIN;
+  // Separator sits centred inside the 3-char SEP_W gap between the
+  // state slot and the domain.
+  const sepX = stateX + STATE_W_RESERVED + SEP_W / 2;
+  const domainX = stateX + STATE_W_RESERVED + SEP_W;
 
   // 13px monospace digits sit ~5px below the centre line for mid-
   // cap alignment on a 32px canvas. Holds across SF Mono / Menlo /
   // Consolas / JetBrains Mono.
-  const domainBaselineY = H / 2 + 4.5;
+  const textBaselineY = H / 2 + 4.5;
+
+  const textFont = `font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" letter-spacing="-0.01em"`;
 
   let iconEl = "";
   if (state === "verified") {
@@ -133,9 +157,16 @@ function renderSvg(domain: string, state: BadgeState): string {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)})">
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R}" fill="${p.bg}" stroke="${p.border}" stroke-width="1"/>${iconEl}
-  <text x="${domainX}" y="${domainBaselineY}" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" font-weight="600" fill="${p.text}" letter-spacing="-0.01em">${esc(display)}</text>
+  <text x="${stateX}" y="${textBaselineY}" ${textFont} font-weight="700" fill="${p.text}">${esc(stateWord)}</text>
+  <text x="${sepX}" y="${textBaselineY}" ${textFont} font-weight="400" fill="${p.text}" fill-opacity="0.75" text-anchor="middle">·</text>
+  <text x="${domainX}" y="${textBaselineY}" ${textFont} font-weight="600" fill="${p.text}">${esc(display)}</text>
 </svg>`;
 }
+
+// Padding on each side of the `·` separator in the PNG (2× logical px).
+// Mirrors the SEP_W budget (3 chars × 2 = 6 units per side in the 2×
+// render space, split as " · ").
+const DOMAIN_SEP_PAD = 6;
 
 // PNG variant — renders via next/og so it embeds cleanly in email
 // signatures (Gmail, Outlook, Apple Mail).
@@ -146,6 +177,7 @@ function renderPng(
 ) {
   const p = PALETTES[state];
   const { display, width: W } = sizeBadge(domain);
+  const stateWord = STATE_WORDS[state];
 
   // Rendered at 2× for retina crispness.
   const PNG_W = W * 2;
@@ -156,7 +188,7 @@ function renderPng(
   const iconR2x = iconD2x / 2;
 
   // Icon renders as a standalone <svg> child so Satori's flexbox
-  // layout can position it on the main axis alongside the domain.
+  // layout can position it on the main axis alongside the text.
   let iconNode: React.ReactNode;
   if (state === "verified") {
     iconNode = (
@@ -194,6 +226,13 @@ function renderPng(
     );
   }
 
+  // Reserved state-word slot keeps badge width stable across state
+  // transitions — we always render a fixed-width box around the
+  // actual state word, left-aligned, so "Pending" (7 chars) and
+  // "Verified" (8 chars) produce the same overall canvas for a
+  // given domain.
+  const stateSlotW = STATE_W_RESERVED * 2;
+
   return new ImageResponse(
     (
       <div
@@ -213,20 +252,46 @@ function renderPng(
         }}
       >
         {iconNode}
-        <span
+        <div
           style={{
-            color: p.text,
-            fontSize: 26,
-            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
             fontFamily: "monospace",
+            fontSize: 26,
+            color: p.text,
             lineHeight: 1,
             letterSpacing: -0.2,
-            overflow: "hidden",
-            whiteSpace: "nowrap",
           }}
         >
-          {display}
-        </span>
+          <span
+            style={{
+              fontWeight: 700,
+              width: stateSlotW,
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {stateWord}
+          </span>
+          <span
+            style={{
+              fontWeight: 400,
+              opacity: 0.75,
+              padding: `0 ${DOMAIN_SEP_PAD}px`,
+            }}
+          >
+            ·
+          </span>
+          <span
+            style={{
+              fontWeight: 600,
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {display}
+          </span>
+        </div>
       </div>
     ),
     {
@@ -255,9 +320,11 @@ export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
 ): Record<string, string> {
-  // v10: tier label renamed (On record → Building). Same pixels for
-  // sighted users, but the SVG aria-label changes, so bust caches.
-  const etag = `W/"${snapshot.state}-${format}-v10"`;
+  // v11: badge gained a state word inline ("Verified" / "Building" /
+  // "Pending") and Pending dropped from filled yellow to outline gray.
+  // Pixels change materially across all three states — bust caches
+  // everywhere so in-the-wild signatures pick up the new rendering.
+  const etag = `W/"${snapshot.state}-${format}-v11"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

@@ -26,7 +26,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 
 - **Seal pages** at `/b/[domain]` — `StateBlock` verdict (Verified / Building / Warming up) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when in Building state but not yet verified
 - **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
-- **Dynamic badge** at `/badge/[domain]` — SVG or PNG, state-colored pill (`[ icon ][ domain ]`): solid green for Verified, solid amber for Building, outline gray for Pending. `ETag`-cached by state; `?preview=verified|onRecord|pending` for marketing surfaces
+- **Dynamic badge** at `/badge/[domain]` — SVG or PNG, state-colored pill (`[ icon ][ STATE WORD ] · [ domain ]`): solid green "Verified", solid amber "Building", outline gray "Pending". State word included inline so strangers don't have to decode color alone. `ETag`-cached by state; `?preview=verified|onRecord|pending` for marketing surfaces
 - **Trust index** (`lib/scores.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
 - **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
@@ -84,7 +84,7 @@ signet-witness/
 │   │       ├── access/route.ts    # Art 15 — JSON export
 │   │       ├── opt-out/route.ts   # Art 21 — denylist only
 │   │       └── erasure/route.ts   # Art 17 — hard-delete + denylist
-│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge — state-colored pill ([icon] [domain])
+│   ├── badge/[slug]/route.tsx    # Dynamic SVG/PNG badge — state-colored pill ([icon] [STATE WORD] · [domain])
 │   ├── ops/[token]/page.tsx      # Internal dashboard — activity, top senders, anti-abuse
 │   └── components/               # NavBar, Footer, CopyableEmail, BadgeEmbed, Sparkline, RightsForm, …
 ├── i18n/

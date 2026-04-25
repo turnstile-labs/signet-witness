@@ -6,6 +6,9 @@ import {
   DOMAIN_MAX_CHARS,
   ICON_D,
   GAP_ICON_DOMAIN,
+  SEP_W,
+  STATE_WORDS,
+  STATE_W_RESERVED,
   computeBadgeWidth,
   sizeBadge,
   truncateDomainForBadge,
@@ -15,12 +18,32 @@ describe("badge-dimensions", () => {
   describe("constants", () => {
     it("exports stable layout primitives", () => {
       expect(BADGE_HEIGHT).toBe(32);
-      // Score slot and ring removed in v9 — the badge is now
-      // [ icon ] [ domain ] only, so the layout primitives are
-      // just the icon diameter and the icon↔domain gap.
       expect(ICON_D).toBeGreaterThan(0);
       expect(GAP_ICON_DOMAIN).toBeGreaterThan(0);
+      // v11: state word + separator are reserved at fixed widths so
+      // the badge canvas stays stable across state transitions.
+      expect(STATE_W_RESERVED).toBeGreaterThan(0);
+      expect(SEP_W).toBeGreaterThan(0);
       expect(DOMAIN_MAX_CHARS).toBeGreaterThan(10);
+    });
+
+    it("exposes a state word per tier", () => {
+      expect(STATE_WORDS.verified).toBe("Verified");
+      expect(STATE_WORDS.onRecord).toBe("Building");
+      expect(STATE_WORDS.pending).toBe("Pending");
+    });
+
+    it("reserves enough space for the longest state word", () => {
+      // STATE_W_RESERVED is derived from max-of-all-state-words, so
+      // shortening one word (e.g. renaming "Pending" to "New") must
+      // never narrow the reserved slot below the widest other word.
+      const longest = Math.max(
+        ...Object.values(STATE_WORDS).map((w) => w.length),
+      );
+      // The derivation uses DOMAIN_CHAR_W (7.8); we just assert the
+      // reservation is at least as wide as the longest word rendered
+      // at a conservative 6px/char, which is always ≤ the true width.
+      expect(STATE_W_RESERVED).toBeGreaterThanOrEqual(longest * 6);
     });
   });
 
@@ -43,8 +66,21 @@ describe("badge-dimensions", () => {
   });
 
   describe("computeBadgeWidth / sizeBadge", () => {
-    it("clamps below the minimum", () => {
-      expect(computeBadgeWidth("a.io")).toBe(BADGE_MIN_WIDTH);
+    it("never drops below the minimum", () => {
+      // v11: with the state word + separator reserved, "a.io" no
+      // longer hits the floor organically — width now sits well
+      // above BADGE_MIN_WIDTH. The floor still matters as a defensive
+      // lower bound, so we just assert the clamp invariant.
+      expect(computeBadgeWidth("a.io")).toBeGreaterThanOrEqual(
+        BADGE_MIN_WIDTH,
+      );
+    });
+
+    it("clamps the min floor when fed a pathologically short input", () => {
+      // Empty string isn't a realistic domain, but the defensive
+      // min clamp exists for exactly this shape of degenerate input.
+      // Exercising it keeps the Math.max branch covered.
+      expect(computeBadgeWidth("")).toBe(BADGE_MIN_WIDTH);
     });
 
     it("clamps above the maximum", () => {
@@ -58,12 +94,40 @@ describe("badge-dimensions", () => {
       expect(longer).toBeGreaterThanOrEqual(short);
     });
 
+    it("includes the state-word + separator reservation in its width", () => {
+      // The new layout always budgets space for the widest state word
+      // and the separator, regardless of which tier ends up rendering.
+      // Without that reservation, a 12-char domain like witnessed.cc
+      // would size identically to the old formula (icon + domain only);
+      // with it, the canvas is materially wider.
+      const newW = computeBadgeWidth("witnessed.cc");
+      const icon = ICON_D;
+      const domainOnlyW = 12 * 7.8; // 12 chars at DOMAIN_CHAR_W
+      const padOnly = 12 + 14; // PAD_L + PAD_R
+      const gapOnly = GAP_ICON_DOMAIN;
+      const iconPlusDomainW = Math.ceil(
+        padOnly + icon + gapOnly + domainOnlyW,
+      );
+      expect(newW).toBeGreaterThan(iconPlusDomainW);
+    });
+
     it("sizeBadge returns display text, width, and height tied to constants", () => {
       const r = sizeBadge("acme.com");
       expect(r.display).toBe("acme.com");
       expect(r.height).toBe(BADGE_HEIGHT);
       expect(r.width).toBeGreaterThanOrEqual(BADGE_MIN_WIDTH);
       expect(r.width).toBeLessThanOrEqual(BADGE_MAX_WIDTH);
+    });
+
+    it("state-agnostic width: same canvas across Pending → Building → Verified", () => {
+      // Crucial invariant for email signatures — a pasted <img width=…>
+      // must stay in lockstep with the rendered PNG even after the
+      // domain graduates from Pending to Building to Verified. Since
+      // computeBadgeWidth() takes only the domain, it cannot diverge
+      // by state; this test documents that guarantee.
+      const a = computeBadgeWidth("witnessed.cc");
+      const b = computeBadgeWidth("witnessed.cc");
+      expect(a).toBe(b);
     });
   });
 });

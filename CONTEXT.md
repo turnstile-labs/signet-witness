@@ -148,12 +148,12 @@ The hero on `/b/[domain]` is `StateBlock` — a colored frame + icon + label + o
 `/badge/[slug]` serves both SVG and PNG (PNG via `next/og`/Satori). Layout is a single pill:
 
 ```
-[ icon ]  [ domain ]
+[ icon ]  [ STATE WORD ]  ·  [ domain ]
 ```
 
-State *is* the badge's identity — a verified domain renders a **solid green pill** with a white check, on-record is **solid amber** with a white dot, pending is an **outlined gray pill** with a hollow circle. No progress ring, no 0–100 readout, no theme variance — the color does all the work, and badges in email signatures need to read on any client bg anyway. The precise 0–100 number lives on the seal page where there's room for the detail.
+State *is* the badge's identity, but the literal word carries it: a verified domain renders a **solid green pill** with a bold "Verified" and a white check, Building is **solid amber** with a bold "Building" and a white dot, Pending is a **transparent pill** with a gray outline, gray "Pending" and a hollow ring. Color + icon alone are ambiguous to strangers (an amber pill with a dot can read as "also approved" to someone with no Witnessed mental model); the state word removes the guesswork, and Pending's outline treatment keeps earned-trust tiers (Verified, Building) visually distinct from the "on the record, nothing earned yet" tier. No progress ring, no 0–100 readout, no theme variance — the color + word do all the work, and the badge reads on any email client bg, light or dark. The precise 0–100 number lives on the seal page where there's room for the detail.
 
-Canvas **width adapts to the domain length** (clamped 140–320px); height stays fixed at 32px (signature-compatible). Dimension math lives in `lib/badge-dimensions.ts` and is shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. State resolution lives in `lib/badge-state.ts#resolveSnapshot` so tests can import it without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, format, layout-version)` — the only thing that changes the pixels now is a real state transition, so cache hit rates are effectively perfect per domain until the state moves. The `?preview=verified|onRecord|pending` query short-circuits the DB lookup for marketing surfaces; it never mutates data.
+Canvas **width adapts to the domain length** (clamped 140–320px); height stays fixed at 32px (signature-compatible). The state-word slot is reserved at a fixed max width in `lib/badge-dimensions.ts` so a badge's pixel size stays stable across a domain's Pending → Building → Verified transitions — the `<img>` tag pasted into an email signature doesn't reflow when the tier moves. Dimension math is shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. State resolution lives in `lib/badge-state.ts#resolveSnapshot` so tests can import it without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, format, layout-version)` — the only thing that changes the pixels now is a real state transition, so cache hit rates are effectively perfect per domain until the state moves. The `?preview=verified|onRecord|pending` query short-circuits the DB lookup for marketing surfaces; it never mutates data.
 
 ### Internationalization (EN + ES)
 
@@ -169,7 +169,7 @@ Routing is handled by `next-intl` (`i18n/`, `proxy.ts`, `messages/`). `localePre
 - `GET /` (and `/es`) — homepage explaining the Bcc mechanic
 - `GET /b/[domain]` — seal page (claimed: shows history; unclaimed: shows receiver count + badge preview)
 - `GET /privacy`, `GET /terms` — legal pages (fully translated)
-- `GET /badge/[slug]` — dynamic SVG/PNG badge for email signatures (`?theme=light` for light mode)
+- `GET /badge/[slug]` — dynamic SVG/PNG badge for email signatures (adapts to the domain's current tier; `?preview=<state>` for marketing surfaces)
 - `POST /api/inbound` — receives raw email, verifies DKIM, writes to DB
 
 **DB schema** (run `schema.sql` — it is idempotent, safe to re-run for migrations):
@@ -189,7 +189,7 @@ Note: there is no outbound email layer. Witnessed never initiates contact with a
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 
-**Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?theme=light` toggles palette; `?preview=verified|onRecord|pending` short-circuits the DB lookup for marketing surfaces; `?t=0..100` overrides the ring fraction in preview mode. Bump the trailing `v8` layout fingerprint in `cacheHeaders()` whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
+**Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?preview=verified|onRecord|pending` short-circuits the DB lookup for marketing surfaces. Bump the trailing layout fingerprint in `cacheHeaders()` (currently `v11`) whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
 
 **Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
 
