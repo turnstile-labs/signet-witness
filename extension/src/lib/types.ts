@@ -1,16 +1,19 @@
 /**
  * Shared types between the content script, background worker, and popup.
  *
- * The DomainState union mirrors the canonical four-state system used on
- * /b/[domain]. We add `error` as a transient local state so the cache
- * can remember that a lookup failed recently without conflating it with
- * an actual product state.
+ * The DomainState union mirrors the canonical state taxonomy used on
+ * /b/[domain] and the public JSON API: three product states plus a
+ * transient `error` state so the cache can remember that a lookup
+ * failed recently without conflating it with an actual product state.
+ *
+ * The legacy `pending` tier was collapsed into `onRecord` on every
+ * public surface in v12 — the API and seal page never emit it, so the
+ * popup never sees it either.
  */
 
 export type DomainState =
   | "verified"
   | "onRecord"
-  | "pending"
   | "unclaimed"
   | "error";
 

@@ -13,13 +13,12 @@ export const COMPOSE_DEBOUNCE_MS = 400;
 
 /** Per-domain cache TTLs for the popup's sender lookup.
  *  Verified / onRecord states are sticky — a verified domain won't flip
- *  back within a day, so we keep them a full day. Pending / unclaimed can
- *  upgrade on the next sealed email, so they cache shorter to give the
- *  popup a chance to surface an upgrade. */
+ *  back within a day, so we keep them a full day. Unclaimed can upgrade
+ *  on the next sealed email so it caches shorter, giving the popup a
+ *  chance to surface an upgrade promptly. */
 export const CACHE_TTL_MS = {
   verified: 24 * 60 * 60 * 1000,
   onRecord: 12 * 60 * 60 * 1000,
-  pending: 60 * 60 * 1000,
   unclaimed: 60 * 60 * 1000,
   error: 5 * 60 * 1000,
 } as const;

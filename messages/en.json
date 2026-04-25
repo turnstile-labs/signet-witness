@@ -73,11 +73,9 @@
     "state": {
       "verifiedTitle": "Verified",
       "onRecordTitle": "Building",
-      "pendingTitle": "Warming up",
       "unclaimedTitle": "No record yet",
       "subtitleVerified": "Trust index {index} / 100",
       "subtitleBuilding": "Trust index {index} / 100 · building toward {threshold}",
-      "subtitlePending": "Awaiting first verified email",
       "subtitleUnclaimed": "This domain hasn't been witnessed yet"
     },
     "statVerifiedEmails": "Verified emails",

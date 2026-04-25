@@ -20,8 +20,8 @@ const $ = <T extends HTMLElement>(id: string): T => {
 // page so the popup, the badge, and /b/<domain> all read as the
 // same product.
 //   verified  → green
-//   onRecord  → amber
-//   pending   → yellow
+//   onRecord  → amber  (absorbs the legacy "pending" tier — the
+//                       public surface stays binary)
 //   unclaimed → neutral gray
 //   error     → red
 const CHIP: Record<
@@ -41,13 +41,6 @@ const CHIP: Record<
     dot: "#f59e0b",
     border: "rgba(245,158,11,0.40)",
     tint: "rgba(245,158,11,0.08)",
-  },
-  pending: {
-    label: "Pending",
-    hint: "First seal only — not warmed up yet",
-    dot: "#eab308",
-    border: "rgba(234,179,8,0.40)",
-    tint: "rgba(234,179,8,0.09)",
   },
   unclaimed: {
     label: "Unclaimed",

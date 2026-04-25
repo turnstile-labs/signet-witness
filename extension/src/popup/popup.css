@@ -64,7 +64,6 @@
   --brand-2: #a89cf8;
   --verified: #22c55e;
   --amber: #f59e0b;
-  --pending: #eab308;
   --unclaimed: #9ca3af;
   --danger: #ef4444;
 }
@@ -87,7 +86,6 @@ html.light {
   --brand-2: #4a38d6;
   --verified: #16a34a;
   --amber: #d97706;
-  --pending: #ca8a04;
   --unclaimed: #6b7280;
   --danger: #dc2626;
 }
@@ -110,7 +108,6 @@ html.light {
     --brand-2: #4a38d6;
     --verified: #16a34a;
     --amber: #d97706;
-    --pending: #ca8a04;
     --unclaimed: #6b7280;
     --danger: #dc2626;
   }

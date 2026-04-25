@@ -134,18 +134,28 @@ export function computeVerified(
   return { isVerified: false, reason: null };
 }
 
-// Trust-index tier — used by the badge to pick a mark style without
-// needing to call-out the exact score. Tiers are intentionally coarse
-// so the badge stays a glanceable signal, not a data readout.
-export type TrustTier = "verified" | "onRecord" | "pending";
+// Public-facing trust tier — drives the badge palette, the seal-page
+// state block, the extension popup chip, and the public JSON API. Two
+// tiers, deliberately:
+//
+//   verified  → passed the composite trust-index gate AND the mutual-
+//               counterparty floor (or grandfathered).
+//   onRecord  → everything else with a registered domain row. We used
+//               to expose a third "pending" tier (no DKIM-verified
+//               events yet), but in practice it was indistinguishable
+//               from onRecord to a normal reader, and the cases where
+//               it stayed sticky (broken DKIM, never-emitting senders)
+//               are operator concerns. The /ops dashboard derives its
+//               own three-state status from raw counts; everything
+//               public stays binary.
+export type TrustTier = "verified" | "onRecord";
 
 export function trustTierFromScore(
   score: DomainScore | null,
   verified: VerifiedState,
 ): TrustTier {
   if (verified.isVerified) return "verified";
-  if (score && score.verified_event_count > 0) return "onRecord";
-  return "pending";
+  return "onRecord";
 }
 
 // ── Trust-index math ──────────────────────────────────────────

@@ -111,22 +111,24 @@ function Stat({
 // ── Trust state visuals ──────────────────────────────────────
 //
 // Canonical state taxonomy lives in `lib/scores.ts#trustTierFromScore`
-// and returns one of `verified | onRecord | pending`. This file maps
-// each tier to one Tailwind palette and one icon so every surface on
-// the seal page (hero, landing replica, eventually ops) reads from
-// the same definitions. `dim` is a fourth tone used only on the
-// Unclaimed placeholder, where the state block reads as ghosted.
+// and returns one of `verified | onRecord`. This file maps each tier
+// to one Tailwind palette and one icon so every surface on the seal
+// page (hero, landing replica) reads from the same definitions.
+// `dim` is a third tone used only on the Unclaimed placeholder, where
+// the state block reads as ghosted.
 //
 // Palette is traffic-light semantic:
 //   verified  → green   / ✓ check    / "Verified"
 //   onRecord  → amber   / ● dot      / "Building"    (sealed mail
 //                                                      exists, trust
 //                                                      bar not yet
-//                                                      reached)
-//   pending   → yellow  / ○ hollow   / "Warming up"  (warmer than
-//                                                      gray — still
-//                                                      live, still
-//                                                      building)
+//                                                      reached — this
+//                                                      tier absorbs
+//                                                      what used to
+//                                                      be "pending"
+//                                                      so the public
+//                                                      surface stays
+//                                                      binary)
 //   dim       → gray    / ○ hollow   / "—" (Unclaimed only)
 //
 // Labels and subtitles are i18n-driven. Icon and color choices are
@@ -147,11 +149,6 @@ const STATE_TONE_CLASSES: Record<StateTone, {
   onRecord: {
     frame: "border-amber/40 bg-amber/10",
     title: "text-amber",
-    subtitle: "text-muted",
-  },
-  pending: {
-    frame: "border-pending/40 bg-pending/10",
-    title: "text-pending",
     subtitle: "text-muted",
   },
   dim: {
@@ -187,16 +184,6 @@ function StateIcon({ tone }: { tone: StateTone }) {
         className="shrink-0 w-10 h-10 rounded-full bg-amber flex items-center justify-center"
       >
         <span className="w-2.5 h-2.5 rounded-full bg-bg" />
-      </span>
-    );
-  }
-  if (tone === "pending") {
-    return (
-      <span
-        aria-hidden
-        className="shrink-0 w-10 h-10 rounded-full border-2 border-pending flex items-center justify-center"
-      >
-        <span className="w-2.5 h-2.5 rounded-full bg-pending" />
       </span>
     );
   }
@@ -371,17 +358,15 @@ export default async function SealPage({ params }: Props) {
 
   // State block copy — one label + one supporting line per tier.
   // Subtitle carries the 0–100 trust index as technical detail under
-  // the headline verdict. Below-threshold tiers also name the target
-  // so the reader sees where they're headed.
+  // the headline verdict. The Building tier also names the target so
+  // the reader sees where they're headed.
   const stateTitle = t(`state.${tier}Title`);
   const stateSubtitle = verified.isVerified
     ? t("state.subtitleVerified", { index: trustIndex })
-    : tier === "pending"
-      ? t("state.subtitlePending")
-      : t("state.subtitleBuilding", {
-          index: trustIndex,
-          threshold: VERIFIED_INDEX,
-        });
+    : t("state.subtitleBuilding", {
+        index: trustIndex,
+        threshold: VERIFIED_INDEX,
+      });
 
   return (
     // The seal page is the public showcase of a domain — every share
@@ -389,8 +374,8 @@ export default async function SealPage({ params }: Props) {
     // Visually it belongs to the same family as the landing/setup/legal
     // surfaces, so it opts into the `.marketing` brand tint (purple
     // `--brand` remaps `--accent`) for full consistency. Trust-tier
-    // colors (verified green, building amber, pending yellow) stay
-    // independent of brand, so this swap never collides with state.
+    // colors (verified green, building amber) stay independent of
+    // brand, so this swap never collides with state.
     <div className="marketing flex flex-col min-h-screen bg-bg">
       <NavBar />
 

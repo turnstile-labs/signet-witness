@@ -27,15 +27,17 @@ describe("badge-dimensions", () => {
       expect(DOMAIN_MAX_CHARS).toBeGreaterThan(10);
     });
 
-    it("exposes a state word per tier", () => {
+    it("exposes a state word per public tier", () => {
+      // Two-state public surface (v12+). The legacy "pending" tier was
+      // collapsed into "onRecord" — see lib/scores.ts for the rationale.
       expect(STATE_WORDS.verified).toBe("Verified");
       expect(STATE_WORDS.onRecord).toBe("Building");
-      expect(STATE_WORDS.pending).toBe("Pending");
+      expect(Object.keys(STATE_WORDS)).toHaveLength(2);
     });
 
     it("reserves enough space for the longest state word", () => {
       // STATE_W_RESERVED is derived from max-of-all-state-words, so
-      // shortening one word (e.g. renaming "Pending" to "New") must
+      // shortening one word (e.g. renaming "Building" to "New") must
       // never narrow the reserved slot below the widest other word.
       const longest = Math.max(
         ...Object.values(STATE_WORDS).map((w) => w.length),
@@ -119,10 +121,10 @@ describe("badge-dimensions", () => {
       expect(r.width).toBeLessThanOrEqual(BADGE_MAX_WIDTH);
     });
 
-    it("state-agnostic width: same canvas across Pending → Building → Verified", () => {
+    it("state-agnostic width: same canvas across Building → Verified", () => {
       // Crucial invariant for email signatures — a pasted <img width=…>
       // must stay in lockstep with the rendered PNG even after the
-      // domain graduates from Pending to Building to Verified. Since
+      // domain graduates from Building to Verified. Since
       // computeBadgeWidth() takes only the domain, it cannot diverge
       // by state; this test documents that guarantee.
       const a = computeBadgeWidth("witnessed.cc");

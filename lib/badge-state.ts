@@ -13,7 +13,7 @@ import {
   trustTierFromScore,
 } from "@/lib/scores";
 
-export type BadgeState = "verified" | "onRecord" | "pending";
+export type BadgeState = "verified" | "onRecord";
 
 export interface BadgeSnapshot {
   state: BadgeState;
@@ -24,17 +24,18 @@ export interface BadgeSnapshot {
 // page's verified gate (composite trust index + mutuality floor) and
 // grandfathers pre-Layer-2 domains so their badge shows "Verified"
 // even if the recomputed score hasn't caught up yet. Fails closed
-// (pending) on any DB error so a flaky connection never renders a
-// spuriously verified badge.
+// (onRecord, count 0) on any DB error so a flaky connection never
+// renders a spuriously verified badge — the badge still resolves,
+// just in the conservative "Building" tone.
 export async function resolveSnapshot(domain: string): Promise<BadgeSnapshot> {
   try {
     const record = await getDomain(domain);
-    if (!record) return { state: "pending", count: 0 };
+    if (!record) return { state: "onRecord", count: 0 };
     const score = await getDomainScore(record.id, record.domain);
     const verified = computeVerified(score, record.grandfathered_verified);
     const tier = trustTierFromScore(score, verified);
     return { state: tier, count: record.event_count };
   } catch {
-    return { state: "pending", count: 0 };
+    return { state: "onRecord", count: 0 };
   }
 }

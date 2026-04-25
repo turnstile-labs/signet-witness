@@ -6,24 +6,22 @@
 //
 // Verified = solid green, bold "Verified", white domain, inline check.
 // Building = solid amber, bold "Building", white domain, inline filled dot.
-// Pending  = transparent pill, gray border, gray "Pending" + domain, hollow ring.
 //
 // The state word was added in v11 because color + icon alone didn't
 // tell strangers apart from "Verified" at a glance — an amber pill
 // with a dot can read as "also approved" to a recipient who has no
 // Witnessed mental model. The literal word removes that ambiguity:
-// Verified says "Verified", Building says "Building", Pending says
-// "Pending". No score readout, no progress ring — the precise 0–100
-// trust index lives on the seal page. Badges are identity; seal
-// pages are data.
+// Verified says "Verified", Building says "Building". No score
+// readout, no progress ring — the precise 0–100 trust index lives on
+// the seal page. Badges are identity; seal pages are data.
 //
 // Width adapts to the domain length so the canvas feels tailored
 // instead of a stretched template. Height stays fixed so the badge
 // remains compatible with every email signature layout we've tested.
 // The state-word slot is reserved at a fixed width (max-of-all-state-
 // words) so the overall badge width is stable across a domain's
-// Pending → Building → Verified transitions — a pasted <img> tag
-// keeps reading sanely even after the state moves.
+// Building → Verified transition — a pasted <img> tag keeps reading
+// sanely even after the state moves.
 //
 // This module is pure JS — safe to import from server routes
 // (app/badge/[slug]/route.tsx) and client components (BadgeEmbed.tsx)
@@ -56,7 +54,6 @@ const DOMAIN_CHAR_W = 7.8;
 export const STATE_WORDS: Record<BadgeState, string> = {
   verified: "Verified",
   onRecord: "Building",
-  pending: "Pending",
 };
 
 // Longest state word dictates the reserved slot width. Fixed reservation
@@ -97,7 +94,7 @@ export function truncateDomainForBadge(domain: string): string {
 // regardless of which one will actually render. That keeps the PNG
 // pixel dimensions and the <img width=…> attribute aligned across a
 // domain's lifetime, so Gmail/Apple Mail/Outlook never have to reflow
-// a signature when the tier moves from Pending to Building to Verified.
+// a signature when the tier moves from Building to Verified.
 export function computeBadgeWidth(displayDomain: string): number {
   const domainW = displayDomain.length * DOMAIN_CHAR_W;
   const raw =

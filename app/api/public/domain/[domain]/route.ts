@@ -31,6 +31,10 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Public-facing state space. `unclaimed` is the absence-of-data state
+// (no domain row in the registry); `verified` and `onRecord` come from
+// `trustTierFromScore` which collapses the legacy `pending` tier into
+// `onRecord` on every public surface as of v12.
 type PublicState = TrustTier | "unclaimed";
 
 interface PublicPayload {

@@ -179,16 +179,21 @@ describe("trustTierFromScore", () => {
     ).toBe("onRecord");
   });
 
-  it("returns pending when the domain has no verified events yet", () => {
+  // The legacy "pending" tier was collapsed into "onRecord" on every
+  // public surface — once a domain has a row in our DB, we surface
+  // "Building" regardless of whether the first DKIM-verified event has
+  // landed yet. The /ops dashboard derives its three-state breakdown
+  // directly from raw counts; everything else is binary.
+  it("returns onRecord when the domain has no verified events yet", () => {
     expect(
       trustTierFromScore(score(), { isVerified: false, reason: null }),
-    ).toBe("pending");
+    ).toBe("onRecord");
   });
 
-  it("returns pending when no score exists at all", () => {
+  it("returns onRecord when no score exists at all", () => {
     expect(
       trustTierFromScore(null, { isVerified: false, reason: null }),
-    ).toBe("pending");
+    ).toBe("onRecord");
   });
 });
 

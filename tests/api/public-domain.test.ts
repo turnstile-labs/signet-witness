@@ -66,7 +66,7 @@ describe("GET /api/public/domain/[domain]", () => {
     expect(body.firstSeen).toBeNull();
   });
 
-  it("returns `pending` for a claimed domain with no quality events yet", async () => {
+  it("returns `onRecord` for a claimed domain with no quality events yet", async () => {
     getDomainMock.mockResolvedValue({
       id: 1,
       domain: "acme.com",
@@ -87,7 +87,7 @@ describe("GET /api/public/domain/[domain]", () => {
     });
     const res = await GET(new Request("http://t"), params("acme.com"));
     const body = await res.json();
-    expect(body.state).toBe("pending");
+    expect(body.state).toBe("onRecord");
     expect(body.trustIndex).toBe(8);
     expect(body.firstSeen).toBe("2026-04-20T00:00:00Z");
   });

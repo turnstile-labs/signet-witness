@@ -52,10 +52,10 @@ describe("badge-state / resolveSnapshot", () => {
     ...over,
   });
 
-  it("returns pending when the domain is not registered", async () => {
+  it("falls back to onRecord when the domain is not registered", async () => {
     getDomainMock.mockResolvedValue(null);
     const snap = await resolveSnapshot("ghost.example");
-    expect(snap).toEqual({ state: "pending", count: 0 });
+    expect(snap).toEqual({ state: "onRecord", count: 0 });
   });
 
   it("returns the tier resolver's verdict on a claimed domain", async () => {
@@ -89,19 +89,19 @@ describe("badge-state / resolveSnapshot", () => {
     expect(snap.count).toBe(11);
   });
 
-  it("falls through to pending when the score lookup returns null", async () => {
+  it("falls through to onRecord when the score lookup returns null", async () => {
     getDomainMock.mockResolvedValue(fakeDomain({ id: 3, domain: "new.dev" }));
     getDomainScoreMock.mockResolvedValue(null);
     computeVerifiedMock.mockReturnValue({ isVerified: false, reason: null });
-    trustTierFromScoreMock.mockReturnValue("pending");
+    trustTierFromScoreMock.mockReturnValue("onRecord");
 
     const snap = await resolveSnapshot("new.dev");
-    expect(snap).toEqual({ state: "pending", count: 0 });
+    expect(snap).toEqual({ state: "onRecord", count: 0 });
   });
 
-  it("fails closed (pending) when getDomain throws", async () => {
+  it("fails closed (onRecord) when getDomain throws", async () => {
     getDomainMock.mockRejectedValue(new Error("db down"));
     const snap = await resolveSnapshot("boom.com");
-    expect(snap).toEqual({ state: "pending", count: 0 });
+    expect(snap).toEqual({ state: "onRecord", count: 0 });
   });
 });

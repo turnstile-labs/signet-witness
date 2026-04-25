@@ -23,17 +23,15 @@ import {
 //
 // Verified: filled green pill, white check icon, bold "Verified", white domain.
 // Building: filled amber pill, white dot icon,   bold "Building", white domain.
-// Pending : transparent pill, gray outline, gray hollow-ring icon, gray "Pending" + domain.
 //
-// The state word (added in v11) is the glossary. Color + icon alone
-// are ambiguous to strangers: an amber pill with a filled dot can
-// read as "also approved" to a recipient who has no Witnessed mental
-// model, which devalues Verified. The literal word removes the
-// guesswork — Verified says "Verified", Building says "Building",
-// Pending says "Pending". Pending also drops from filled yellow to
-// an outlined gray pill in the same release so it no longer
-// squats in the visual space reserved for earned-trust tiers; it
-// reads as "on the record, but hasn't earned badge-weight yet."
+// Two tiers, no third "Pending" variant. We collapsed Pending into
+// Building on every public surface in v12 — the distinction was
+// meaningful in code (DKIM-passed-event count) but unreadable to a
+// stranger looking at a badge in a signature, and the tiny class of
+// domains that genuinely stuck in Pending (broken DKIM) is an
+// operator concern, not a customer-facing one. The /ops dashboard
+// still surfaces the three-state breakdown; everything outside ops
+// is binary.
 //
 // No progress ring, no score readout, no theme param. The color +
 // state word do all the work, and the badge's identity stays stable
@@ -94,23 +92,12 @@ const PALETTES: Record<BadgeState, Palette> = {
     icon: "#ffffff",
     iconBg: "#d97706",
   },
-  pending: {
-    // Outline variant — no fill, mid-gray border + text. Reads on any
-    // email client bg, light or dark, and crucially reads as "different
-    // family" from the two filled trust-colored tiers above.
-    bg: "transparent",
-    border: "#94a3b8",       // slate-400
-    text: "#64748b",         // slate-500
-    icon: "#64748b",
-    iconBg: "transparent",
-  },
 };
 
 function stateAria(state: BadgeState): string {
   switch (state) {
     case "verified": return "verified";
     case "onRecord": return "building";
-    case "pending":  return "pending";
   }
 }
 
@@ -125,8 +112,8 @@ function renderSvg(domain: string, state: BadgeState): string {
 
   // Three-column text layout anchored at fixed x offsets so the
   // domain starts at the same x across every state. Stable vertical
-  // column = stable pixel width across Pending → Building → Verified
-  // transitions.
+  // column = stable pixel width across the Building → Verified
+  // transition.
   const stateX = PAD_L + ICON_D + GAP_ICON_DOMAIN;
   // Separator sits centred inside the 3-char SEP_W gap between the
   // state slot and the domain.
@@ -146,13 +133,10 @@ function renderSvg(domain: string, state: BadgeState): string {
     iconEl = `
     <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}" fill="${p.icon}"/>
     <path d="${check}" stroke="${p.iconBg}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
-  } else if (state === "onRecord") {
+  } else {
     iconEl = `
     <circle cx="${iconCX}" cy="${iconCY}" r="${iconR}" fill="${p.icon}"/>
     <circle cx="${iconCX}" cy="${iconCY}" r="1.6" fill="${p.iconBg}"/>`;
-  } else {
-    iconEl = `
-    <circle cx="${iconCX}" cy="${iconCY}" r="${iconR - 0.75}" fill="none" stroke="${p.icon}" stroke-width="1.5"/>`;
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Witnessed badge: ${esc(domain)} (${stateAria(state)})">
@@ -204,31 +188,18 @@ function renderPng(
         />
       </svg>
     );
-  } else if (state === "onRecord") {
+  } else {
     iconNode = (
       <svg width={iconD2x} height={iconD2x} viewBox={`0 0 ${iconD2x} ${iconD2x}`}>
         <circle cx={iconR2x} cy={iconR2x} r={iconR2x} fill={p.icon} />
         <circle cx={iconR2x} cy={iconR2x} r="3.2" fill={p.iconBg} />
       </svg>
     );
-  } else {
-    iconNode = (
-      <svg width={iconD2x} height={iconD2x} viewBox={`0 0 ${iconD2x} ${iconD2x}`}>
-        <circle
-          cx={iconR2x}
-          cy={iconR2x}
-          r={iconR2x - 1.5}
-          fill="none"
-          stroke={p.icon}
-          strokeWidth="3"
-        />
-      </svg>
-    );
   }
 
   // Reserved state-word slot keeps badge width stable across state
   // transitions — we always render a fixed-width box around the
-  // actual state word, left-aligned, so "Pending" (7 chars) and
+  // actual state word, left-aligned, so "Building" (8 chars) and
   // "Verified" (8 chars) produce the same overall canvas for a
   // given domain.
   const stateSlotW = STATE_W_RESERVED * 2;
@@ -320,11 +291,12 @@ export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
 ): Record<string, string> {
-  // v11: badge gained a state word inline ("Verified" / "Building" /
-  // "Pending") and Pending dropped from filled yellow to outline gray.
-  // Pixels change materially across all three states — bust caches
-  // everywhere so in-the-wild signatures pick up the new rendering.
-  const etag = `W/"${snapshot.state}-${format}-v11"`;
+  // v12: collapsed Pending into Building on every public surface.
+  // The badge now has two tiers (Verified / Building) with no third
+  // outline variant — Pending domains render as Building from this
+  // version on. Bust caches everywhere so in-the-wild signatures
+  // pick up the new rendering.
+  const etag = `W/"${snapshot.state}-${format}-v12"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
@@ -360,9 +332,7 @@ export async function GET(
   // registry. Never mutates data; read-only presentation toggle.
   const previewParam = url.searchParams.get("preview");
   const previewState: BadgeState | null =
-    previewParam === "verified" ||
-    previewParam === "onRecord" ||
-    previewParam === "pending"
+    previewParam === "verified" || previewParam === "onRecord"
       ? previewParam
       : null;
 
