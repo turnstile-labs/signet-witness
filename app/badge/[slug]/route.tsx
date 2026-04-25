@@ -305,11 +305,14 @@ type Snapshot = BadgeSnapshot;
 //   v14 = Tightened canvas (224→204) and warm-neutral dark for the
 //         right half (slate-900 → stone-900). Same shape, calibrated
 //         proportions and palette for email-client rendering.
+//   v15 = LEFT_W bump (96→104) after v14's left half clipped against
+//         "Verified" at the metric Satori actually renders. Total
+//         canvas 204→212.
 export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
 ): Record<string, string> {
-  const etag = `W/"${snapshot.state}-${format}-v14"`;
+  const etag = `W/"${snapshot.state}-${format}-v15"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
