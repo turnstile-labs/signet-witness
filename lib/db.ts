@@ -268,12 +268,6 @@ export interface OpsStats {
     verified_event_count: number | null;
     grandfathered_verified: boolean;
   }>;
-  topReceivers: Array<{
-    receiver_domain: string;
-    count: number;
-    distinct_senders: number;
-    claimed: boolean;
-  }>;
   eventsByDay: Array<{ day: string; count: number }>;
   newDomainsByDay: Array<{ day: string; count: number }>;
   verifiedDomains: number;
@@ -488,7 +482,6 @@ export async function getOpsStats(): Promise<OpsStats> {
     denyTotal,
     denyByReason,
     topSenders,
-    topReceivers,
     eventsByDay,
     newDomainsByDay,
     verified,
@@ -541,26 +534,6 @@ export async function getOpsStats(): Promise<OpsStats> {
       [] as { reason: string; count: number }[],
     ),
     topSendersWithScores(),
-    sql`
-      SELECT
-        e.receiver_domain,
-        COUNT(*)::int                      AS count,
-        COUNT(DISTINCT e.domain_id)::int   AS distinct_senders,
-        EXISTS (
-          SELECT 1 FROM domains d2 WHERE d2.domain = e.receiver_domain
-        )                                  AS claimed
-      FROM events e
-      GROUP BY e.receiver_domain
-      ORDER BY count DESC
-      LIMIT 15
-    ` as unknown as Promise<
-      Array<{
-        receiver_domain: string;
-        count: number;
-        distinct_senders: number;
-        claimed: boolean;
-      }>
-    >,
     sql`
       SELECT to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS day,
              COUNT(*)::int AS count
@@ -647,7 +620,6 @@ export async function getOpsStats(): Promise<OpsStats> {
     denylistTotal: denyTotal[0]?.n ?? 0,
     denylistByReason: denyByReason,
     topSenders,
-    topReceivers,
     eventsByDay,
     newDomainsByDay,
     verifiedDomains: verified[0]?.n ?? 0,

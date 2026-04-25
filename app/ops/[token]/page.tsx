@@ -90,6 +90,8 @@ function humanReason(reason: string): string {
       return "Recipient on a known-bad list";
     case "concentration":
       return "Sender only emails one recipient";
+    case "solo_recipient":
+      return "No counterparty in To/Cc";
     case "erasure":
       return "GDPR erasure (Art 17)";
     case "opt_out":
@@ -269,8 +271,12 @@ export default async function OpsPage({
         </div>
       </section>
 
-      {/* Domains grid — two side-by-side panels ··················· */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
+      {/* Registered domains panel — leaderboard with status mix.
+          The "Top recipients" panel that used to live alongside this
+          one was a network map, not health data; it answered none of
+          the three operator questions framing this dashboard, so it
+          was removed in favor of the single full-width domains table. */}
+      <div className="mb-8">
         <Panel
           title="Registered domains"
           legend={
@@ -321,62 +327,6 @@ export default async function OpsPage({
                     </tr>
                   );
                 })}
-              </tbody>
-            </table>
-          )}
-        </Panel>
-
-        <Panel
-          title="Top recipients"
-          legend={
-            <span className="text-[0.6rem] text-muted-2">
-              last 30 days
-            </span>
-          }
-        >
-          {stats.topReceivers.length === 0 ? (
-            <Empty>No recipient data yet.</Empty>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
-                  <th className="py-2 pr-3 font-normal">Domain</th>
-                  <th className="py-2 pr-3 font-normal text-right">
-                    Received
-                  </th>
-                  <th className="py-2 pr-3 font-normal text-right">
-                    Senders
-                  </th>
-                  <th className="py-2 font-normal">State</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {stats.topReceivers.slice(0, 8).map((r) => (
-                  <tr key={r.receiver_domain}>
-                    <td className="py-2.5 pr-3 truncate max-w-[11rem]">
-                      {r.receiver_domain}
-                    </td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums">
-                      {r.count.toLocaleString()}
-                    </td>
-                    <td className="py-2.5 pr-3 text-right tabular-nums text-muted">
-                      {r.distinct_senders.toLocaleString()}
-                    </td>
-                    <td className="py-2.5 text-muted-2">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span
-                          className={`inline-block w-1.5 h-1.5 rounded-full ${
-                            r.claimed
-                              ? "bg-txt"
-                              : "border border-muted-2 bg-transparent"
-                          }`}
-                          aria-hidden="true"
-                        />
-                        {r.claimed ? "Registered" : "Unclaimed"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           )}
