@@ -23,6 +23,7 @@ import {
   getSettings,
   onSettingsChange,
 } from "../lib/storage";
+import { emailToDomain } from "../lib/parse";
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
@@ -190,14 +191,10 @@ function scanComposes(): void {
 
 // ── Read probe ────────────────────────────────────────────────
 // Runs only when the popup asks; no UI side effects.
-
-function emailToDomain(raw: string | null | undefined): string | null {
-  const addr = raw?.trim().toLowerCase();
-  if (!addr || !addr.includes("@")) return null;
-  const domain = addr.split("@", 2)[1];
-  if (!domain || !domain.includes(".")) return null;
-  return domain;
-}
+//
+// Pure parsing helpers (e.g. `emailToDomain`) live in `../lib/parse`
+// so they can be unit-tested without dragging Gmail's DOM into the
+// test runtime.
 
 export type VisibleContext = "thread" | "list" | "none";
 
