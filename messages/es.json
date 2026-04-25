@@ -61,7 +61,8 @@
       "never": "✗ nunca"
     },
     "cta": {
-      "built": "Hecho para freelancers, agencias y startups — cualquiera que necesite probar que ha estado ahí.",
+      "built": "Empieza a construir tu historial.",
+      "consequence": "Cada email que envías sin Cco es un ayer que no podrás probar.",
       "sub": "Gratis para siempre. Sin necesidad de cuenta."
     },
     "orAutoLabel": "O sáltate el copiar y pegar —",
@@ -103,7 +104,8 @@
       "noOutboundBody": "<d>{name}</d> ha sido destinatario en {count} {count, plural, =1 {comunicación verificada} other {comunicaciones verificadas}}. Otros negocios ya están sellando sus emails con Witnessed — pero <d>{name}</d> aún no ha empezado a construir su propio registro de envíos.",
       "noRecordBody": "<d>{name}</d> todavía no ha sido registrado. Añade <e>{addr}</e> en Cco en un email de trabajo y esta página se completa — automáticamente, sin cuenta.",
       "claimEyebrow": "Reclama esta página",
-      "startEyebrow": "Empieza este registro",
+      "startEyebrow": "Empieza a construir tu historial.",
+      "startConsequence": "Cada email que envías sin Cco es un ayer que no podrás probar.",
       "orAutoLabel": "O sáltate el copiar y pegar —",
       "orAutoLink": "configúralo una vez, en automático →"
     }

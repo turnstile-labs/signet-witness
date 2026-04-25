@@ -61,7 +61,8 @@
       "never": "✗ never"
     },
     "cta": {
-      "built": "Built for freelancers, agencies, startups — anyone who needs to prove they've been here.",
+      "built": "Start building your history.",
+      "consequence": "Every email you send without a Bcc is a yesterday you can't prove.",
       "sub": "Free forever. No account needed."
     },
     "orAutoLabel": "Or skip the copy-paste —",
@@ -103,7 +104,8 @@
       "noOutboundBody": "<d>{name}</d> has been the recipient in {count} witnessed {count, plural, =1 {communication} other {communications}}. Other businesses are already sealing their mail with Witnessed — but <d>{name}</d> hasn't started building its own outbound record yet.",
       "noRecordBody": "<d>{name}</d> hasn't been witnessed yet. Add <e>{addr}</e> to Bcc on a business email and this page fills in — automatically, no account needed.",
       "claimEyebrow": "Claim this page",
-      "startEyebrow": "Start this record",
+      "startEyebrow": "Start building your history.",
+      "startConsequence": "Every email you send without a Bcc is a yesterday you can't prove.",
       "orAutoLabel": "Or skip the copy-paste —",
       "orAutoLink": "set it up once, automatically →"
     }

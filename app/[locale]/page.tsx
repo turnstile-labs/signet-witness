@@ -307,11 +307,23 @@ export default async function Home({
           </div>
         </section>
 
-        {/* ── Final CTA ────────────────────────────────────────── */}
+        {/* ── Final CTA ──────────────────────────────────────────
+             Three-beat rhythm:
+               1. cta.built       — invitation ("Start building your history.")
+               2. cta.consequence — stake ("Every email you send without a Bcc is a
+                                    yesterday you can't prove.")
+               3. action button + cta.sub — disarm friction.
+             The consequence line sits between heading and action so the stake
+             is established before the click, then the small `sub` reassures.
+             Two visually distinct typefaces (heading semibold, consequence
+             muted-but-readable) keep the hierarchy obvious at a glance. */}
         <section className="border-t border-border bg-bg">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
-            <p className="text-base sm:text-lg text-txt font-semibold max-w-xl mx-auto leading-relaxed mb-8">
+            <p className="text-base sm:text-lg text-txt font-semibold max-w-xl mx-auto leading-relaxed mb-3">
               {t("cta.built")}
+            </p>
+            <p className="text-sm sm:text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
+              {t("cta.consequence")}
             </p>
             <CopyableEmail variant="hero" />
             <p className="mt-4 text-xs text-muted-2 font-mono">

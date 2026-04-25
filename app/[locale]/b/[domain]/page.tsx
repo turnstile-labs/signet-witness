@@ -548,7 +548,23 @@ async function UnclaimedPage({
             />
           </div>
 
-          <p className="mt-10 text-sm text-muted leading-relaxed max-w-xl">
+          {/* On the cold-start path (no record yet for this domain) we
+              lead with the stake — "every email sent without a Bcc is a
+              yesterday you can't prove" — before the existing
+              instructional body. Skipped on the receiver-activity path
+              because that page already has its own framing (the domain
+              has been named in others' mail; the rhetorical situation
+              is different). Same string powers the "Start building your
+              history" eyebrow below; the page now reads as one coherent
+              beat from top to bottom. */}
+          {!hasReceiverActivity && (
+            <p className="mt-10 text-base sm:text-lg text-txt font-semibold leading-relaxed max-w-xl">
+              {tu("startConsequence")}
+            </p>
+          )}
+          <p
+            className={`${hasReceiverActivity ? "mt-10" : "mt-3"} text-sm text-muted leading-relaxed max-w-xl`}
+          >
             {hasReceiverActivity
               ? tu.rich("noOutboundBody", {
                   name: domain,
@@ -584,7 +600,7 @@ async function UnclaimedPage({
              visual language wherever someone is about to take action.
              Eyebrow shifts based on context — "Claim this page" when
              the domain is already being named in others' emails,
-             "Start this record" when the page is cold. */}
+             "Start building your history." when the page is cold. */}
         <section className="mt-12 pt-10 border-t border-border text-center">
           <EyebrowLabel>
             {hasReceiverActivity ? tu("claimEyebrow") : tu("startEyebrow")}
