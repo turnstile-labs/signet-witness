@@ -2,6 +2,17 @@ import { notFound } from "next/navigation";
 import { timingSafeEqual } from "crypto";
 import type { Metadata } from "next";
 import { getOpsStats, type OpsStats } from "@/lib/db";
+import {
+  ACTIVITY_WEIGHT,
+  MUTUAL_WEIGHT,
+  TENURE_WEIGHT,
+  DIVERSITY_WEIGHT,
+  ACTIVITY_CAP,
+  MUTUAL_CAP,
+  TENURE_CAP_DAYS,
+  VERIFIED_INDEX,
+  MIN_MUTUALS,
+} from "@/lib/scores";
 
 // Internal ops dashboard. Reached via a secret URL: /ops/<STATS_TOKEN>.
 // Not linked from anywhere. Not localised. No tracking.
@@ -71,8 +82,8 @@ function statusFor(row: {
 }): StatusLabel {
   if (row.grandfathered_verified) return "Verified";
   if (
-    (row.trust_index ?? 0) >= 65 &&
-    (row.mutual_counterparties ?? 0) >= 3
+    (row.trust_index ?? 0) >= VERIFIED_INDEX &&
+    (row.mutual_counterparties ?? 0) >= MIN_MUTUALS
   ) {
     return "Verified";
   }
@@ -289,6 +300,7 @@ export default async function OpsPage({
             />
           }
         >
+          <TrustFormula />
           {stats.topSenders.length === 0 ? (
             <Empty>No domains registered yet.</Empty>
           ) : (
@@ -572,6 +584,45 @@ function Panel({
       </header>
       {children}
     </section>
+  );
+}
+
+// Trust-index formula caption.
+//
+// Always visible above the Registered domains table. Operators looking
+// at the "Trust" column want to know how it's computed without leaving
+// the page; four lines of math is below the threshold where progressive
+// disclosure earns its complexity. All numbers are imported from
+// `lib/scores.ts` so the legend can never drift from the math the
+// `domain_scores` table actually uses.
+//
+// Layout: the composite formula on top, the four sub-formulas in a
+// monospace grid below, and the verified gate as a final line. Muted
+// styling so it sits as reference rather than competing with the table.
+function TrustFormula() {
+  const w = (n: number) => n.toFixed(2);
+  return (
+    <div className="mb-4 px-3 py-2.5 rounded border border-border/70 bg-bg/40 text-[0.7rem] leading-relaxed text-muted">
+      <p className="font-mono text-muted-2 mb-1.5">
+        <span className="text-muted">trust_index</span> ={" "}
+        {w(ACTIVITY_WEIGHT)}·activity + {w(MUTUAL_WEIGHT)}·mutual +{" "}
+        {w(TENURE_WEIGHT)}·tenure + {w(DIVERSITY_WEIGHT)}·diversity
+      </p>
+      <dl className="font-mono grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-0.5 text-muted-2">
+        <dt className="text-muted">activity</dt>
+        <dd>log(1+events) / log(1+{ACTIVITY_CAP})</dd>
+        <dt className="text-muted">mutual</dt>
+        <dd>min(mutuals, {MUTUAL_CAP}) / {MUTUAL_CAP}</dd>
+        <dt className="text-muted">tenure</dt>
+        <dd>min(days, {TENURE_CAP_DAYS}) / {TENURE_CAP_DAYS}</dd>
+        <dt className="text-muted">diversity</dt>
+        <dd>1 − Gini(events per receiver)</dd>
+      </dl>
+      <p className="font-mono text-muted-2 mt-1.5">
+        <span className="text-muted">verified gate</span>: index ≥{" "}
+        {VERIFIED_INDEX} AND mutuals ≥ {MIN_MUTUALS} (or grandfathered)
+      </p>
+    </div>
   );
 }
 

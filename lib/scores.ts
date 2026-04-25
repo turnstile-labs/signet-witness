@@ -167,13 +167,39 @@ export function trustTierFromScore(
 //
 // Each sub-score is 0..100. Weighted sum, clamped, rounded.
 //
-//   activity   35%   log(1 + verified_events) / log(1 + 200), capped
-//                    so a wall-of-emails attacker gets diminishing
+//   activity   35%   log(1 + verified_events) / log(1 + ACTIVITY_CAP),
+//                    capped so a wall-of-emails attacker gets diminishing
 //                    returns past ~200 quality events.
-//   mutual     25%   min(mutuals, 20) / 20. Linear. The strongest
-//                    anti-fake signal; 20 mutuals is "real business."
-//   tenure     20%   min(days, 730) / 730. Linear, 2-year cap.
+//   mutual     25%   min(mutuals, MUTUAL_CAP) / MUTUAL_CAP. Linear.
+//                    The strongest anti-fake signal; 20 mutuals is
+//                    "real business."
+//   tenure     20%   min(days, TENURE_CAP_DAYS) / TENURE_CAP_DAYS.
+//                    Linear, 2-year cap.
 //   diversity  20%   already 0..1. Rewards breadth, punishes pump.
+//
+// Weights and caps live as named constants so operator-facing surfaces
+// (the /ops legend, the seal page explainer) can render the same numbers
+// the math actually uses — change here and every legend updates in
+// lockstep. The four weights are required to sum to 1 — `_WEIGHT_SUM`
+// is exported only for the runtime invariant check below.
+
+export const ACTIVITY_WEIGHT = 0.35;
+export const MUTUAL_WEIGHT = 0.25;
+export const TENURE_WEIGHT = 0.2;
+export const DIVERSITY_WEIGHT = 0.2;
+
+// Cap inputs — past these the sub-score saturates at 1.0 and additional
+// signal stops moving the index. Picked to make "real established
+// business" hit ~100: 200 quality emails, 20 distinct mutual senders,
+// 2 years of tenure.
+export const ACTIVITY_CAP = 200;
+export const MUTUAL_CAP = 20;
+export const TENURE_CAP_DAYS = 730;
+
+// Compile-time-ish invariant: weights must sum to 1, otherwise the
+// composite stops being a 0..100 measure. Tested in scores.test.ts.
+export const _WEIGHT_SUM =
+  ACTIVITY_WEIGHT + MUTUAL_WEIGHT + TENURE_WEIGHT + DIVERSITY_WEIGHT;
 
 export function computeTrustIndex(parts: {
   verified_event_count: number;
@@ -182,15 +208,18 @@ export function computeTrustIndex(parts: {
   tenure_days: number;
 }): number {
   const activityRaw =
-    Math.log1p(parts.verified_event_count) / Math.log1p(200);
+    Math.log1p(parts.verified_event_count) / Math.log1p(ACTIVITY_CAP);
   const activity = Math.min(1, Math.max(0, activityRaw)) * 100;
 
-  const mutual = Math.min(1, parts.mutual_counterparties / 20) * 100;
-  const tenure = Math.min(1, parts.tenure_days / 730) * 100;
+  const mutual = Math.min(1, parts.mutual_counterparties / MUTUAL_CAP) * 100;
+  const tenure = Math.min(1, parts.tenure_days / TENURE_CAP_DAYS) * 100;
   const diversity = Math.min(1, Math.max(0, parts.diversity)) * 100;
 
   const composite =
-    0.35 * activity + 0.25 * mutual + 0.2 * tenure + 0.2 * diversity;
+    ACTIVITY_WEIGHT * activity +
+    MUTUAL_WEIGHT * mutual +
+    TENURE_WEIGHT * tenure +
+    DIVERSITY_WEIGHT * diversity;
   return Math.max(0, Math.min(100, Math.round(composite)));
 }
 
