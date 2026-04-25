@@ -23,7 +23,10 @@ export default function SealError({
   }, [error]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg">
+    // Mirrors the seal page itself — error boundaries inherit the
+    // surrounding visual family, so we opt this fallback into the
+    // marketing brand tint too.
+    <div className="marketing flex flex-col min-h-screen bg-bg">
       <NavBar />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="text-center max-w-sm">

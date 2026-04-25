@@ -41,18 +41,20 @@
 
 /* ── Dark (default) ────────────────────────────────────────── */
 /* Two accent systems live side-by-side on purpose:
-     --brand  (purple) is the *marketing* identity. It shows up on
-              the nav wordmark, the landing page, the setup flow,
-              and every legal / rights page — i.e. surfaces where
-              we're pitching the product.
-     --accent (blue)   is the *product* accent. It shows up on the
-              seal page, ops, and the extension popup — surfaces
-              where data is the point and the UI should feel
+     --brand  (purple) is the *public-facing* identity. It shows up
+              on the nav wordmark and on every page a stranger could
+              land on — landing, seal, setup, legal, rights, the
+              post-install welcome — i.e. surfaces where we're either
+              pitching the product or showing the product to someone
+              who isn't operating it.
+     --accent (blue)   is the *operator* accent. It shows up on the
+              ops dashboard and the extension popup — surfaces where
+              data density is the point and the UI should feel
               utilitarian rather than branded.
    Both are decoupled from the state palette (verified green,
    on-record amber, pending yellow, unclaimed gray, danger red) so
    neither brand nor accent can ever collide with a trust tier.
-   Marketing pages opt into purple via the `.marketing` wrapper
+   Public-facing pages opt into purple via the `.marketing` wrapper
    (see below) which remaps --accent → --brand locally. */
 :root {
   --bg:        #0c0c0f;
@@ -95,12 +97,13 @@ html.light {
   --danger:    #dc2626;
 }
 
-/* Marketing wrapper — apply to the root element of any marketing
-   page (landing, setup, rights, privacy, terms) to paint every
-   `text-accent` / `bg-accent` / `border-accent` / `ring-accent`
-   inside in the purple brand tint instead. Product surfaces
-   (seal page, ops) just omit the class and stay on the blue
-   --accent, which is what a data-dense UI wants. */
+/* Marketing wrapper — apply to the root element of any public-facing
+   page (landing, seal page, setup, rights, privacy, terms,
+   extension/welcome) to paint every `text-accent` / `bg-accent` /
+   `border-accent` / `ring-accent` inside in the purple brand tint
+   instead. Operator surfaces (ops dashboard, extension popup) omit
+   the class and stay on the blue `--accent`, which is what a data-
+   dense UI wants. */
 .marketing {
   --accent:   var(--brand);
   --accent-2: var(--brand-2);

@@ -66,7 +66,11 @@ export default function DomainSearch({
           autoCorrect="off"
           inputMode="url"
           aria-label={ariaLabel ?? placeholder}
-          className="bg-transparent outline-none text-sm font-mono text-txt placeholder:text-muted-2 flex-1 min-w-0"
+          // Mobile: 16px (text-base) keeps Safari from auto-zooming the
+          // viewport on focus — the classic "page zooms when I tap the
+          // input" bug. Desktop drops back to 14px (text-sm) so the
+          // search bar stays as compact as the surrounding type stack.
+          className="bg-transparent outline-none text-base sm:text-sm font-mono text-txt placeholder:text-muted flex-1 min-w-0"
         />
       </label>
       <button

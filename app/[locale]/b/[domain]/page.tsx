@@ -384,7 +384,14 @@ export default async function SealPage({ params }: Props) {
         });
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg">
+    // The seal page is the public showcase of a domain — every share
+    // link, badge click, and "check this domain" hand-off lands here.
+    // Visually it belongs to the same family as the landing/setup/legal
+    // surfaces, so it opts into the `.marketing` brand tint (purple
+    // `--brand` remaps `--accent`) for full consistency. Trust-tier
+    // colors (verified green, building amber, pending yellow) stay
+    // independent of brand, so this swap never collides with state.
+    <div className="marketing flex flex-col min-h-screen bg-bg">
       <NavBar />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">
@@ -504,7 +511,10 @@ async function UnclaimedPage({
   const hasReceiverActivity = receiverCount > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg">
+    // Same `.marketing` opt-in as the claimed seal page — Unclaimed is
+    // the most marketing-facing surface of all (it's what a stranger
+    // sees the first time someone types a domain into the lookup).
+    <div className="marketing flex flex-col min-h-screen bg-bg">
       <NavBar />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 w-full">

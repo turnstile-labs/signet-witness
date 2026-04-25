@@ -235,7 +235,11 @@ export default async function Home({
           </div>
 
           <div className="mt-10 sm:mt-12">
-            <p className="text-center text-[0.65rem] font-mono uppercase tracking-widest text-muted-2 mb-3">
+            {/* Eyebrow + caption sit one notch lighter than the rest of
+                the landing's micro-type so this lookup widget reads
+                as the section's primary action — not as fine print
+                tucked under the mock card. */}
+            <p className="text-center text-xs font-mono uppercase tracking-widest text-muted mb-3">
               {t("mock.lookupLabel")}
             </p>
             <DomainSearch
@@ -243,7 +247,7 @@ export default async function Home({
               submitLabel={t("mock.lookupSubmit")}
               ariaLabel={t("mock.lookupAria")}
             />
-            <p className="text-center text-xs text-muted-2 mt-4">
+            <p className="text-center text-xs text-muted mt-4">
               {t("mock.realOne")}{" "}
               <Link
                 href="/b/witnessed.cc"
