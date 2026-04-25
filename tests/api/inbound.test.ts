@@ -271,8 +271,9 @@ describe("/api/inbound — anti-abuse decision tree", () => {
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it("skips receiver-side gates when primary receiver is 'unknown'", async () => {
-    // Mail with no To or CC lines.
+  it("drops solo-recipient mail (no To/Cc counterparty) as a throttle", async () => {
+    // Mail with no To or CC lines — i.e. seal@ was the only addressee,
+    // so there's no proof-of-business event to record.
     const onlyFrom = [
       "From: <ceo@acme.com>",
       "Subject: hi",
@@ -281,9 +282,17 @@ describe("/api/inbound — anti-abuse decision tree", () => {
     ].join("\r\n");
     const res = await POST(makeReq(onlyFrom));
     expect(res.status).toBe(200);
-    // MX / DBL must not have been queried — there's no receiver.
+    expect(await res.json()).toEqual({ ok: true, dropped: "solo_recipient" });
+    // Receiver-side gates and the public ledger never get touched.
     expect(mxMock).not.toHaveBeenCalled();
     expect(dblMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(throttledMock).toHaveBeenCalledWith(
+      "acme.com",
+      "unknown",
+      expect.any(String),
+      "solo_recipient",
+    );
   });
 
   it("accepts the happy path and returns ok", async () => {

@@ -470,7 +470,8 @@ export type ThrottleReason =
   | "receiver_no_mx"
   | "rate_limit"
   | "receiver_blocklist"
-  | "concentration";
+  | "concentration"
+  | "solo_recipient";
 
 /**
  * Record a throttled event. Never affects public counts. Retained

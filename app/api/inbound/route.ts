@@ -60,12 +60,19 @@ export async function POST(req: NextRequest) {
   }
 
   // 6. Extract the primary receiver domain from the visible headers.
-  // We look at both To and Cc because a sealed email may carry either:
-  // the standard flow is a silent Bcc to seal@ with the real recipient
-  // in To, but some senders still Cc their counterparty, and Outlook
-  // desktop's rule engine can only duplicate via Cc. Bcc headers are
-  // stripped by the sender's server and never appear here — which is
-  // the whole point: the recipient can't tell we were copied.
+  //
+  // The default and recommended flow is silent Bcc: the sender Bccs
+  // seal@witnessed.cc, and the real recipient sits in `To:`. Bcc
+  // headers are stripped by the sender's MTA before delivery, so we
+  // never see ourselves in the headers we receive — the recipient
+  // can't tell we were copied. That's the whole privacy guarantee.
+  //
+  // We also accept `Cc:` as a legacy fallback, for two reasons:
+  //   * Outlook classic's rule engine can only duplicate via Cc, not
+  //     Bcc — documented as a known compromise on /setup.
+  //   * Some senders deliberately Cc a counterparty (e.g. a CEO Ccing
+  //     counsel) — that counsel is a legitimate part of the proof
+  //     of business and should still register as a counterparty.
   //
   // We only keep domains — individual recipient identities are never
   // stored publicly (GDPR), and nothing downstream of this file needs
@@ -82,32 +89,50 @@ export async function POST(req: NextRequest) {
   }
   const primaryReceiver = receiverDomains[0] ?? "unknown";
 
-  // 7. GDPR — honor the denylist. If either the sender or the primary
+  // 7. Hash the DKIM signature for storage (proof without raw sig data).
+  // Computed up front so every throttle path below can record the same
+  // forensic hash as accepted events, and so the solo-recipient gate
+  // doesn't need a throwaway local variable.
+  const dkimHash = createHash("sha256")
+    .update(passing.signature ?? rawEmail.slice(0, 512))
+    .digest("hex");
+
+  // 8. Anti-abuse · solo-recipient drop.
+  //
+  // If the email had no counterparty in To or Cc — i.e. seal@ was the
+  // only addressee — there's no proof-of-business event to record.
+  // This catches two real cases:
+  //   * Someone fan-mails seal@ directly with no real recipient.
+  //   * A sender misconfigures a forwarding rule and we receive a
+  //     stripped-down copy that lost the To header.
+  // Either way, an event with `receiver_domain = "unknown"` adds an
+  // event_count tick but contributes zero to the trust graph (no
+  // counterparty diversity, no mutual-counterparty signal). Better to
+  // record it in the throttle table for forensics and skip the public
+  // ledger entirely.
+  if (primaryReceiver === "unknown") {
+    await recordThrottled(senderDomain, "unknown", dkimHash, "solo_recipient");
+    return NextResponse.json({ ok: true, dropped: "solo_recipient" });
+  }
+
+  // 9. GDPR — honor the denylist. If either the sender or the primary
   // receiver has opted out / exercised erasure, silently drop the event.
-  // We 200 so the upstream SMTP path doesn't retry or bounce.
+  // We 200 so the upstream SMTP path doesn't retry or bounce. The
+  // solo-recipient gate above already filtered out "unknown", so both
+  // sides are guaranteed real domains here.
   try {
     const [senderBlocked, receiverBlocked] = await Promise.all([
       isDenylisted(senderDomain),
-      primaryReceiver !== "unknown"
-        ? isDenylisted(primaryReceiver)
-        : Promise.resolve(false),
+      isDenylisted(primaryReceiver),
     ]);
     if (senderBlocked || receiverBlocked) {
       return NextResponse.json({ ok: true, dropped: "denylist" });
     }
   } catch (err) {
-    // Best-effort check — log and continue.
     console.error("[inbound] denylist check failed", err);
   }
 
-  // 8. Hash the DKIM signature for storage (proof without raw sig data).
-  // Computed before the anti-abuse gates so throttled events carry the
-  // same forensic hash as accepted ones.
-  const dkimHash = createHash("sha256")
-    .update(passing.signature ?? rawEmail.slice(0, 512))
-    .digest("hex");
-
-  // 9. Anti-abuse · receiver must have an MX record and must not be
+  // 10. Anti-abuse · receiver must have an MX record and must not be
   // on Spamhaus DBL. DKIM-valid mail addressed to a domain with no
   // mail exchange is a typo, a sinkhole, or a deliberately chosen
   // spoof target; mail addressed to a DBL-listed domain is almost
@@ -118,32 +143,30 @@ export async function POST(req: NextRequest) {
   // 7d/1d) and DBL is a single DNS query to dbl.spamhaus.org (cached
   // 24h). Typical added latency on cache hit: ~0ms. On cache miss:
   // ~30-80ms.
-  if (primaryReceiver !== "unknown") {
-    const [hasMx, dblListed] = await Promise.all([
-      receiverHasMx(primaryReceiver),
-      isOnDbl(primaryReceiver),
-    ]);
-    if (!hasMx) {
-      await recordThrottled(
-        senderDomain,
-        primaryReceiver,
-        dkimHash,
-        "receiver_no_mx",
-      );
-      return NextResponse.json({ ok: true, dropped: "receiver_no_mx" });
-    }
-    if (dblListed) {
-      await recordThrottled(
-        senderDomain,
-        primaryReceiver,
-        dkimHash,
-        "receiver_blocklist",
-      );
-      return NextResponse.json({ ok: true, dropped: "receiver_blocklist" });
-    }
+  const [hasMx, dblListed] = await Promise.all([
+    receiverHasMx(primaryReceiver),
+    isOnDbl(primaryReceiver),
+  ]);
+  if (!hasMx) {
+    await recordThrottled(
+      senderDomain,
+      primaryReceiver,
+      dkimHash,
+      "receiver_no_mx",
+    );
+    return NextResponse.json({ ok: true, dropped: "receiver_no_mx" });
+  }
+  if (dblListed) {
+    await recordThrottled(
+      senderDomain,
+      primaryReceiver,
+      dkimHash,
+      "receiver_blocklist",
+    );
+    return NextResponse.json({ ok: true, dropped: "receiver_blocklist" });
   }
 
-  // 10. Anti-abuse · Layer 0 — per-sender rate limit. A domain pushing
+  // 11. Anti-abuse · Layer 0 — per-sender rate limit. A domain pushing
   // extraordinary volume (500/hour or 5000/day) trips the throttle;
   // subsequent events within the window are recorded for forensics
   // but not counted publicly. Enterprise-scale legitimate senders
@@ -159,7 +182,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dropped: "rate_limit" });
   }
 
-  // 11. Write to DB.
+  // 12. Write to DB.
   try {
     const domain = await upsertDomain(senderDomain);
     await insertEvent(domain.id, primaryReceiver, dkimHash);
@@ -168,7 +191,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "DB error" }, { status: 500 });
   }
 
-  // 12. Post-response work — CT-log warm-up for the sender domain
+  // 13. Post-response work — CT-log warm-up for the sender domain
   // so the next score recompute picks up real tenure instead of the
   // system's `first_seen` fallback. Idempotent via its own 30-day
   // cache. Does not block the 200 going back upstream; the Vercel
