@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "backfill:scores": "tsx --env-file=.env.local scripts/backfill-scores.ts",
+    "backfill:trust": "tsx --env-file=.env.local scripts/backfill-trust.ts",
     "purge:domains": "tsx --env-file=.env.local scripts/purge-domains.ts"
   },
   "dependencies": {

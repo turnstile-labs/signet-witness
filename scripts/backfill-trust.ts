@@ -1,17 +1,16 @@
-// One-shot recompute of every `domain_scores` row.
+// One-shot recompute of every domain's trust index.
 //
 // Why this exists:
-//   `insertEvent` writes to `events` and marks `domain_scores.stale = TRUE`
-//   in the same round-trip, but it does NOT recompute `verified_event_count`
+//   `insertEvent` writes to `events` and marks the trust row stale in
+//   the same round-trip, but it does NOT recompute `verified_event_count`
 //   or any other derived signal — that's lazy, triggered by the next
 //   read on the seal page. Two failure modes leave `/ops` showing
 //   "Inactive" (the operator-only sub-bucket of Building) for domains
 //   that have real events:
 //
-//     1. The `domain_scores` row never got created at all — most often
-//        because the domain was first seen before the schema migration
-//        ran. The LEFT JOIN on /ops returns NULL → COALESCE to 0 →
-//        Inactive.
+//     1. The trust row never got created at all — most often because
+//        the domain was first seen before the schema migration ran.
+//        The LEFT JOIN on /ops returns NULL → COALESCE to 0 → Inactive.
 //
 //     2. The recompute hasn't been triggered yet — no one has visited
 //        `/b/<domain>` since the last event landed.
@@ -19,12 +18,17 @@
 // This script walks every row in `domains`, calls `refreshDomainMetrics`
 // on each (which is the same path the seal page uses), and prints a
 // before/after diff per domain. Idempotent — safe to re-run any time
-// scoring logic changes or a backfill is needed.
+// the trust formula changes or a backfill is needed.
+//
+// Note: the underlying table is still called `domain_scores` because
+// renaming a Postgres table on a live DB isn't worth the migration
+// headache — the public concept is "trust index", and that's what
+// this script and the rest of the codebase speak in.
 //
 // Run it:
-//   DATABASE_URL=... npx tsx scripts/backfill-scores.ts
+//   DATABASE_URL=... npx tsx scripts/backfill-trust.ts
 // or, if .env.local has DATABASE_URL set:
-//   npm run backfill:scores
+//   npm run backfill:trust
 
 import { neon } from "@neondatabase/serverless";
 import { refreshDomainMetrics } from "../lib/trust";
@@ -44,7 +48,7 @@ async function main(): Promise<void> {
   const url = process.env.DATABASE_URL ?? process.env.STORAGE_URL;
   if (!url) {
     console.error("Set DATABASE_URL (or STORAGE_URL) before running.");
-    console.error("  e.g. add it to .env.local and run `npm run backfill:scores`.");
+    console.error("  e.g. add it to .env.local and run `npm run backfill:trust`.");
     process.exit(1);
   }
 
