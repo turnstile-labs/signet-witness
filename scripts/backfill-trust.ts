@@ -33,7 +33,7 @@ interface DomainRow {
   domain: string;
 }
 
-interface ScoreSnapshot {
+interface TrustSnapshot {
   verified_event_count: number;
   mutual_counterparties: number;
   trust_index: number;
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  console.log(`Backfilling scores for ${domains.length} domain(s)...\n`);
+  console.log(`Recomputing trust for ${domains.length} domain(s)...\n`);
 
   let okCount = 0;
   let failCount = 0;
@@ -80,7 +80,7 @@ async function main(): Promise<void> {
       FROM domain_trust
       WHERE domain_id = ${d.id}
       LIMIT 1
-    `) as unknown as ScoreSnapshot[];
+    `) as unknown as TrustSnapshot[];
     const before = beforeRows[0] ?? null;
 
     const after = await refreshDomainMetrics(d.id, d.domain);

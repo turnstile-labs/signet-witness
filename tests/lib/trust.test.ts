@@ -3,6 +3,11 @@ import {
   FREE_MAIL_DOMAINS,
   VERIFIED_INDEX,
   MIN_MUTUALS,
+  ACTIVITY_WEIGHT,
+  MUTUAL_WEIGHT,
+  TENURE_WEIGHT,
+  DIVERSITY_WEIGHT,
+  _WEIGHT_SUM,
   computeTrustIndex,
   computeVerified,
   trustTierFromMetrics,
@@ -41,6 +46,19 @@ describe("FREE_MAIL_DOMAINS", () => {
     for (const d of ["gmail.com", "outlook.com", "yahoo.com", "proton.me"]) {
       expect(FREE_MAIL_DOMAINS.has(d)).toBe(true);
     }
+  });
+});
+
+describe("trust-index weights", () => {
+  // The index is a 0..100 measure only because the four weights sum to 1.
+  // If a future tuning change forgets that invariant, the composite stops
+  // being on the documented scale — the legend on /ops and the seal page
+  // start lying. Floating-point sum, so allow a microscopic epsilon.
+  it("has weights that sum to exactly 1", () => {
+    expect(_WEIGHT_SUM).toBeCloseTo(1, 12);
+    expect(
+      ACTIVITY_WEIGHT + MUTUAL_WEIGHT + TENURE_WEIGHT + DIVERSITY_WEIGHT,
+    ).toBeCloseTo(1, 12);
   });
 });
 

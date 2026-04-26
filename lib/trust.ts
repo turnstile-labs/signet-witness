@@ -234,7 +234,7 @@ export function computeTrustIndex(parts: {
 // ── Refresh ───────────────────────────────────────────────────
 
 /**
- * Mark a domain's precomputed score as stale. Called from the inbound
+ * Mark a domain's precomputed trust row as stale. Called from the inbound
  * pipeline after every accepted event. The next seal-page render for
  * this domain will trigger a recompute.
  */
@@ -417,7 +417,7 @@ export async function refreshDomainMetrics(
 }
 
 /**
- * Read-through accessor used by the seal page. Returns cached scores
+ * Read-through accessor used by the seal page. Returns cached metrics
  * when fresh, triggers recompute when stale or TTL-expired.
  *
  * Failure mode: if the cache is missing and a recompute fails, returns

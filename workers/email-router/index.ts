@@ -11,10 +11,9 @@ export default {
       method: "POST",
       headers: {
         "Content-Type": "message/rfc822",
-        // Shared-secret header for the inbound webhook. The Next.js
-        // app reads either `X-Witnessed-Secret` (preferred) or
-        // `X-Signet-Secret` (legacy alias from the project's previous
-        // codename) so worker + app can be redeployed independently.
+        // Shared-secret header for the inbound webhook. Must match the
+        // `INBOUND_SECRET` env var on the Next.js side; the app rejects
+        // any request that doesn't carry this exact header.
         "X-Witnessed-Secret": env.INBOUND_SECRET,
       },
       body: raw,

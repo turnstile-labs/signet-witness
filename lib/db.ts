@@ -347,7 +347,7 @@ type OpsSenderRow = {
   grandfathered_verified: boolean;
 };
 
-async function topSendersWithScores(): Promise<OpsSenderRow[]> {
+async function topSendersWithMetrics(): Promise<OpsSenderRow[]> {
   try {
     return (await sql`
       SELECT d.domain, d.event_count, d.first_seen,
@@ -538,7 +538,7 @@ export async function getOpsStats(): Promise<OpsStats> {
       ` as unknown as Promise<{ reason: string; count: number }[]>,
       [] as { reason: string; count: number }[],
     ),
-    topSendersWithScores(),
+    topSendersWithMetrics(),
     sql`
       SELECT to_char(date_trunc('day', witnessed_at), 'YYYY-MM-DD') AS day,
              COUNT(*)::int AS count
