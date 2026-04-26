@@ -2,3 +2,9 @@ name               = "witnessed-email-router"
 main               = "index.ts"
 compatibility_date = "2024-01-01"
 workers_dev        = false
+
+# Public, non-sensitive config tracked in git so the deploy target is
+# obvious at a glance. INBOUND_SECRET is set via `wrangler secret put`
+# and never lives in this file.
+[vars]
+INBOUND_URL = "https://witnessed.cc/api/inbound"
