@@ -20,7 +20,7 @@ import {
   type BadgeState,
 } from "@/lib/badge-state";
 
-// Split Pill (current ETag: v16).
+// Split Pill (current ETag: v17).
 //
 //   ┌──────────────────┬──────────────────┐
 //   │  ✓  Verified     │     acme.com     │
@@ -125,9 +125,12 @@ function renderSvg(domain: string, state: BadgeState, theme: BadgeTheme): string
   const rightCenterX = LEFT_W + rightW / 2;
 
   // 13px monospace digits sit ~5px below the centre line for mid-cap
-  // alignment on a 32px canvas. Holds across SF Mono / Menlo / Consolas.
+  // alignment on a 32px canvas. Stack leads with `ui-monospace` so we
+  // pick up SF Mono on macOS/iOS, Cascadia/Consolas on Windows, and
+  // the platform-native mono on Linux instead of falling through to
+  // a generic monospace that often renders thinner than designed.
   const baselineY = H / 2 + 4.5;
-  const textFont = `font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace" font-size="13" letter-spacing="-0.01em"`;
+  const textFont = `font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="13" letter-spacing="-0.01em"`;
 
   let iconEl: string;
   if (state === "verified") {
@@ -155,8 +158,8 @@ function renderSvg(domain: string, state: BadgeState, theme: BadgeTheme): string
     <line x1="${LEFT_W}" y1="0" x2="${LEFT_W}" y2="${H}" stroke="${t.border}" stroke-width="1" stroke-opacity="0.55"/>
   </g>
   <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R - 0.5}" fill="none" stroke="${t.border}" stroke-width="1" stroke-opacity="0.55"/>${iconEl}
-  <text x="${stateX}" y="${baselineY}" ${textFont} font-weight="700" fill="${p.fg}">${esc(stateWord)}</text>
-  <text x="${rightCenterX}" y="${baselineY}" ${textFont} font-weight="600" fill="${t.rightFg}" text-anchor="middle">${esc(domainText)}</text>
+  <text x="${stateX}" y="${baselineY}" ${textFont} font-weight="800" fill="${p.fg}">${esc(stateWord)}</text>
+  <text x="${rightCenterX}" y="${baselineY}" ${textFont} font-weight="700" fill="${t.rightFg}" text-anchor="middle">${esc(domainText)}</text>
 </svg>`;
 }
 
@@ -236,8 +239,9 @@ function renderPng(
           {iconNode}
           <span
             style={{
-              fontFamily: "monospace",
-              fontWeight: 700,
+              fontFamily:
+                "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace",
+              fontWeight: 800,
               fontSize: 26,
               color: p.fg,
               lineHeight: 1,
@@ -262,8 +266,9 @@ function renderPng(
         >
           <span
             style={{
-              fontFamily: "monospace",
-              fontWeight: 600,
+              fontFamily:
+                "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace",
+              fontWeight: 700,
               fontSize: 26,
               color: t.rightFg,
               lineHeight: 1,
@@ -306,12 +311,16 @@ type Snapshot = BadgeSnapshot;
 //   v16 = Right half = the actual domain (was a fixed witnessed.cc
 //         wordmark). Theme variance reintroduced (`?theme=light|dark`).
 //         Width is now domain-adaptive.
+//   v17 = Bolder text — state word 700→800, domain 600→700, plus a
+//         `ui-monospace`-leading font stack so we land on the platform's
+//         native bold mono (SF Mono / Cascadia / JetBrains) instead of
+//         the generic monospace fallback that was rendering washed.
 export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
   theme: BadgeTheme,
 ): Record<string, string> {
-  const etag = `W/"${snapshot.state}-${theme}-${format}-v16"`;
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v17"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
