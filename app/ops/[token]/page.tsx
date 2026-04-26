@@ -146,16 +146,27 @@ export default async function OpsPage({
   const commit = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
   const now = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
 
-  // Derived pulse numbers. We compare 24h against the 7d daily average
-  // because that's the smallest window where "normal" is well-defined;
-  // any shorter and day-of-week noise dominates.
-  const avg7d = stats.events7d > 0 ? Math.round(stats.events7d / 7) : 0;
+  // Inbound = everything that arrived through the worker, accepted +
+  // rejected. This is the only number that reconciles across the page:
+  // the headline tile, the anti-abuse panel, and the domains table all
+  // partition this same total. Earlier the headline counted accepted
+  // only, so an operator looking at "Emails · 24h: 6" couldn't tell
+  // whether the 4 visible in the domains table + 2 in anti-abuse was
+  // the right decomposition or a missing 0.
+  const inbound24h = stats.events24h + stats.throttled24h;
+  const inbound7d = stats.events7d + stats.throttled7d;
+
+  // We compare 24h against the 7d inbound daily average because that's
+  // the smallest window where "normal" is well-defined; any shorter
+  // and day-of-week noise dominates.
+  const avg7dInbound = inbound7d > 0 ? Math.round(inbound7d / 7) : 0;
   const delta24hPct =
-    avg7d > 0
-      ? Math.round(((stats.events24h - avg7d) / avg7d) * 100)
+    avg7dInbound > 0
+      ? Math.round(((inbound24h - avg7dInbound) / avg7dInbound) * 100)
       : null;
 
-  // Peak & average over 30d — used in the activity panel.
+  // Peak & average over 30d — used in the activity panel. Scope is
+  // accepted-only (the chart series is `events`, not throttled).
   const peak30d = Math.max(0, ...stats.eventsByDay.map((d) => d.count));
   const avg30d =
     stats.events30d > 0 ? Math.round(stats.events30d / 30) : 0;
@@ -174,7 +185,6 @@ export default async function OpsPage({
   // Rejection rate — share of inbound that anti-abuse blocked. The
   // absolute count alone doesn't say if the filter is calibrated;
   // the rate does. Null when there's no 7d traffic baseline.
-  const inbound7d = stats.events7d + stats.throttled7d;
   const rejectionRatePct =
     inbound7d > 0
       ? Math.round((stats.throttled7d / inbound7d) * 1000) / 10
@@ -205,34 +215,55 @@ export default async function OpsPage({
 
       {/* KPI strip — 4 tiles, one glance = full health read ·······
           Tiles answer the three operator questions:
-            1. Alive?         Emails · 24h
+            1. Alive?         Inbound · 24h    (accepted + rejected)
             2. Going wrong?   Rejected · 7d
             3. Growing?       Verified · domains  +  New domains · 7d
-          The previous "Emails · 7d" tile was redundant with the 24h
-          tile (which already shows 7d avg as its hint), so it was
-          replaced with the headline product metric — Verified. */}
+          "Inbound" is deliberate: it's the only number that reconciles
+          with everything below — accepted feeds the domains table and
+          the activity chart, rejected feeds the anti-abuse panel, and
+          accepted + rejected = inbound by construction. The headline
+          previously counted accepted-only, which made the page look
+          inconsistent ("6 emails but only 4 in the table?"). */}
       <section
         aria-label="pulse"
         className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
       >
         <Kpi
-          label="Emails · 24h"
-          value={stats.events24h.toLocaleString()}
+          label="Inbound · 24h"
+          value={inbound24h.toLocaleString()}
           hint={
-            delta24hPct !== null
-              ? `${delta24hPct > 0 ? "+" : ""}${delta24hPct}% vs 7d avg`
-              : avg7d > 0
-                ? "—"
-                : "no 7d baseline"
-          }
-          hintTone={
-            delta24hPct === null
-              ? "muted"
-              : delta24hPct > 0
-                ? "good"
-                : delta24hPct < 0
-                  ? "warn"
-                  : "muted"
+            <>
+              <span className="block text-muted-2">
+                <span className="text-verified">
+                  {stats.events24h.toLocaleString()} accepted
+                </span>
+                <span className="mx-1.5">·</span>
+                <span
+                  className={
+                    stats.throttled24h > 0 ? "text-amber" : "text-muted-2"
+                  }
+                >
+                  {stats.throttled24h.toLocaleString()} rejected
+                </span>
+              </span>
+              <span
+                className={`block mt-0.5 ${
+                  delta24hPct === null
+                    ? "text-muted-2"
+                    : delta24hPct > 0
+                      ? "text-verified"
+                      : delta24hPct < 0
+                        ? "text-amber"
+                        : "text-muted-2"
+                }`}
+              >
+                {delta24hPct !== null
+                  ? `${delta24hPct > 0 ? "+" : ""}${delta24hPct}% vs 7d avg`
+                  : avg7dInbound > 0
+                    ? "—"
+                    : "no 7d baseline"}
+              </span>
+            </>
           }
         />
         <Kpi
@@ -285,7 +316,7 @@ export default async function OpsPage({
           value={stats.mutualPairsTotal}
           accent={stats.mutualPairsTotal > 0 ? "verified" : undefined}
         />
-        <Stat label="Total emails" value={stats.events} />
+        <Stat label="Accepted (lifetime)" value={stats.events} />
         <Stat
           label="Denylist"
           value={stats.denylistTotal}
@@ -300,16 +331,23 @@ export default async function OpsPage({
           sub-bucket; public surfaces collapse it into Building. */}
       <TrustFunnel tiers={stats.senderTiers} total={stats.domains} />
 
-      {/* Activity panel — chart + side stats ······················ */}
+      {/* Activity panel — chart + side stats ······················
+          Scope: accepted events only. The chart series comes from the
+          `events` table, not `events_throttled`, so the y-axis is the
+          ledger-bound subset of inbound. Anti-abuse rejections are
+          surfaced separately in the Anti-abuse panel below. */}
       <section className="grid md:grid-cols-[1fr_13rem] gap-6 mb-8 p-5 rounded-md border border-border bg-surface/30">
         <div className="min-w-0">
           <h2 className="text-xs uppercase tracking-widest text-muted-2 mb-4">
-            Activity · last 30 days
+            Accepted activity · last 30 days
           </h2>
           <Chart data={stats.eventsByDay} days={30} />
         </div>
         <div className="flex flex-col gap-3 md:border-l md:border-border md:pl-6 justify-center">
-          <InlineStat label="Total" value={stats.events30d.toLocaleString()} />
+          <InlineStat
+            label="Accepted"
+            value={stats.events30d.toLocaleString()}
+          />
           <InlineStat
             label="Peak day"
             value={`${peak30d.toLocaleString()} emails`}
@@ -561,7 +599,7 @@ function Kpi({
 }: {
   label: string;
   value: string;
-  hint?: string;
+  hint?: React.ReactNode;
   tone?: "default" | "muted" | "warn" | "good";
   hintTone?: "muted" | "good" | "warn";
 }) {
