@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { ImageResponse } from "next/og";
 import {
   BADGE_HEIGHT,
@@ -20,7 +21,7 @@ import {
   type BadgeState,
 } from "@/lib/badge-state";
 
-// Split Pill (current ETag: v17).
+// Split Pill (current ETag: v18).
 //
 //   ┌──────────────────┬──────────────────┐
 //   │  ✓  Verified     │     acme.com     │
@@ -42,6 +43,24 @@ import {
 
 const H = BADGE_HEIGHT;
 const R = BADGE_HEIGHT / 2; // pill (rounded-full)
+
+// Bold monospace bundled and shipped to Satori so the PNG path renders
+// in the same intentional typography as the SVG path. Without this,
+// `next/og`/Satori silently falls back to its built-in Noto Sans for
+// any `fontFamily` value — no matter what we declare — and the badge
+// reads thin and washed in the surfaces that embed the PNG (the seal
+// page preview, signature paste targets, etc.).
+//
+// `new URL(..., import.meta.url)` is the Next.js-blessed way to pin
+// a static asset into the route's deployment trace so it's bundled
+// alongside the function on Vercel. The read happens once at module
+// init and the bytes stay in memory for every subsequent request.
+//
+// JetBrains Mono Bold is OFL 1.1 (license shipped at
+// `app/badge/fonts/OFL.txt`).
+const JETBRAINS_MONO_BOLD = readFileSync(
+  new URL("./fonts/JetBrainsMono-Bold.ttf", import.meta.url),
+);
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
 function parseSlug(slug: string): { domain: string; format: "svg" | "png" } {
@@ -239,9 +258,8 @@ function renderPng(
           {iconNode}
           <span
             style={{
-              fontFamily:
-                "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace",
-              fontWeight: 800,
+              fontFamily: "JetBrains Mono",
+              fontWeight: 700,
               fontSize: 26,
               color: p.fg,
               lineHeight: 1,
@@ -266,8 +284,7 @@ function renderPng(
         >
           <span
             style={{
-              fontFamily:
-                "ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, monospace",
+              fontFamily: "JetBrains Mono",
               fontWeight: 700,
               fontSize: 26,
               color: t.rightFg,
@@ -284,6 +301,14 @@ function renderPng(
       width: PNG_W,
       height: PNG_H,
       headers: cacheHeaders,
+      fonts: [
+        {
+          name: "JetBrains Mono",
+          data: JETBRAINS_MONO_BOLD,
+          weight: 700,
+          style: "normal",
+        },
+      ],
     },
   );
 }
@@ -315,12 +340,17 @@ type Snapshot = BadgeSnapshot;
 //         `ui-monospace`-leading font stack so we land on the platform's
 //         native bold mono (SF Mono / Cascadia / JetBrains) instead of
 //         the generic monospace fallback that was rendering washed.
+//   v18 = PNG path now ships JetBrains Mono Bold to Satori. Previously
+//         Satori was silently rendering the PNG in its bundled Noto
+//         Sans regardless of `fontFamily` (because no font bytes had
+//         been loaded), which is why the seal page badge stayed thin
+//         even after v17. SVG path is unchanged in v18.
 export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
   theme: BadgeTheme,
 ): Record<string, string> {
-  const etag = `W/"${snapshot.state}-${theme}-${format}-v17"`;
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v18"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",

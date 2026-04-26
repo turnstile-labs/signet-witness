@@ -17,7 +17,7 @@ import {
   truncateDomain,
 } from "@/lib/badge-dimensions";
 
-describe("badge-dimensions (Split Pill v17)", () => {
+describe("badge-dimensions (Split Pill v18)", () => {
   describe("constants", () => {
     it("exposes a stable height + fixed left half", () => {
       expect(BADGE_HEIGHT).toBe(32);
