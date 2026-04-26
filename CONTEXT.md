@@ -1,6 +1,6 @@
 # Witnessed — Project Context
 
-> Repo / on-disk codename: **`signet-witness`** (preserved as the operational identifier — Cloudflare Worker name, GitHub repo, npm package name). Public product brand: **Witnessed**. Don't mix the two on user-facing surfaces.
+> Repo / on-disk codename: **`signet-witness`** (preserved as the operational identifier — GitHub repo, npm package name). Public product brand: **Witnessed**. The Cloudflare Worker is named `witnessed-email-router` to keep the deployed surface on-brand. Don't mix the two on user-facing surfaces.
 
 This document captures the full decision history, architecture rationale, and product vision for the project. Read this before starting any new conversation in this workspace.
 
@@ -207,7 +207,7 @@ Note: there is no outbound email layer. Witnessed never initiates contact with a
 5. Run `schema.sql` in Vercel Postgres query runner
 6. `cd workers/email-router && npm install && wrangler deploy`
 7. Set Worker secrets: `wrangler secret put INBOUND_URL` + `wrangler secret put INBOUND_SECRET`
-8. In Cloudflare dashboard for `witnessed.cc`: Email Routing → catch-all → Send to Worker → `signet-email-router`
+8. In Cloudflare dashboard for `witnessed.cc`: Email Routing → catch-all → Send to Worker → `witnessed-email-router`
 
 ---
 

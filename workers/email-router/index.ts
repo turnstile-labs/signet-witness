@@ -5,19 +5,21 @@ interface Env {
 
 export default {
   async email(message: ForwardableEmailMessage, env: Env): Promise<void> {
-    // Read the raw RFC 2822 email from the stream.
     const raw = await streamToText(message.raw);
 
     const res = await fetch(env.INBOUND_URL, {
       method: "POST",
       headers: {
         "Content-Type": "message/rfc822",
-        "X-Signet-Secret": env.INBOUND_SECRET,
+        // Shared-secret header for the inbound webhook. The Next.js
+        // app reads either `X-Witnessed-Secret` (preferred) or
+        // `X-Signet-Secret` (legacy alias from the project's previous
+        // codename) so worker + app can be redeployed independently.
+        "X-Witnessed-Secret": env.INBOUND_SECRET,
       },
       body: raw,
     });
 
-    // Log non-200 responses for debugging in the Cloudflare dashboard.
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.error(`inbound error ${res.status}:`, body);

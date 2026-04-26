@@ -1,4 +1,4 @@
-name               = "signet-email-router"
+name               = "witnessed-email-router"
 main               = "index.ts"
 compatibility_date = "2024-01-01"
 workers_dev        = false

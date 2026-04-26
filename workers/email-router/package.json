@@ -1,5 +1,5 @@
 {
-  "name": "signet-email-router",
+  "name": "witnessed-email-router",
   "version": "0.0.1",
   "private": true,
   "scripts": {

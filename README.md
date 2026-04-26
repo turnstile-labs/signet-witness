@@ -183,7 +183,7 @@ wrangler deploy
 In your Cloudflare dashboard for `witnessed.cc`:
 
 1. Enable **Email Routing**
-2. Add a catch-all rule: `*@witnessed.cc` → **Send to Worker** → `signet-email-router`
+2. Add a catch-all rule: `*@witnessed.cc` → **Send to Worker** → `witnessed-email-router`
 
 ---
 

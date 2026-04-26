@@ -19,7 +19,13 @@ const WITNESS_EMAIL = "seal@witnessed.cc";
 
 export async function POST(req: NextRequest) {
   // 1. Authenticate the request — only accept from our Cloudflare Worker.
-  const secret = req.headers.get("x-signet-secret");
+  // Prefer the canonical `x-witnessed-secret` header; fall back to the
+  // legacy `x-signet-secret` (from the project's previous codename) so
+  // worker + app can be redeployed independently. The legacy alias can
+  // be removed once the worker is verified to be sending the new name.
+  const secret =
+    req.headers.get("x-witnessed-secret") ??
+    req.headers.get("x-signet-secret");
   if (!secret || secret !== INBOUND_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

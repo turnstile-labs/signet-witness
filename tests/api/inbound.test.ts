@@ -88,7 +88,7 @@ function makeReq(body: string, headers: Record<string, string> = {}): NextReques
     method: "POST",
     headers: {
       "content-type": "text/plain",
-      "x-signet-secret": "test-inbound-secret",
+      "x-witnessed-secret": "test-inbound-secret",
       ...headers,
     },
     body,
@@ -144,14 +144,31 @@ describe("/api/inbound — auth + parsing", () => {
   });
 
   it("rejects wrong secret", async () => {
-    const res = await POST(makeReq(raw(), { "x-signet-secret": "nope" }));
+    const res = await POST(makeReq(raw(), { "x-witnessed-secret": "nope" }));
     expect(res.status).toBe(401);
+  });
+
+  it("accepts the legacy x-signet-secret header for backward compat", async () => {
+    // The worker may send either header during the rename migration;
+    // the route accepts both until the worker is verified on the new
+    // name. Drop this test (and the legacy fallback in route.ts) once
+    // the worker is fully on x-witnessed-secret.
+    const req = new NextRequest("https://witnessed.cc/api/inbound", {
+      method: "POST",
+      headers: {
+        "content-type": "text/plain",
+        "x-signet-secret": "test-inbound-secret",
+      },
+      body: raw(),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
   });
 
   it("400s on empty body", async () => {
     const req = new NextRequest("https://witnessed.cc/api/inbound", {
       method: "POST",
-      headers: { "x-signet-secret": "test-inbound-secret" },
+      headers: { "x-witnessed-secret": "test-inbound-secret" },
       body: "",
     });
     const res = await POST(req);
