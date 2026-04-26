@@ -20,13 +20,13 @@ don't hammer the API.
 ## Status
 
 **v0.3.2** — Gmail only. Write-side (auto-BCC on compose) and read-side
-(multi-domain popup list) both shipped. Chrome Web Store submission is
-wired up: `homepage_url` declared, `externally_connectable` pinned to
-`witnessed.cc` so the site can probe install state, fonts are
-self-hosted (no more fetch to `fonts.gstatic.com` on popup open),
-first-install flow opens a welcome tab at
-`https://witnessed.cc/extension/welcome`. Firefox build and Outlook /
-Fastmail / Proton content scripts are v0.4 / v0.5.
+(multi-domain popup list) both shipped. Live on the Chrome Web Store at
+[`chromewebstore.google.com/detail/iaicdleiecpkmdnbhpaknphegkchpgaj`](https://chromewebstore.google.com/detail/iaicdleiecpkmdnbhpaknphegkchpgaj).
+`homepage_url` declared, `externally_connectable` pinned to `witnessed.cc`
+so the site can probe install state, fonts are self-hosted (no fetch to
+`fonts.gstatic.com` on popup open), first-install flow opens a welcome
+tab at `https://witnessed.cc/extension/welcome`. Firefox build and
+Outlook / Fastmail / Proton content scripts are v0.4 / v0.5.
 
 ## Why a popup, not an inbox injection?
 

@@ -188,7 +188,7 @@ composition are designed so a 1:1 drop-in of real screenshots at
 - [ ] No remote code fetched at runtime (fonts self-hosted, no
       eval / Function / innerHTML from remote sources).
 - [ ] Privacy policy URL resolves (`https://witnessed.cc/privacy`).
-- [ ] `EXTENSION_ID` in `lib/extension.ts` updated once Chrome
+- [x] `EXTENSION_ID` in `lib/extension.ts` updated once Chrome
       assigns it (enables the "Installed ✓" swap on /setup's
       extension recipe).
 
