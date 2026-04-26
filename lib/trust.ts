@@ -33,8 +33,8 @@
 // weights encode the operator's judgement of how hard each signal is
 // to fake at low cost. See `computeTrustIndex` below for the math.
 //
-// The table is refreshed lazily: `markDomainScoreStale()` is called on
-// every accepted event, and `getDomainScore()` triggers a compute when
+// The table is refreshed lazily: `markDomainMetricsStale()` is called on
+// every accepted event, and `getDomainMetrics()` triggers a compute when
 // the row is stale or older than SCORE_TTL_MS. Compute is a handful of
 // SQL aggregates — runs in under 50ms on current data shapes.
 // ─────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export const FREE_MAIL_DOMAINS = new Set([
 
 const SCORE_TTL_MS = 24 * 60 * 60 * 1000;
 
-export interface DomainScore {
+export interface DomainMetrics {
   verified_event_count: number;
   counterparty_count: number;
   mutual_counterparties: number;
@@ -118,13 +118,13 @@ export interface VerifiedState {
 }
 
 export function computeVerified(
-  score: DomainScore | null,
+  metrics: DomainMetrics | null,
   grandfathered: boolean,
 ): VerifiedState {
   if (
-    score &&
-    score.trust_index >= VERIFIED_INDEX &&
-    score.mutual_counterparties >= MIN_MUTUALS
+    metrics &&
+    metrics.trust_index >= VERIFIED_INDEX &&
+    metrics.mutual_counterparties >= MIN_MUTUALS
   ) {
     return { isVerified: true, reason: "score" };
   }
@@ -155,10 +155,15 @@ export function computeVerified(
 // drifting between codebase and UI.
 export type TrustTier = "verified" | "building";
 
-export function trustTierFromScore(
-  score: DomainScore | null,
+export function trustTierFromMetrics(
+  metrics: DomainMetrics | null,
   verified: VerifiedState,
 ): TrustTier {
+  // `metrics` isn't read today (verified.isVerified already encodes
+  // the trust-index gate via computeVerified), but it stays in the
+  // signature so a future "near-verified" tier or operator override
+  // can branch on raw counts without breaking every caller.
+  void metrics;
   if (verified.isVerified) return "verified";
   return "building";
 }
@@ -197,7 +202,7 @@ export const MUTUAL_CAP = 20;
 export const TENURE_CAP_DAYS = 730;
 
 // Compile-time-ish invariant: weights must sum to 1, otherwise the
-// composite stops being a 0..100 measure. Tested in scores.test.ts.
+// composite stops being a 0..100 measure. Tested in trust.test.ts.
 export const _WEIGHT_SUM =
   ACTIVITY_WEIGHT + MUTUAL_WEIGHT + TENURE_WEIGHT + DIVERSITY_WEIGHT;
 
@@ -230,7 +235,7 @@ export function computeTrustIndex(parts: {
  * pipeline after every accepted event. The next seal-page render for
  * this domain will trigger a recompute.
  */
-export async function markDomainScoreStale(domainId: number): Promise<void> {
+export async function markDomainMetricsStale(domainId: number): Promise<void> {
   try {
     await sql`
       INSERT INTO domain_scores (domain_id, stale, computed_at)
@@ -239,7 +244,7 @@ export async function markDomainScoreStale(domainId: number): Promise<void> {
     `;
   } catch (err) {
     // Not fatal — the row will still be recomputed lazily at TTL.
-    console.error("[scores] markDomainScoreStale failed", { domainId, err });
+    console.error("[trust] markDomainMetricsStale failed", { domainId, err });
   }
 }
 
@@ -328,7 +333,7 @@ async function aggregate(domainId: number): Promise<RawAggregates | null> {
     }>;
     return rows[0] ?? null;
   } catch (err) {
-    console.error("[scores] aggregate failed", { domainId, err });
+    console.error("[trust] aggregate failed", { domainId, err });
     return null;
   }
 }
@@ -336,12 +341,12 @@ async function aggregate(domainId: number): Promise<RawAggregates | null> {
 /**
  * Recompute the `domain_scores` row for this domain from scratch.
  * Pulls fresh CT-log tenure (lazy; falls back to first_seen on miss)
- * and persists. Called by getDomainScore() when stale.
+ * and persists. Called by getDomainMetrics() when stale.
  */
-export async function refreshDomainScore(
+export async function refreshDomainMetrics(
   domainId: number,
   domainName: string,
-): Promise<DomainScore | null> {
+): Promise<DomainMetrics | null> {
   const agg = await aggregate(domainId);
   if (!agg) return null;
 
@@ -393,7 +398,7 @@ export async function refreshDomainScore(
         computed_at            = NOW()
     `;
   } catch (err) {
-    console.error("[scores] persist failed", { domainId, err });
+    console.error("[trust] persist failed", { domainId, err });
     return null;
   }
 
@@ -416,10 +421,10 @@ export async function refreshDomainScore(
  * null — caller should fall back to raw `domains.event_count` so the
  * page still renders.
  */
-export async function getDomainScore(
+export async function getDomainMetrics(
   domainId: number,
   domainName: string,
-): Promise<DomainScore | null> {
+): Promise<DomainMetrics | null> {
   try {
     const rows = (await sql`
       SELECT verified_event_count, counterparty_count, mutual_counterparties,
@@ -456,8 +461,8 @@ export async function getDomainScore(
   } catch (err) {
     // Table missing (migration not yet run in prod) → fall through to
     // compute; compute will hit the same error but we'll log once.
-    console.error("[scores] getDomainScore read failed", { domainId, err });
+    console.error("[trust] getDomainMetrics read failed", { domainId, err });
   }
 
-  return refreshDomainScore(domainId, domainName);
+  return refreshDomainMetrics(domainId, domainName);
 }

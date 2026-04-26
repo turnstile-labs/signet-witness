@@ -1,29 +1,29 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { resolveSnapshot } from "@/lib/badge-state";
-import type { DomainScore } from "@/lib/scores";
+import type { DomainMetrics } from "@/lib/trust";
 
 vi.mock("@/lib/db", () => ({
   getDomain: vi.fn(),
 }));
-vi.mock("@/lib/scores", () => ({
-  getDomainScore: vi.fn(),
+vi.mock("@/lib/trust", () => ({
+  getDomainMetrics: vi.fn(),
   computeVerified: vi.fn(),
-  trustTierFromScore: vi.fn(),
+  trustTierFromMetrics: vi.fn(),
 }));
 
 import { getDomain } from "@/lib/db";
 import {
-  getDomainScore,
+  getDomainMetrics,
   computeVerified,
-  trustTierFromScore,
-} from "@/lib/scores";
+  trustTierFromMetrics,
+} from "@/lib/trust";
 
 const getDomainMock = vi.mocked(getDomain);
-const getDomainScoreMock = vi.mocked(getDomainScore);
+const getDomainMetricsMock = vi.mocked(getDomainMetrics);
 const computeVerifiedMock = vi.mocked(computeVerified);
-const trustTierFromScoreMock = vi.mocked(trustTierFromScore);
+const trustTierFromMetricsMock = vi.mocked(trustTierFromMetrics);
 
-const baseScore: DomainScore = {
+const baseMetrics: DomainMetrics = {
   verified_event_count: 10,
   counterparty_count: 4,
   mutual_counterparties: 3,
@@ -36,9 +36,9 @@ const baseScore: DomainScore = {
 describe("badge-state / resolveSnapshot", () => {
   beforeEach(() => {
     getDomainMock.mockReset();
-    getDomainScoreMock.mockReset();
+    getDomainMetricsMock.mockReset();
     computeVerifiedMock.mockReset();
-    trustTierFromScoreMock.mockReset();
+    trustTierFromMetricsMock.mockReset();
   });
 
   const fakeDomain = (over: Partial<Awaited<ReturnType<typeof getDomain>>>) => ({
@@ -60,9 +60,9 @@ describe("badge-state / resolveSnapshot", () => {
 
   it("returns the tier resolver's verdict on a claimed domain", async () => {
     getDomainMock.mockResolvedValue(fakeDomain({ event_count: 7 }));
-    getDomainScoreMock.mockResolvedValue({ ...baseScore, trust_index: 42 });
+    getDomainMetricsMock.mockResolvedValue({ ...baseMetrics, trust_index: 42 });
     computeVerifiedMock.mockReturnValue({ isVerified: false, reason: null });
-    trustTierFromScoreMock.mockReturnValue("building");
+    trustTierFromMetricsMock.mockReturnValue("building");
 
     const snap = await resolveSnapshot("acme.com");
     expect(snap).toEqual({ state: "building", count: 7 });
@@ -77,12 +77,12 @@ describe("badge-state / resolveSnapshot", () => {
         grandfathered_verified: true,
       }),
     );
-    getDomainScoreMock.mockResolvedValue({ ...baseScore, trust_index: 40 });
+    getDomainMetricsMock.mockResolvedValue({ ...baseMetrics, trust_index: 40 });
     computeVerifiedMock.mockReturnValue({
       isVerified: true,
       reason: "grandfathered",
     });
-    trustTierFromScoreMock.mockReturnValue("verified");
+    trustTierFromMetricsMock.mockReturnValue("verified");
 
     const snap = await resolveSnapshot("legacy.co");
     expect(snap.state).toBe("verified");
@@ -91,9 +91,9 @@ describe("badge-state / resolveSnapshot", () => {
 
   it("falls through to building when the score lookup returns null", async () => {
     getDomainMock.mockResolvedValue(fakeDomain({ id: 3, domain: "new.dev" }));
-    getDomainScoreMock.mockResolvedValue(null);
+    getDomainMetricsMock.mockResolvedValue(null);
     computeVerifiedMock.mockReturnValue({ isVerified: false, reason: null });
-    trustTierFromScoreMock.mockReturnValue("building");
+    trustTierFromMetricsMock.mockReturnValue("building");
 
     const snap = await resolveSnapshot("new.dev");
     expect(snap).toEqual({ state: "building", count: 0 });

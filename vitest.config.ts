@@ -18,7 +18,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "text-summary", "html"],
       include: [
-        "lib/scores.ts",
+        "lib/trust.ts",
         "lib/reputation.ts",
         "lib/badge-state.ts",
         "lib/badge-dimensions.ts",

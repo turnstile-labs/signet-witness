@@ -38,7 +38,7 @@ If you're about to surface receiver domains, historical receiver lists, or per-e
 
 ---
 
-## Anti-abuse invariants (read before touching `/api/inbound`, `lib/reputation.ts`, or `lib/scores.ts`)
+## Anti-abuse invariants (read before touching `/api/inbound`, `lib/reputation.ts`, or `lib/trust.ts`)
 
 DKIM proves "a mail server holding $domain's private key signed this message." It does not prove the receiver exists, that the receiver is a real counterparty, or that the sender is running real commerce. Without these checks, an attacker with a valid DKIM key can manufacture a pristine-looking record by blasting `seal@` with emails addressed to nonexistent, sinkholed, or simply low-value receivers.
 
@@ -56,21 +56,21 @@ All three lookups fail-open on unclassified errors so transient DNS issues don't
 
 **Layer 1 (shipped) — quality-adjusted scoring.**
 
-Raw `domains.event_count` is kept as the ingest counter, but the metric the product **exposes** is now the composite `trust_index` stored in `domain_scores`. The table is refreshed lazily: `insertEvent()` flips `stale = TRUE`, and `getDomainScore()` recomputes on read when stale or TTL-expired (24h). Five signals feed the index:
+Raw `domains.event_count` is kept as the ingest counter, but the metric the product **exposes** is now the composite `trust_index` stored in `domain_scores` (the table name predates the rename to "trust index" — the code module is `lib/trust.ts`, the type is `DomainMetrics`, and we keep the SQL table name as-is to avoid a migration that buys nothing). The table is refreshed lazily: `insertEvent()` flips `stale = TRUE`, and `getDomainMetrics()` recomputes on read when stale or TTL-expired (24h). Five signals feed the index:
 
-- `verified_event_count` — events toward non-free-mail receivers. Free-mail accounts (`gmail.com`, `outlook.com`, etc.) still produce `events` rows but never count toward this number. List lives in `lib/scores.ts#FREE_MAIL_DOMAINS`.
+- `verified_event_count` — events toward non-free-mail receivers. Free-mail accounts (`gmail.com`, `outlook.com`, etc.) still produce `events` rows but never count toward this number. List lives in `lib/trust.ts#FREE_MAIL_DOMAINS`.
 - `counterparty_count` — distinct receiver domains, all-time.
 - `mutual_counterparties` — receivers that are **themselves** senders who sealed this domain back. The strongest anti-fake signal because it requires the counterparty to have its own DKIM-signing MTA and its own incentive to add `seal@` to their outbound. Computed via a self-join on `events ⋈ domains`.
 - `diversity` — `1 − Gini(events per receiver)`. Prevents "pump one friendly receiver 500 times."
 - `tenure_days` — `max(now − first_seen, now − first_cert_at)`. `first_cert_at` comes from Certificate Transparency logs via `crt.sh` and is cached forever once resolved. CT lookup is **cache-only** on the sync path (`cachedFirstCertAt`); network-backed `fetchFirstCertAt` is for deferred / admin backfill.
 
-Weights are encoded in `lib/scores.ts#computeTrustIndex`: 35% activity (log-scaled), 25% mutuality, 20% tenure, 20% diversity. See the file for the math.
+Weights are encoded in `lib/trust.ts#computeTrustIndex`: 35% activity (log-scaled), 25% mutuality, 20% tenure, 20% diversity. See the file for the math.
 
 **Layer 2 (shipped) — trust index is the public metric + verified gating.**
 
 - The `/b/[domain]` seal page displays the composite `trust_index` as the headline metric with a 0–100 bar tick-marked at the verified threshold. The three supporting stats are `verified_event_count`, `tenure`, and `mutual_counterparties`.
 - Verified gating: `trust_index ≥ 65 AND mutual_counterparties ≥ 3` OR `domains.grandfathered_verified = TRUE`. The grandfather flag was set one-time for domains that met the pre-Layer-2 rule (90d + 10 events) so no user loses a badge when the metric changes. Operators can clear the flag per-domain for proven abusers.
-- The badge (`/badge/[slug]`) uses the same gating via `trustTierFromScore()`. See the "Badge" section below for the full ETag key shape.
+- The badge (`/badge/[slug]`) uses the same gating via `trustTierFromMetrics()`. See the "Badge" section below for the full ETag key shape.
 - The landing-page mock of `acmecorp.com`'s seal card is a 1:1 replica of the real `/b/<domain>` hero — same `StateBlock` (amber `building` tone), same stats grid, same `scoreBasis` and `trustLine` copy (reused verbatim from `seal.*`) — so the landing can't drift from the real page.
 - Ops ranks top senders by `trust_index` and displays both `t<index>` and `m<mutuals>` inline next to raw event counts.
 
@@ -126,7 +126,7 @@ Discovery happens through direct URL sharing (`witnessed.cc/b/acme.com`), the em
 
 ### Canonical trust-state system
 
-Public surfaces are binary: `Verified | Building`. They're resolved from `(domain, score)` by `lib/scores.ts#trustTierFromScore()` and rendered identically everywhere — seal page, landing mock, badge, public API, extension popup — so state can't drift between surfaces. One definition, one palette, one icon per tier:
+Public surfaces are binary: `Verified | Building`. They're resolved from `(domain, metrics)` by `lib/trust.ts#trustTierFromMetrics()` and rendered identically everywhere — seal page, landing mock, badge, public API, extension popup — so state can't drift between surfaces. One definition, one palette, one icon per tier:
 
 | Tier | Criteria | Color | Icon | Label |
 |------|----------|-------|------|-------|
@@ -192,7 +192,7 @@ Note: there is no outbound email layer. Witnessed never initiates contact with a
 
 **Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?preview=verified|building` short-circuits the DB lookup for marketing surfaces. Bump the trailing layout fingerprint in `cacheHeaders()` (currently `v13`) whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
 
-**Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
+**Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/trust.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
 
 ---
 

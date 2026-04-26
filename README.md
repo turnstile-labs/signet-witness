@@ -27,7 +27,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 - **Seal pages** at `/b/[domain]` — `StateBlock` verdict (Verified / Building / Warming up) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when in Building state but not yet verified
 - **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
 - **Dynamic badge** at `/badge/[domain]` — SVG or PNG, **Split Pill** layout (`[ icon STATE_WORD ][ witnessed.cc ]`): state-tinted left half (solid green "Verified" or solid amber "Building") + neutral slate right half with the immutable `witnessed.cc` wordmark. Constant 224×32 canvas across every domain — pasted `<img>` tags never reflow. `ETag`-cached by state (v13); `?preview=verified|building` for marketing surfaces
-- **Trust index** (`lib/scores.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
+- **Trust index** (`lib/trust.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
 - **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
 - **Inbound denylist gate** — any sealed email from or to an opted-out / erased domain is silently dropped
@@ -39,7 +39,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 - **Light + dark theme** — CSS-variable driven, persisted to `localStorage`
 - **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — ~30-line catch-all forwarder
-- **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/scores.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
+- **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/trust.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
 - **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open, 5-min edge cache) returning `{state, trustIndex, mutualCounterparties, verifiedEventCount, firstSeen}` for any domain. Powers the extension's sender-verification card, third-party integrations, and CLI checks; denylisted domains are rendered as `unclaimed` so opt-out never leaks
 - **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.3 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and a read-side toolbar popup that surfaces the Witnessed "proof of business" card (state, trust index, sealed events, mutual domains, deep link to `/b/<domain>`) for whichever sender is currently in focus in Gmail. See [`extension/README.md`](extension/README.md)
 

@@ -5,12 +5,12 @@ import {
   MIN_MUTUALS,
   computeTrustIndex,
   computeVerified,
-  trustTierFromScore,
-  markDomainScoreStale,
-  refreshDomainScore,
-  getDomainScore,
-} from "@/lib/scores";
-import type { DomainScore } from "@/lib/scores";
+  trustTierFromMetrics,
+  markDomainMetricsStale,
+  refreshDomainMetrics,
+  getDomainMetrics,
+} from "@/lib/trust";
+import type { DomainMetrics } from "@/lib/trust";
 import { enqueueSql, resetSql, sqlCalls } from "../helpers/sql";
 
 vi.mock("@/lib/reputation", () => ({
@@ -25,7 +25,7 @@ beforeEach(() => {
   cachedFirstCertAtMock.mockResolvedValue(null);
 });
 
-const score = (over: Partial<DomainScore> = {}): DomainScore => ({
+const score = (over: Partial<DomainMetrics> = {}): DomainMetrics => ({
   verified_event_count: 0,
   counterparty_count: 0,
   mutual_counterparties: 0,
@@ -163,16 +163,16 @@ describe("computeVerified", () => {
   });
 });
 
-describe("trustTierFromScore", () => {
+describe("trustTierFromMetrics", () => {
   it("returns verified when the gate passes", () => {
     expect(
-      trustTierFromScore(score(), { isVerified: true, reason: "score" }),
+      trustTierFromMetrics(score(), { isVerified: true, reason: "score" }),
     ).toBe("verified");
   });
 
   it("returns building when verified_event_count > 0 but not yet verified", () => {
     expect(
-      trustTierFromScore(score({ verified_event_count: 3 }), {
+      trustTierFromMetrics(score({ verified_event_count: 3 }), {
         isVerified: false,
         reason: null,
       }),
@@ -186,39 +186,39 @@ describe("trustTierFromScore", () => {
   // directly from raw counts; everything else is binary.
   it("returns building when the domain has no verified events yet", () => {
     expect(
-      trustTierFromScore(score(), { isVerified: false, reason: null }),
+      trustTierFromMetrics(score(), { isVerified: false, reason: null }),
     ).toBe("building");
   });
 
   it("returns building when no score exists at all", () => {
     expect(
-      trustTierFromScore(null, { isVerified: false, reason: null }),
+      trustTierFromMetrics(null, { isVerified: false, reason: null }),
     ).toBe("building");
   });
 });
 
-describe("markDomainScoreStale", () => {
+describe("markDomainMetricsStale", () => {
   it("emits a single upsert against domain_scores", async () => {
     enqueueSql([]);
-    await markDomainScoreStale(42);
+    await markDomainMetricsStale(42);
     expect(sqlCalls.length).toBe(1);
     expect(sqlCalls[0]?.values).toContain(42);
   });
 
   it("swallows DB errors so inbound never fails on a cache-flag write", async () => {
     enqueueSql(new Error("boom"));
-    await expect(markDomainScoreStale(1)).resolves.toBeUndefined();
+    await expect(markDomainMetricsStale(1)).resolves.toBeUndefined();
   });
 });
 
-describe("refreshDomainScore", () => {
+describe("refreshDomainMetrics", () => {
   it("returns null when the aggregate query errors", async () => {
     enqueueSql(new Error("agg failed"));
-    const r = await refreshDomainScore(1, "acme.com");
+    const r = await refreshDomainMetrics(1, "acme.com");
     expect(r).toBeNull();
   });
 
-  it("computes, persists, and returns a DomainScore on the happy path", async () => {
+  it("computes, persists, and returns a DomainMetrics on the happy path", async () => {
     const aggRow = {
       verified_event_count: 50,
       counterparty_count: 10,
@@ -229,7 +229,7 @@ describe("refreshDomainScore", () => {
     enqueueSql([aggRow]); // aggregate()
     enqueueSql([]); // persist upsert
 
-    const r = await refreshDomainScore(1, "acme.com");
+    const r = await refreshDomainMetrics(1, "acme.com");
     expect(r).not.toBeNull();
     expect(r?.verified_event_count).toBe(50);
     expect(r?.mutual_counterparties).toBe(4);
@@ -251,7 +251,7 @@ describe("refreshDomainScore", () => {
     const twoYearsAgo = new Date(Date.now() - 730 * 24 * 60 * 60 * 1000);
     cachedFirstCertAtMock.mockResolvedValue(twoYearsAgo);
 
-    const r = await refreshDomainScore(1, "acme.com");
+    const r = await refreshDomainMetrics(1, "acme.com");
     expect(r?.tenure_days).toBeGreaterThanOrEqual(720);
   });
 
@@ -267,7 +267,7 @@ describe("refreshDomainScore", () => {
     enqueueSql([]);
     cachedFirstCertAtMock.mockResolvedValue(null);
 
-    const r = await refreshDomainScore(1, "acme.com");
+    const r = await refreshDomainMetrics(1, "acme.com");
     expect(r?.tenure_days).toBe(30);
   });
 
@@ -283,7 +283,7 @@ describe("refreshDomainScore", () => {
     ]);
     enqueueSql([]);
     cachedFirstCertAtMock.mockRejectedValue(new Error("cache read failed"));
-    const r = await refreshDomainScore(1, "acme.com");
+    const r = await refreshDomainMetrics(1, "acme.com");
     expect(r).not.toBeNull();
   });
 
@@ -298,30 +298,30 @@ describe("refreshDomainScore", () => {
       },
     ]);
     enqueueSql(new Error("persist failed"));
-    const r = await refreshDomainScore(1, "acme.com");
+    const r = await refreshDomainMetrics(1, "acme.com");
     expect(r).toBeNull();
   });
 
   it("returns null when aggregate returns an empty row set", async () => {
     enqueueSql([]);
-    const r = await refreshDomainScore(99, "none.com");
+    const r = await refreshDomainMetrics(99, "none.com");
     expect(r).toBeNull();
   });
 });
 
 describe("cold-start — DATABASE_URL unset", () => {
-  it("markDomainScoreStale swallows the throw-from-sql-wrapper", async () => {
+  it("markDomainMetricsStale swallows the throw-from-sql-wrapper", async () => {
     vi.resetModules();
     const prev = process.env.DATABASE_URL;
     delete process.env.DATABASE_URL;
     delete process.env.STORAGE_URL;
-    const mod = await import("@/lib/scores");
-    await expect(mod.markDomainScoreStale(1)).resolves.toBeUndefined();
+    const mod = await import("@/lib/trust");
+    await expect(mod.markDomainMetricsStale(1)).resolves.toBeUndefined();
     process.env.DATABASE_URL = prev;
   });
 });
 
-describe("getDomainScore", () => {
+describe("getDomainMetrics", () => {
   it("returns the cached row when fresh and non-stale", async () => {
     const freshRow = {
       verified_event_count: 5,
@@ -334,7 +334,7 @@ describe("getDomainScore", () => {
       computed_at: new Date().toISOString(),
     };
     enqueueSql([freshRow]);
-    const r = await getDomainScore(1, "acme.com");
+    const r = await getDomainMetrics(1, "acme.com");
     expect(r?.trust_index).toBe(30);
   });
 
@@ -361,7 +361,7 @@ describe("getDomainScore", () => {
     ]);
     enqueueSql([]);
 
-    const r = await getDomainScore(1, "acme.com");
+    const r = await getDomainMetrics(1, "acme.com");
     expect(r?.verified_event_count).toBe(7);
   });
 
@@ -388,7 +388,7 @@ describe("getDomainScore", () => {
     ]);
     enqueueSql([]);
 
-    const r = await getDomainScore(1, "acme.com");
+    const r = await getDomainMetrics(1, "acme.com");
     expect(r?.verified_event_count).toBe(7);
   });
 
@@ -404,12 +404,12 @@ describe("getDomainScore", () => {
       },
     ]);
     enqueueSql([]);
-    const r = await getDomainScore(1, "acme.com");
+    const r = await getDomainMetrics(1, "acme.com");
     expect(r).not.toBeNull();
   });
 
   it("recomputes when there is no cached row at all", async () => {
-    enqueueSql([]); // getDomainScore read → no rows
+    enqueueSql([]); // getDomainMetrics read → no rows
     enqueueSql([
       {
         verified_event_count: 2,
@@ -420,7 +420,7 @@ describe("getDomainScore", () => {
       },
     ]);
     enqueueSql([]); // persist
-    const r = await getDomainScore(1, "acme.com");
+    const r = await getDomainMetrics(1, "acme.com");
     expect(r?.verified_event_count).toBe(2);
   });
 });

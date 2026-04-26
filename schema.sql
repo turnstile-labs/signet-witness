@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS domain_scores (
   mutual_counterparties   INTEGER NOT NULL DEFAULT 0,   -- receivers that are also senders who sealed us back
   diversity               NUMERIC(5,4) NOT NULL DEFAULT 0,   -- 1 - Gini(events per receiver), 0 = single receiver
   tenure_days             INTEGER NOT NULL DEFAULT 0,   -- max(now - first_seen, now - first_cert_at)
-  trust_index             INTEGER NOT NULL DEFAULT 0,   -- 0-100 composite, see lib/scores.ts
+  trust_index             INTEGER NOT NULL DEFAULT 0,   -- 0-100 composite, see lib/trust.ts
   stale                   BOOLEAN NOT NULL DEFAULT TRUE,
   computed_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

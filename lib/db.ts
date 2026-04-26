@@ -383,8 +383,8 @@ async function topSendersWithScores(): Promise<OpsSenderRow[]> {
 }
 
 // Population shape across every registered sender: how many are
-// Verified / Building / Inactive. Same predicates as lib/scores.ts
-// (trustTierFromScore) — duplicated in SQL for a one-shot count.
+// Verified / Building / Inactive. Same predicates as lib/trust.ts
+// (trustTierFromMetrics) — duplicated in SQL for a one-shot count.
 //
 // "building" matches the public TrustTier exactly. "inactive" is an
 // operator-only sub-bucket of "building" (zero verified events vs ≥1)

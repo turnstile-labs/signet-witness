@@ -6,13 +6,13 @@ import {
   getDailyActivity,
 } from "@/lib/db";
 import {
-  getDomainScore,
+  getDomainMetrics,
   computeVerified,
-  trustTierFromScore,
+  trustTierFromMetrics,
   VERIFIED_INDEX,
   MIN_MUTUALS,
   type TrustTier,
-} from "@/lib/scores";
+} from "@/lib/trust";
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import NavBar from "@/app/components/NavBar";
@@ -110,7 +110,7 @@ function Stat({
 
 // ── Trust state visuals ──────────────────────────────────────
 //
-// Canonical state taxonomy lives in `lib/scores.ts#trustTierFromScore`
+// Canonical state taxonomy lives in `lib/trust.ts#trustTierFromMetrics`
 // and returns one of `verified | building`. This file maps each tier
 // to one Tailwind palette and one icon so every surface on the seal
 // page (hero, landing replica) reads from the same definitions.
@@ -333,28 +333,28 @@ export default async function SealPage({ params }: Props) {
     return <UnclaimedPage domain={decoded} receiverCount={receiverCount} />;
   }
 
-  // Score, aggregates, and 30-day activity fetched in parallel. Score
-  // is lazy-refreshed on stale/TTL-expired — a handful of SQL aggregates,
-  // sub-50ms at current scale.
-  const [score, { uniqueReceivers }, daily] = await Promise.all([
-    getDomainScore(record.id, record.domain),
+  // Metrics, aggregates, and 30-day activity fetched in parallel.
+  // Metrics are lazy-refreshed on stale/TTL-expired — a handful of SQL
+  // aggregates, sub-50ms at current scale.
+  const [metrics, { uniqueReceivers }, daily] = await Promise.all([
+    getDomainMetrics(record.id, record.domain),
     getSealAggregates(record.id),
     getDailyActivity(record.id, 30),
   ]);
 
   const days = daysActive(record.first_seen);
-  const verified = computeVerified(score, record.grandfathered_verified);
-  const tier = trustTierFromScore(score, verified);
+  const verified = computeVerified(metrics, record.grandfathered_verified);
+  const tier = trustTierFromMetrics(metrics, verified);
   const recent30 = daily.reduce((sum, d) => sum + d.count, 0);
   const firstSeenLabel = formatFirstSeen(record.first_seen, locale);
 
-  // Display fallbacks when the score row hasn't materialised yet (cold
-  // start, or a rare refresh failure). The page still renders; the
-  // secondary line below acknowledges that quality data is warming.
-  const trustIndex = score?.trust_index ?? 0;
-  const verifiedEvents = score?.verified_event_count ?? record.event_count;
-  const mutuals = score?.mutual_counterparties ?? 0;
-  const diversity = score?.diversity ?? 0;
+  // Display fallbacks when the metrics row hasn't materialised yet
+  // (cold start, or a rare refresh failure). The page still renders;
+  // the secondary line below acknowledges that quality data is warming.
+  const trustIndex = metrics?.trust_index ?? 0;
+  const verifiedEvents = metrics?.verified_event_count ?? record.event_count;
+  const mutuals = metrics?.mutual_counterparties ?? 0;
+  const diversity = metrics?.diversity ?? 0;
 
   // State block copy — one label + one supporting line per tier.
   // Subtitle carries the 0–100 trust index as technical detail under

@@ -23,17 +23,17 @@ import { NextResponse } from "next/server";
 import { getDomain, getReceiverCount, isDenylisted } from "@/lib/db";
 import {
   computeVerified,
-  getDomainScore,
-  trustTierFromScore,
+  getDomainMetrics,
+  trustTierFromMetrics,
   type TrustTier,
-} from "@/lib/scores";
+} from "@/lib/trust";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Public-facing state space. `unclaimed` is the absence-of-data state
 // (no domain row in the registry); `verified` and `building` come from
-// `trustTierFromScore` which collapses the legacy `pending` tier into
+// `trustTierFromMetrics` which collapses the legacy `pending` tier into
 // `building` on every public surface as of v12.
 type PublicState = TrustTier | "unclaimed";
 
@@ -131,18 +131,18 @@ export async function GET(
     });
   }
 
-  const score = await getDomainScore(record.id, record.domain);
-  const verified = computeVerified(score, record.grandfathered_verified);
-  const state = trustTierFromScore(score, verified);
+  const metrics = await getDomainMetrics(record.id, record.domain);
+  const verified = computeVerified(metrics, record.grandfathered_verified);
+  const state = trustTierFromMetrics(metrics, verified);
 
   const payload: PublicPayload = {
     domain,
     state,
-    trustIndex: score?.trust_index ?? null,
+    trustIndex: metrics?.trust_index ?? null,
     verifiedEventCount:
-      score?.verified_event_count ?? record.event_count ?? 0,
-    mutualCounterparties: score?.mutual_counterparties ?? 0,
-    uniqueReceivers: score?.counterparty_count ?? 0,
+      metrics?.verified_event_count ?? record.event_count ?? 0,
+    mutualCounterparties: metrics?.mutual_counterparties ?? 0,
+    uniqueReceivers: metrics?.counterparty_count ?? 0,
     inboundCount: null,
     firstSeen: record.first_seen,
     updatedAt: new Date().toISOString(),

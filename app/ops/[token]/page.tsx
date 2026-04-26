@@ -13,7 +13,7 @@ import {
   TENURE_CAP_DAYS,
   VERIFIED_INDEX,
   MIN_MUTUALS,
-} from "@/lib/scores";
+} from "@/lib/trust";
 
 // Internal ops dashboard. Reached via a secret URL: /ops/<STATS_TOKEN>.
 // Not linked from anywhere. Not localised. No tracking.
@@ -703,7 +703,7 @@ function Panel({
 // at the "Trust" column want to know how it's computed without leaving
 // the page; four lines of math is below the threshold where progressive
 // disclosure earns its complexity. All numbers are imported from
-// `lib/scores.ts` so the legend can never drift from the math the
+// `lib/trust.ts` so the legend can never drift from the math the
 // `domain_scores` table actually uses.
 //
 // Layout: the composite formula on top, the four sub-formulas in a

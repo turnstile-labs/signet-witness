@@ -16,7 +16,7 @@
 //     2. The recompute hasn't been triggered yet — no one has visited
 //        `/b/<domain>` since the last event landed.
 //
-// This script walks every row in `domains`, calls `refreshDomainScore`
+// This script walks every row in `domains`, calls `refreshDomainMetrics`
 // on each (which is the same path the seal page uses), and prints a
 // before/after diff per domain. Idempotent — safe to re-run any time
 // scoring logic changes or a backfill is needed.
@@ -27,7 +27,7 @@
 //   npm run backfill:scores
 
 import { neon } from "@neondatabase/serverless";
-import { refreshDomainScore } from "../lib/scores";
+import { refreshDomainMetrics } from "../lib/trust";
 
 interface DomainRow {
   id: number;
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   let changedCount = 0;
   let unchangedCount = 0;
 
-  // Sequential rather than Promise.all — refreshDomainScore makes ~3
+  // Sequential rather than Promise.all — refreshDomainMetrics makes ~3
   // DB round-trips per domain, and we'd rather not stampede the pool
   // on a one-shot maintenance script. Volume is tiny anyway.
   for (let i = 0; i < domains.length; i++) {
@@ -84,7 +84,7 @@ async function main(): Promise<void> {
     `) as unknown as ScoreSnapshot[];
     const before = beforeRows[0] ?? null;
 
-    const after = await refreshDomainScore(d.id, d.domain);
+    const after = await refreshDomainMetrics(d.id, d.domain);
 
     if (!after) {
       failCount++;

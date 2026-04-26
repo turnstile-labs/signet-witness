@@ -6,7 +6,7 @@ import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
 import DomainSearch from "@/app/components/DomainSearch";
 import { sizeBadge } from "@/lib/badge-dimensions";
-import { VERIFIED_INDEX } from "@/lib/scores";
+import { VERIFIED_INDEX } from "@/lib/trust";
 
 export const revalidate = 300;
 

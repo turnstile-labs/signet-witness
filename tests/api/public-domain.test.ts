@@ -6,24 +6,24 @@ vi.mock("@/lib/db", () => ({
   isDenylisted: vi.fn(),
 }));
 
-vi.mock("@/lib/scores", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/scores")>(
-    "@/lib/scores",
+vi.mock("@/lib/trust", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/trust")>(
+    "@/lib/trust",
   );
   return {
     ...actual,
-    getDomainScore: vi.fn(),
+    getDomainMetrics: vi.fn(),
   };
 });
 
 import { getDomain, getReceiverCount, isDenylisted } from "@/lib/db";
-import { getDomainScore } from "@/lib/scores";
+import { getDomainMetrics } from "@/lib/trust";
 import { GET, OPTIONS } from "@/app/api/public/domain/[domain]/route";
 
 const getDomainMock = vi.mocked(getDomain);
 const getReceiverCountMock = vi.mocked(getReceiverCount);
 const isDenylistedMock = vi.mocked(isDenylisted);
-const getDomainScoreMock = vi.mocked(getDomainScore);
+const getDomainMetricsMock = vi.mocked(getDomainMetrics);
 
 function params(domain: string) {
   return { params: Promise.resolve({ domain }) };
@@ -76,7 +76,7 @@ describe("GET /api/public/domain/[domain]", () => {
       grandfathered_verified: false,
       updated_at: "2026-04-23T00:00:00Z",
     });
-    getDomainScoreMock.mockResolvedValue({
+    getDomainMetricsMock.mockResolvedValue({
       verified_event_count: 0,
       counterparty_count: 0,
       mutual_counterparties: 0,
@@ -102,7 +102,7 @@ describe("GET /api/public/domain/[domain]", () => {
       grandfathered_verified: false,
       updated_at: "2026-04-23T00:00:00Z",
     });
-    getDomainScoreMock.mockResolvedValue({
+    getDomainMetricsMock.mockResolvedValue({
       verified_event_count: 40,
       counterparty_count: 8,
       mutual_counterparties: 1,
@@ -127,7 +127,7 @@ describe("GET /api/public/domain/[domain]", () => {
       grandfathered_verified: false,
       updated_at: "2026-04-23T00:00:00Z",
     });
-    getDomainScoreMock.mockResolvedValue({
+    getDomainMetricsMock.mockResolvedValue({
       verified_event_count: 180,
       counterparty_count: 24,
       mutual_counterparties: 8,

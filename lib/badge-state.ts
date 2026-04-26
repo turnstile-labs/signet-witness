@@ -8,10 +8,10 @@
 
 import { getDomain } from "@/lib/db";
 import {
-  getDomainScore,
+  getDomainMetrics,
   computeVerified,
-  trustTierFromScore,
-} from "@/lib/scores";
+  trustTierFromMetrics,
+} from "@/lib/trust";
 
 export type BadgeState = "verified" | "building";
 
@@ -31,9 +31,9 @@ export async function resolveSnapshot(domain: string): Promise<BadgeSnapshot> {
   try {
     const record = await getDomain(domain);
     if (!record) return { state: "building", count: 0 };
-    const score = await getDomainScore(record.id, record.domain);
-    const verified = computeVerified(score, record.grandfathered_verified);
-    const tier = trustTierFromScore(score, verified);
+    const metrics = await getDomainMetrics(record.id, record.domain);
+    const verified = computeVerified(metrics, record.grandfathered_verified);
+    const tier = trustTierFromMetrics(metrics, verified);
     return { state: tier, count: record.event_count };
   } catch {
     return { state: "building", count: 0 };
