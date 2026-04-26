@@ -222,7 +222,7 @@ export async function isRateLimited(senderDomain: string): Promise<boolean> {
 // We only run DBL when SPAMHAUS_DQS_KEY is configured. Without a key,
 // `isOnDbl` short-circuits to false with no DNS round-trip — the
 // remaining anti-abuse layers (MX, rate limit, mutuality, diversity,
-// tenure, free-mail exclusion) already cover the attack surface.
+// tenure) already cover the attack surface.
 //
 // Response semantics (https://www.spamhaus.org/dbl/):
 //   127.0.1.2 .. 127.0.1.99   — spam / phish / malware  (listed)

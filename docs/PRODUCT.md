@@ -154,9 +154,15 @@ MTA and maintain its own record. The trust index weights mutuality at 25%.
 **Diversity.** `1 − Gini(events per receiver)` — pumping one friendly
 counterparty 500 times yields near-zero diversity and a weak index.
 
-**Quality-adjusted activity.** Events toward free-mail accounts
-(`gmail.com`, `outlook.com`, etc.) still land in the raw event count but
-never in the quality-adjusted number that the index reads.
+**Activity.** Total verified events, log-curved so a wall-of-emails
+sender hits diminishing returns past ~200 quality events. Earlier
+iterations excluded free-mail receivers (`gmail.com`, `outlook.com`)
+from this count to defang a pump-aliases-I-control attack; the
+diversity Gini and the mutual-counterparties verified gate handle
+that attack on their own, and excluding free-mail receivers also
+erased legitimate consumer-facing correspondence — so the exclusion
+is gone. Real businesses get credit for talking to their actual
+customers, wherever those customers happen to read mail.
 
 **Tenure.** `first_cert_at` via Certificate Transparency logs (`crt.sh`) —
 a public, free lower bound on "this domain has been operating since …,"

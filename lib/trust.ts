@@ -9,9 +9,22 @@
 //
 // This module computes a *quality-adjusted* view of a sender:
 //
-//   • verified_event_count    events toward non-throttled, non-free-mail
-//                             receivers. The denominator for everything
-//                             else. Attacker-resistant.
+//   • verified_event_count    events toward any non-throttled receiver.
+//                             The denominator for everything else.
+//                             Earlier versions excluded free-mail
+//                             receivers (gmail.com, outlook.com, …) on
+//                             the theory that an attacker could pump
+//                             100 gmail aliases they control. The
+//                             diversity-Gini sub-score and the
+//                             MIN_MUTUALS verified-gate floor handle
+//                             that attack independently, and excluding
+//                             free-mail receivers also erased every
+//                             real customer-support / consumer-facing
+//                             interaction from the score. The exclusion
+//                             is gone; the FREE_MAIL_DOMAINS list
+//                             below is kept as a reference set for
+//                             future surfaces (popup labels, etc.) but
+//                             no longer participates in this math.
 //   • counterparty_count      distinct receiver domains, all-time.
 //   • mutual_counterparties   the anti-fake signal. These are receivers
 //                             who are *themselves* senders and who have
@@ -52,11 +65,14 @@ function sql(...args: Parameters<ReturnType<typeof neon>>) {
   return (_sql as ReturnType<typeof neon>)(...args);
 }
 
-// Consumer-grade free mail providers. We still accept events addressed
-// to these (plenty of real commerce flows through them), but they
-// don't count toward `verified_event_count` because they're trivially
-// available to attackers. A domain whose entire history is gmail.com
-// receivers scores near zero on quality, correctly.
+// Consumer-grade free mail providers. Reference list only — no longer
+// wired into the trust pipeline (see the file header for the rationale
+// for retiring the exclusion). Kept as an export so future surfaces
+// can label these differently without re-deriving the set: e.g. the
+// extension popup can say "personal address" instead of "domain" when
+// the user is composing from a free-mail account, or the seal page
+// can render an alternative explainer for a free-mail domain that has
+// no useful aggregate signal.
 export const FREE_MAIL_DOMAINS = new Set([
   "gmail.com",
   "googlemail.com",
@@ -261,9 +277,6 @@ interface RawAggregates {
 
 async function aggregate(domainId: number): Promise<RawAggregates | null> {
   // One round-trip: five aggregates plus the mutuality self-join.
-  // `free_mail_list` is inlined as an array literal so we don't have
-  // to paginate a WITH VALUES table through the driver.
-  const freeMailArray = Array.from(FREE_MAIL_DOMAINS);
   try {
     const rows = (await sql`
       WITH me AS (
@@ -274,10 +287,6 @@ async function aggregate(domainId: number): Promise<RawAggregates | null> {
         FROM events
         WHERE domain_id = ${domainId}
         GROUP BY receiver_domain
-      ),
-      verified_events AS (
-        SELECT receiver_domain, n FROM receiver_events
-        WHERE receiver_domain <> ALL (${freeMailArray}::text[])
       ),
       -- Gini coefficient on (events per receiver). Window functions
       -- can't be aggregate args, so we rank first then aggregate.
@@ -316,7 +325,7 @@ async function aggregate(domainId: number): Promise<RawAggregates | null> {
           )
       )
       SELECT
-        COALESCE((SELECT SUM(n)::int FROM verified_events), 0)         AS verified_event_count,
+        COALESCE((SELECT SUM(n)::int FROM receiver_events), 0)          AS verified_event_count,
         COALESCE((SELECT COUNT(*)::int FROM receiver_events), 0)        AS counterparty_count,
         COALESCE((SELECT n FROM mutuals), 0)                            AS mutual_counterparties,
         1 - COALESCE((SELECT g FROM gini), 0)::float                    AS diversity,

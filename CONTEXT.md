@@ -60,7 +60,7 @@ All three lookups fail-open on unclassified errors so transient DNS issues don't
 
 Raw `domains.event_count` is kept as the ingest counter, but the metric the product **exposes** is the composite `trust_index` stored in `domain_trust`. The table is refreshed lazily: `insertEvent()` flips `stale = TRUE`, and `getDomainMetrics()` recomputes on read when stale or TTL-expired (24h). Five signals feed the index:
 
-- `verified_event_count` — events toward non-free-mail receivers. Free-mail accounts (`gmail.com`, `outlook.com`, etc.) still produce `events` rows but never count toward this number. List lives in `lib/trust.ts#FREE_MAIL_DOMAINS`.
+- `verified_event_count` — total events toward any receiver. An earlier iteration excluded free-mail receivers (`gmail.com`, `outlook.com`, …) on anti-pump grounds; the diversity-Gini sub-score and the `MIN_MUTUALS` verified-gate floor cover that attack independently, and the exclusion was erasing every legitimate consumer/customer-support interaction from the score. The `FREE_MAIL_DOMAINS` set in `lib/trust.ts` is kept as a reference list for surfaces that want to label free-mail domains differently (e.g. the popup) but no longer participates in the trust math.
 - `counterparty_count` — distinct receiver domains, all-time.
 - `mutual_counterparties` — receivers that are **themselves** senders who sealed this domain back. The strongest anti-fake signal because it requires the counterparty to have its own DKIM-signing MTA and its own incentive to add `seal@` to their outbound. Computed via a self-join on `events ⋈ domains`.
 - `diversity` — `1 − Gini(events per receiver)`. Prevents "pump one friendly receiver 500 times."
