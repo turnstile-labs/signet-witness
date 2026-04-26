@@ -4,6 +4,15 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // The badge PNG route reads JetBrains Mono Bold from disk at runtime
+  // and hands the bytes to `next/og`/Satori. Vercel's File Trace can't
+  // statically infer that a `.ttf` next to a route handler should ship
+  // with the function bundle, so we name it explicitly here. Without
+  // this entry the route works locally but `readFileSync` 404s on
+  // Vercel and the badge falls back to Satori's bundled Noto Sans.
+  outputFileTracingIncludes: {
+    "/badge/[slug]": ["./app/badge/fonts/JetBrainsMono-Bold.ttf"],
+  },
   // `/extension` and `/integrations` used to be standalone landing pages.
   // They collapsed into `/setup` (one hub, one URL, five recipes). These
   // redirects keep pre-existing links working — including the test

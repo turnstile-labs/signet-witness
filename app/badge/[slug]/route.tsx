@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import {
   BADGE_HEIGHT,
@@ -51,15 +52,19 @@ const R = BADGE_HEIGHT / 2; // pill (rounded-full)
 // reads thin and washed in the surfaces that embed the PNG (the seal
 // page preview, signature paste targets, etc.).
 //
-// `new URL(..., import.meta.url)` is the Next.js-blessed way to pin
-// a static asset into the route's deployment trace so it's bundled
-// alongside the function on Vercel. The read happens once at module
-// init and the bytes stay in memory for every subsequent request.
+// We resolve the path at runtime via `process.cwd()` rather than the
+// `new URL(..., import.meta.url)` trick because Turbopack (the build
+// tool Next.js 16 ships with) tries to resolve those URLs as module
+// imports and chokes on a `.ttf`. The runtime read is cheap — it
+// happens once at module init on cold start and the bytes stay in
+// memory for every subsequent request. Vercel's deployment trace
+// (NFT) is hinted explicitly via `outputFileTracingIncludes` in
+// `next.config.ts` so the font ships with the function bundle.
 //
 // JetBrains Mono Bold is OFL 1.1 (license shipped at
 // `app/badge/fonts/OFL.txt`).
 const JETBRAINS_MONO_BOLD = readFileSync(
-  new URL("./fonts/JetBrainsMono-Bold.ttf", import.meta.url),
+  join(process.cwd(), "app/badge/fonts/JetBrainsMono-Bold.ttf"),
 );
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
