@@ -1,12 +1,14 @@
-# Signet Witness — Project Context
+# Witnessed — Project Context
 
-This document captures the full decision history, architecture rationale, and product vision for the `signet-witness` project. Read this before starting any new conversation in this workspace.
+> Repo / on-disk codename: **`signet-witness`** (preserved as the operational identifier — Cloudflare Worker name, GitHub repo, npm package name). Public product brand: **Witnessed**. Don't mix the two on user-facing surfaces.
+
+This document captures the full decision history, architecture rationale, and product vision for the project. Read this before starting any new conversation in this workspace.
 
 ---
 
 ## What this project is
 
-**Signet** is a business trust infrastructure product. The core mechanic: Bcc `seal@witnessed.cc` on any business email. Signet verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
+**Witnessed** is a business trust infrastructure product. The core mechanic: Bcc `seal@witnessed.cc` on any business email. Witnessed verifies the DKIM signature, records the sender domain, receiver domain, and timestamp, and discards everything else. Over time, a domain builds a verified communication history — passively, permanently, and impossible to manufacture.
 
 The output: a public seal page at `witnessed.cc/b/yourdomain` that proves a domain has been doing real business with real counterparties over time. This is the one signal AI cannot fake: history.
 
@@ -88,7 +90,7 @@ Weights are encoded in `lib/trust.ts#computeTrustIndex`: 35% activity (log-scale
 
 ### New repo, not built on signet-pass
 
-The existing `signet-pass` repo (`/Users/buitre/code/2026/signet-pass`) is a ZK email gating product — it uses Circom circuits, Solidity smart contracts, wagmi, and ConnectKit. Every dependency and abstraction layer assumes wallet-connected users. Building Signet Witness on top of it would mean fighting the existing assumptions at every turn. The two products are siblings, not parent/child.
+The existing `signet-pass` repo (`/Users/buitre/code/2026/signet-pass`) is a ZK email gating product — it uses Circom circuits, Solidity smart contracts, wagmi, and ConnectKit. Every dependency and abstraction layer assumes wallet-connected users. Building Witnessed on top of it would mean fighting the existing assumptions at every turn. The two products are siblings, not parent/child.
 
 `signet-pass` stays alive as-is — it becomes the Web3 gating product that connects to this one in the long-term roadmap.
 
@@ -154,7 +156,7 @@ The hero on `/b/[domain]` is `StateBlock` — a colored frame + icon + label + o
 
 State *is* the badge's identity, but the literal word carries it: a verified domain renders a **solid green pill** with a bold "Verified" and a white check; Building is **solid amber** with a bold "Building" and a white dot. Color + icon alone are ambiguous to strangers (an amber pill with a dot can read as "also approved" to someone with no Witnessed mental model); the state word removes the guesswork. No progress ring, no 0–100 readout, no theme variance — the color + word do all the work, and the badge reads on any email client bg, light or dark. The precise 0–100 number lives on the seal page where there's room for the detail.
 
-Canvas is a **constant 224×32 px Split Pill** (v13): state-tinted LEFT half (icon + state word) + neutral slate RIGHT half (the immutable `witnessed.cc` wordmark). The embedded domain text was dropped — the URL still encodes the domain (`/badge/acme.com.png`) but the rendered output is identical-size for every domain, so a pasted `<img>` tag never reflows on tier transitions and signature layouts that mix multiple badges line up cleanly. Dimension constants live in `lib/badge-dimensions.ts` and are shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. State resolution lives in `lib/badge-state.ts#resolveSnapshot` so tests can import it without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, format, layout-version)` — the only thing that changes the pixels now is a real state transition, so cache hit rates are effectively perfect per domain until the state moves. The `?preview=verified|building` query short-circuits the DB lookup for marketing surfaces; it never mutates data.
+Canvas is a **constant 212×32 px Split Pill** (current ETag: v15): state-tinted LEFT half (icon + state word) + warm-neutral stone RIGHT half (the immutable `witnessed.cc` wordmark). The embedded domain text was dropped — the URL still encodes the domain (`/badge/acme.com.png`) but the rendered output is identical-size for every domain, so a pasted `<img>` tag never reflows on tier transitions and signature layouts that mix multiple badges line up cleanly. Dimension constants live in `lib/badge-dimensions.ts` and are shared by the route, `BadgeEmbed`, and the landing-page demo so the rendered image and the `<img>` tag's advertised size stay in lockstep. State resolution lives in `lib/badge-state.ts#resolveSnapshot` so tests can import it without loading `next/og`. Cached at the edge with an `ETag` keyed on `(state, format, layout-version)` — the only thing that changes the pixels now is a real state transition, so cache hit rates are effectively perfect per domain until the state moves. The `?preview=verified|building` query short-circuits the DB lookup for marketing surfaces; it never mutates data.
 
 ### Internationalization (EN + ES)
 
@@ -190,7 +192,7 @@ Note: there is no outbound email layer. Witnessed never initiates contact with a
 
 **Cloudflare Worker:** `workers/email-router/` — deploy with `wrangler deploy`
 
-**Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?preview=verified|building` short-circuits the DB lookup for marketing surfaces. Bump the trailing layout fingerprint in `cacheHeaders()` (currently `v13`) whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
+**Badge.** See `Dynamic badge (implemented)` above for the full rendering contract. Short surface: `GET /badge/[slug]` renders SVG or PNG (format from the slug suffix); `?preview=verified|building` short-circuits the DB lookup for marketing surfaces. Bump the trailing layout fingerprint in `cacheHeaders()` (currently `v15`) whenever the visual output changes so in-the-wild 304s don't serve stale pixels.
 
 **Tests.** `npm test` runs the Vitest suite; `npm run test:coverage` emits a v8 report. Coverage is scoped to the anti-abuse surface (`lib/trust.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`) with a 100% lines / 100% statements / 100% functions / 95% branches floor. Framework glue and presentational components are explicitly out of scope — chasing 100% on those pays for tests that catch no defects. The suite mocks `@neondatabase/serverless` via a programmable queue (`tests/helpers/sql.ts`), mocks `dns.promises.resolveMx/resolve4`, and spies on global `fetch` so every external side-effect is assertable. Cold-start / env-toggle paths (`SPAMHAUS_DQS_KEY`, `DATABASE_URL`) are covered via `vi.resetModules()` + dynamic import.
 

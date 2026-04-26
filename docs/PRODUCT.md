@@ -1,8 +1,8 @@
-# Signet Witness — Product
+# Witnessed — Product
 
 **The business record AI can't fake.**
 
-Bcc `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
+Bcc `seal@witnessed.cc` on your business emails. Witnessed verifies the DKIM
 signature, records who you emailed and when, and discards everything else.
 Your domain builds a verified communication history — passively, permanently,
 and impossible to manufacture. When you need to prove you're real, the proof
@@ -35,7 +35,7 @@ Add `seal@witnessed.cc` to the Bcc field on any business email you send, or
 configure your mail provider to Bcc it automatically (Google Workspace,
 Microsoft 365, and the browser extension all do this in one click).
 
-Signet receives it, verifies the DKIM signature from your domain, records the
+Witnessed receives it, verifies the DKIM signature from your domain, records the
 sender domain, receiver domain, and timestamp. The email body and subject line
 are discarded immediately — never stored, never read.
 
@@ -107,9 +107,9 @@ senders past 500/hour or 5000/day into a forensic-only throttled queue. See
 
 ---
 
-## What Signet Proves
+## What Witnessed Proves
 
-Signet proves one thing: that this domain has been operational. That it has
+Witnessed proves one thing: that this domain has been operational. That it has
 been sending real, DKIM-signed email to established counterparties over a
 meaningful period of time — not legal standing, not financial solvency, just
 presence.
@@ -125,11 +125,11 @@ identity cannot have is a past.
 **Stored:** sender domain, receiver domain, timestamp, DKIM signature hash.
 
 **Discarded immediately:** email body, subject line, attachments, all personal
-content. Never stored. Never logged. No human at Signet can read your emails.
+content. Never stored. Never logged. No human at Witnessed can read your emails.
 
 **Consent model:** adding the address is an explicit, voluntary act by the
 sender — per email, or via a one-time mail-flow rule the sender configures
-themselves. Nothing is collected without the user choosing to include Signet.
+themselves. Nothing is collected without the user choosing to include Witnessed.
 
 **Self-serve rights:** anyone who controls a domain — sender or receiver —
 can exercise GDPR rights at `witnessed.cc/rights` without contacting us.
@@ -178,7 +178,7 @@ to the sender on every inbox row — a passive discovery surface that turns
 "someone emailed me" into "this sender has a verifiable history." Clicking
 the pill opens the sender's seal page.
 
-**Domain search.** Anyone can search any domain on Signet. If a domain appears
+**Domain search.** Anyone can search any domain on Witnessed. If a domain appears
 as a receiver in witnessed emails but hasn't started its own history:
 
 > `bigcorp.com` · Appears in 23 witnessed communications · No history claimed
@@ -297,7 +297,7 @@ domain owners, tokenization, per-query royalties) stays in v2 territory.
 ### Month 1 — Build, ship, and eat your own cooking
 
 Bcc `seal@witnessed.cc` on every outgoing business email from day one.
-Signet's own seal page at `witnessed.cc/b/witnessed.cc` becomes the first
+The product's own seal page at `witnessed.cc/b/witnessed.cc` becomes the first
 proof that the product works. Publish 2–3 pieces of content on the AI
 impersonation problem. No product pitch. Plant the thesis: "time is the only
 thing AI can't fake."
@@ -325,7 +325,7 @@ and procurement platforms for early API partnership conversations.
 
 The cache has enough depth to demo real verification value. One signed API
 partnership validates the entire model. This is the inflection point — the
-moment Signet transitions from a SaaS tool to an infrastructure business.
+moment Witnessed transitions from a SaaS tool to an infrastructure business.
 
 ---
 
@@ -334,11 +334,11 @@ moment Signet transitions from a SaaS tool to an infrastructure business.
 The technology is simple. Any team could build the email ingestion and seal
 pages in six weeks. The moat is the accumulated history in the cache — and
 that takes exactly as long to build as it takes. A competitor launching two
-years after Signet needs two years to have comparable depth.
+years after Witnessed needs two years to have comparable depth.
 
 **On Big Tech:** Google has DKIM data for most business email already. But
 using it commercially means admitting they analyze email metadata at scale —
-a PR and regulatory disaster. Signet's advantage is the consent model:
+a PR and regulatory disaster. Witnessed's advantage is the consent model:
 adding the address is an explicit, opt-in act by the sender. That's a
 structural difference, not a speed difference.
 

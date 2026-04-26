@@ -1,8 +1,8 @@
-# Signet Witness
+# Witnessed
 
 **The business record AI can't fake.**
 
-Bcc `seal@witnessed.cc` on your business emails. Signet verifies the DKIM
+Bcc `seal@witnessed.cc` on your business emails. Witnessed verifies the DKIM
 signature, records who you emailed and when, and discards everything else.
 
 Live at **[witnessed.cc](https://witnessed.cc)**
@@ -26,7 +26,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 
 - **Seal pages** at `/b/[domain]` — `StateBlock` verdict (Verified / Building / Warming up) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when in Building state but not yet verified
 - **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
-- **Dynamic badge** at `/badge/[domain]` — SVG or PNG, **Split Pill** layout (`[ icon STATE_WORD ][ witnessed.cc ]`): state-tinted left half (solid green "Verified" or solid amber "Building") + neutral slate right half with the immutable `witnessed.cc` wordmark. Constant 224×32 canvas across every domain — pasted `<img>` tags never reflow. `ETag`-cached by state (v13); `?preview=verified|building` for marketing surfaces
+- **Dynamic badge** at `/badge/[domain]` — SVG or PNG, **Split Pill** layout (`[ icon STATE_WORD ][ witnessed.cc ]`): state-tinted left half (solid green "Verified" or solid amber "Building") + neutral stone right half with the immutable `witnessed.cc` wordmark. Constant 212×32 canvas across every domain — pasted `<img>` tags never reflow. `ETag`-cached by state (v15); `?preview=verified|building` for marketing surfaces
 - **Trust index** (`lib/trust.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
 - **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
@@ -97,7 +97,7 @@ signet-witness/
 ├── proxy.ts                      # next-intl middleware (locale detection)
 ├── lib/
 │   ├── db.ts                     # Neon SQL client + typed queries + GDPR helpers + ops aggregates
-│   ├── scores.ts                 # Trust-index math + free-mail list + verified gating
+│   ├── trust.ts                  # Trust-index math + free-mail list + verified gating
 │   ├── reputation.ts             # MX / DBL / rate-limit gates + CT-log lookup cache
 │   ├── badge-state.ts            # Pure state resolver for the badge (DB-free, test-friendly)
 │   ├── badge-dimensions.ts       # Shared layout math for SVG/PNG + BadgeEmbed

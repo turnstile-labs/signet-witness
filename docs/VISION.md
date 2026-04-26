@@ -1,6 +1,6 @@
-# Signet Witness — Vision & Roadmap
+# Witnessed — Vision & Roadmap
 
-This document describes where Signet is going: the phased product roadmap as
+This document describes where Witnessed is going: the phased product roadmap as
 the email history cache grows, and the long-term vision of a unified trust
 layer for both Web2 businesses and Web3 operators.
 
@@ -61,7 +61,7 @@ For domains that need a credential faster than the organic trust-index
 ramp — entering a marketplace, responding to an enterprise procurement RFP,
 onboarding with a financial institution — an accelerated path.
 
-Signet cross-references the domain's Certificate Transparency history (already
+Witnessed cross-references the domain's Certificate Transparency history (already
 fed into Layer 1 tenure), DNS consistency (MX / SPF / DKIM record stability),
 and a manual attestation. If external signals are strong enough (e.g. domain
 with 5+ years of CT history and stable DNS), a provisional Verified badge is
@@ -72,7 +72,7 @@ threshold.
 ### Tamper-proof history
 
 Periodic cryptographic commitments of domain histories to an independent
-audit log. This transforms the integrity guarantee from "trust Signet's
+audit log. This transforms the integrity guarantee from "trust Witnessed's
 database" to "trust the math."
 
 The seal page shows a subtle indicator: "History independently verifiable" —
@@ -190,11 +190,11 @@ instantly readable by a counterparty.
 
 ### Wallet path
 
-Connect your wallet on Signet. We read your public on-chain activity —
+Connect your wallet on Witnessed. We read your public on-chain activity —
 contract deployments, transaction history, governance votes, multisig
 signatures, protocol interactions — and compute a verified operational profile.
 
-No new data is created. Everything Signet reads is already public on the
+No new data is created. Everything Witnessed reads is already public on the
 blockchain. The value is in the packaging: a single, readable credential that
 answers "how long has this wallet been doing real work?"
 
@@ -237,7 +237,7 @@ harder to fake than activity within a single system.
 Merkle roots of all histories (domain and wallet) committed to Base on a
 weekly batch schedule. The seal page shows: "History anchored on-chain" with
 a link to the Base transaction. Invisible to the user — transforms the
-integrity guarantee from "trust Signet" to "trust math."
+integrity guarantee from "trust Witnessed" to "trust math."
 
 ---
 
@@ -259,9 +259,9 @@ The cache is the moat. Everything else is a feature.
 ## Competitive Position (long-term)
 
 **On crypto identity:** Projects like Gitcoin Passport, Worldcoin, and ENS
-prove *who you are* or *that you're human*. Signet proves *how long you've
+prove *who you are* or *that you're human*. Witnessed proves *how long you've
 been operating*. Different question, complementary answer. A wallet with a
-Gitcoin Passport and a Signet Verified badge is the strongest possible crypto
+Gitcoin Passport and a Witnessed Verified badge is the strongest possible crypto
 identity.
 
 **The unique position:** no one else combines Web2 domain history with Web3
