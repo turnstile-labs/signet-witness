@@ -148,11 +148,10 @@ describe("/api/inbound — auth + parsing", () => {
     expect(res.status).toBe(401);
   });
 
-  it("accepts the legacy x-signet-secret header for backward compat", async () => {
-    // The worker may send either header during the rename migration;
-    // the route accepts both until the worker is verified on the new
-    // name. Drop this test (and the legacy fallback in route.ts) once
-    // the worker is fully on x-witnessed-secret.
+  it("rejects the legacy x-signet-secret header (migration closed)", async () => {
+    // Sanity check that the legacy alias really is gone — if the
+    // worker ever falls back to the old name it should now fail
+    // closed instead of silently authenticating.
     const req = new NextRequest("https://witnessed.cc/api/inbound", {
       method: "POST",
       headers: {
@@ -162,7 +161,7 @@ describe("/api/inbound — auth + parsing", () => {
       body: raw(),
     });
     const res = await POST(req);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
   });
 
   it("400s on empty body", async () => {
