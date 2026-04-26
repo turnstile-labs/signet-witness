@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { sizeBadge } from "@/lib/badge-dimensions";
 import { useSiteTheme } from "@/app/components/useSiteTheme";
@@ -10,19 +10,23 @@ import { useSiteTheme } from "@/app/components/useSiteTheme";
 // One job: get a *clickable* badge onto the clipboard so the owner
 // can paste it into their email signature (Gmail, Apple Mail, Outlook).
 //
-// Theme variance is driven by the site theme — owners flip the
-// navbar's light/dark toggle, the preview reflects it instantly, and
-// the copied HTML carries the matching `?theme=` so the pasted badge
-// keeps reading the way they saw it. The copy button is a single
-// affordance: pick the theme that matches your email client, then
-// copy. Rich-text copy via clipboard.write is what makes this work:
+// Theme handling is split between the preview and the clipboard:
+//
+//   Preview — both variants are rendered as stacked <img> tags and
+//             the active one is picked by CSS via the `light:`
+//             Tailwind variant (which selects on `html.light`). The
+//             no-flash inline script flips that class before first
+//             paint, so the right variant is visible from frame zero.
+//             No JS swap, no hydration flicker on reload.
+//   Copy   — the clipboard payload is a single <img src=…> URL, so
+//             it has to commit to one theme. We use the JS-tracked
+//             site theme (`useSiteTheme`) to pick which variant goes
+//             into the clipboard, so what owners see in the preview
+//             is exactly what they paste.
+//
+// Rich-text copy via clipboard.write is what makes the paste work:
 // Gmail's signature editor is WYSIWYG and only preserves formatting
 // from the clipboard's text/html entry.
-//
-// Both theme variants are preloaded on mount so the swap on toggle
-// is invisible — without that, the browser holds the previous image
-// while fetching the new one, producing a "dark flash" before the
-// light variant settles in.
 
 export default function BadgeEmbed({ domain }: { domain: string }) {
   const t = useTranslations("badge");
@@ -31,19 +35,9 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
 
   const origin = "https://witnessed.cc";
   const sealUrl = `${origin}/b/${domain}`;
+  const darkPreviewSrc = `/badge/${domain}.png?theme=dark`;
+  const lightPreviewSrc = `/badge/${domain}.png?theme=light`;
   const imageUrl = `${origin}/badge/${domain}.png?theme=${theme}`;
-  const previewSrc = `/badge/${domain}.png?theme=${theme}`;
-
-  // Warm both variants into the browser cache on mount. After the
-  // first paint, every navbar theme toggle is a cache hit — no
-  // re-fetch, no flicker, the visible <img> just swaps src and the
-  // pixel data is already there.
-  useEffect(() => {
-    for (const t of ["light", "dark"] as const) {
-      const preload = new Image();
-      preload.src = `${origin}/badge/${domain}.png?theme=${t}`;
-    }
-  }, [domain, origin]);
   // Width adapts to the domain so the copied <img> advertises the same
   // dimensions as the PNG we render. Height is fixed.
   //
@@ -78,6 +72,8 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
     }
   }
 
+  const previewAlt = t("alt", { domain });
+
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-border bg-surface overflow-hidden">
@@ -101,11 +97,19 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={previewSrc}
-                alt={t("alt", { domain })}
+                src={darkPreviewSrc}
+                alt={previewAlt}
                 width={badgeW}
                 height={badgeH}
-                className="max-w-full h-auto block"
+                className="block max-w-full h-auto light:hidden"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lightPreviewSrc}
+                alt={previewAlt}
+                width={badgeW}
+                height={badgeH}
+                className="hidden max-w-full h-auto light:block"
               />
             </a>
           </div>
