@@ -6,9 +6,9 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-border mt-auto">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-xs text-muted-2 font-mono">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex flex-col items-center text-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:text-left sm:gap-x-6 sm:gap-y-2 text-xs text-muted-2 font-mono">
         <p>© {new Date().getFullYear()} Witnessed</p>
-        <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:justify-start">
           <Link href="/setup" className="hover:text-muted transition-colors">
             {t("setup")}
           </Link>
