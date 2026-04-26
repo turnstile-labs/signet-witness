@@ -326,9 +326,13 @@ describe("/api/inbound — post-response work", () => {
     expect(insertMock).toHaveBeenCalled();
   });
 
-  it("excludes sender's own domain and witnessed.cc from the primary receiver", async () => {
-    // First parsed To/CC domain that isn't sender or witnessed.cc
-    // becomes primaryReceiver — here that's victim.example.
+  it("excludes the sender's own domain from the primary receiver", async () => {
+    // First parsed To/CC domain that isn't the sender becomes
+    // primaryReceiver. Here internal@acme.com is the sender's own
+    // domain (acme.com) so it's stripped; victim.example wins. The
+    // ops@witnessed.cc address is *not* the seal endpoint
+    // (seal@witnessed.cc), so it's kept as a counterparty too — but
+    // it's third in the To order, so it doesn't become primary.
     await POST(
       makeReq(
         raw({
@@ -337,5 +341,55 @@ describe("/api/inbound — post-response work", () => {
       ),
     );
     expect(insertMock).toHaveBeenCalledWith(1, "victim.example", expect.any(String));
+  });
+
+  it("strips seal@witnessed.cc but keeps other @witnessed.cc addresses as counterparties", async () => {
+    // Regression test for the solo_recipient bug: when a counterparty
+    // replies to hello@witnessed.cc (a real human inbox) with seal@
+    // also Bcc'd, the seal address gets stripped but hello@ stays as
+    // the counterparty, so the event records witnessed.cc as the
+    // primary receiver instead of falling through to "unknown" and
+    // tripping the solo_recipient gate.
+    upsertMock.mockResolvedValueOnce({
+      id: 7,
+      domain: "randomthoughtsls.com",
+      event_count: 1,
+      first_seen: new Date().toISOString(),
+      tier: "free",
+      grandfathered_verified: false,
+      updated_at: new Date().toISOString(),
+    });
+    await POST(
+      makeReq(
+        raw({
+          from: "yudit@randomthoughtsls.com",
+          to: "hello@witnessed.cc",
+        }),
+      ),
+    );
+    expect(throttledMock).not.toHaveBeenCalled();
+    expect(insertMock).toHaveBeenCalledWith(7, "witnessed.cc", expect.any(String));
+  });
+
+  it("solo_recipient gate still fires when seal@ is the only addressee", async () => {
+    // The seal address by itself is *not* a counterparty — it's a
+    // platform endpoint. A message addressed only to seal@ has no
+    // proof-of-business event to record and should still drop into
+    // the throttle table.
+    await POST(
+      makeReq(
+        raw({
+          from: "ceo@acme.com",
+          to: "seal@witnessed.cc",
+        }),
+      ),
+    );
+    expect(throttledMock).toHaveBeenCalledWith(
+      "acme.com",
+      "unknown",
+      expect.any(String),
+      "solo_recipient",
+    );
+    expect(insertMock).not.toHaveBeenCalled();
   });
 });

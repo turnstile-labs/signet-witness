@@ -12,7 +12,9 @@ import {
 } from "@/lib/reputation";
 
 const INBOUND_SECRET = process.env.INBOUND_SECRET ?? "";
-const WITNESS_DOMAIN = "witnessed.cc";
+// Only the seal address is treated as a platform endpoint; other
+// @witnessed.cc addresses (hello@, support@, …) are real human inboxes
+// and count as counterparties like any other domain.
 const WITNESS_EMAIL = "seal@witnessed.cc";
 
 export async function POST(req: NextRequest) {
@@ -74,16 +76,28 @@ export async function POST(req: NextRequest) {
   //     counsel) — that counsel is a legitimate part of the proof
   //     of business and should still register as a counterparty.
   //
+  // We strip the *seal address itself* (seal@witnessed.cc) — never the
+  // entire @witnessed.cc domain. Earlier iterations stripped any
+  // @witnessed.cc address, which collapsed two different things into
+  // one: the seal address (a platform endpoint) and other @witnessed.cc
+  // addresses (real human inboxes like hello@witnessed.cc). When a
+  // counterparty replied to hello@witnessed.cc with seal@ Bcc'd, the
+  // domain-level strip removed both, leaving no counterparty in To/Cc
+  // and tripping the solo_recipient gate — even though there *was* a
+  // real human counterparty (witnessed.cc itself).
+  //
   // We only keep domains — individual recipient identities are never
   // stored publicly (GDPR), and nothing downstream of this file needs
   // full email addresses.
-  const emailRegex = /@([\w.-]+\.[a-z]{2,})/gi;
+  const addrRegex = /([\w.+-]+@[\w.-]+\.[a-z]{2,})/gi;
   const toLine = rawHeaders.match(/^To:(.+?)(?=\r?\n\S|\r?\n\r?\n)/ims)?.[1] ?? "";
   const ccLine = rawHeaders.match(/^CC:(.+?)(?=\r?\n\S|\r?\n\r?\n)/ims)?.[1] ?? "";
   const receiverDomains: string[] = [];
-  for (const m of (toLine + " " + ccLine).matchAll(emailRegex)) {
-    const domain = m[1].toLowerCase();
-    if (domain === WITNESS_DOMAIN) continue;
+  for (const m of (toLine + " " + ccLine).matchAll(addrRegex)) {
+    const address = m[1].toLowerCase();
+    if (address === WITNESS_EMAIL) continue;
+    const domain = address.split("@")[1];
+    if (!domain) continue;
     if (domain === senderDomain) continue;
     if (!receiverDomains.includes(domain)) receiverDomains.push(domain);
   }
