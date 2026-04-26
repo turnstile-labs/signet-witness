@@ -19,6 +19,3 @@ export const EXTENSION_ID: string | null = null;
 export const CHROME_STORE_URL: string | null = EXTENSION_ID
   ? `https://chromewebstore.google.com/detail/${EXTENSION_ID}`
   : null;
-
-/** Whether the extension listing is live and installable. */
-export const EXTENSION_LISTED: boolean = CHROME_STORE_URL !== null;

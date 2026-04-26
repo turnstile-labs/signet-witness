@@ -110,7 +110,10 @@ export interface DomainMetrics {
 export const VERIFIED_INDEX = 65;
 export const MIN_MUTUALS = 3;
 
-export type VerifiedReason = "score" | "grandfathered";
+// Module-private — only ever appears nested in `VerifiedState.reason`,
+// and consumers branch on the boolean `isVerified`, not on the reason
+// string. Promote to an export only if a caller starts switching on it.
+type VerifiedReason = "score" | "grandfathered";
 
 export interface VerifiedState {
   isVerified: boolean;
