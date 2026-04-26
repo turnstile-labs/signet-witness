@@ -17,7 +17,7 @@ import {
   type BadgeState,
 } from "@/lib/badge-state";
 
-// v13 — Split Pill.
+// Split Pill (current ETag: v15).
 //
 //   ┌──────────────────┬──────────────────┐
 //   │  ✓  Verified     │   witnessed.cc   │
@@ -25,7 +25,7 @@ import {
 //
 // LEFT half  — state-tinted bg (green for Verified, amber for Building)
 //              + white icon + white state word. The variable half.
-// RIGHT half — slate-900 bg + light text "witnessed.cc". The immutable
+// RIGHT half — stone-900 bg + light text "witnessed.cc". The immutable
 //              platform mark. Identical for every badge in the world.
 //
 // A 1px divider sits at LEFT_W. Outer rounded-full clipping gives the
@@ -70,7 +70,7 @@ function esc(s: string): string {
 //
 // Two tones per state on the LEFT half: a solid background for the
 // state tint and a foreground colour for icon/text. The RIGHT half
-// is constant — slate-900 bg, slate-100 text — so the platform mark
+// is constant — stone-900 bg, stone-100 text — so the platform mark
 // reads as immutable across every state and every email-client theme.
 interface Palette {
   bg: string;     // LEFT half background

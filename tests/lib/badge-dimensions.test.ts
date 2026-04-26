@@ -14,7 +14,7 @@ import {
   sizeBadge,
 } from "@/lib/badge-dimensions";
 
-describe("badge-dimensions (v13 Split Pill)", () => {
+describe("badge-dimensions (Split Pill)", () => {
   describe("constants", () => {
     it("exposes a stable, constant canvas", () => {
       expect(BADGE_HEIGHT).toBe(32);
@@ -61,7 +61,7 @@ describe("badge-dimensions (v13 Split Pill)", () => {
 
   describe("sizeBadge", () => {
     it("returns the constant canvas regardless of domain length", () => {
-      // The whole point of v13: the rendered output no longer depends
+      // The whole point of the Split Pill: the rendered output no longer depends
       // on the embedded domain, so width/height are stable. Pasted
       // <img width=…> tags stay accurate forever.
       const a = sizeBadge("acme.com");

@@ -1,4 +1,4 @@
-// Badge layout constants for the v13 Split Pill.
+// Badge layout constants for the Split Pill (current ETag: v15).
 //
 //   ┌──────────────────┬──────────────────┐
 //   │  ✓  Verified     │   witnessed.cc   │
@@ -13,13 +13,13 @@
 //           the state icon + state word. The reader's eye lands here
 //           first because the color is the most distinctive element
 //           on the canvas.
-//   RIGHT — immutable platform. Slate background, light text, the
-//           wordmark "witnessed.cc". This half is identical for every
-//           badge in the world; readers learn it as the brand mark
-//           the same way they learn shields.io / GitHub badges.
+//   RIGHT — immutable platform. Warm-neutral stone background, light
+//           text, the wordmark "witnessed.cc". This half is identical
+//           for every badge in the world; readers learn it as the brand
+//           mark the same way they learn shields.io / GitHub badges.
 //
 // The embedded domain (e.g. "acme.com") was dropped from the rendered
-// pixels in v13. Reasons:
+// pixels in the Split Pill redesign. Reasons:
 //
 //   1. Context already supplies it. A signature badge sits next to
 //      `name@acme.com`; a website badge sits on `acme.com`. Showing
@@ -120,7 +120,7 @@ export const PLATFORM_LABEL = "witnessed.cc";
 // Returns constants regardless of `domain` so callers (BadgeEmbed,
 // landing-page demo, badge route) can keep their existing call shape
 // while the rendered output is now domain-independent. Width/height
-// are stable — this is the whole point of the v13 redesign.
+// are stable — this is the whole point of the Split Pill redesign.
 export function sizeBadge(_domain: string): {
   width: number;
   height: number;
