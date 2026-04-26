@@ -116,14 +116,14 @@ CREATE INDEX IF NOT EXISTS events_throttled_sender_idx
 CREATE INDEX IF NOT EXISTS events_throttled_witnessed_idx
   ON events_throttled(witnessed_at DESC);
 
--- Precomputed quality-adjusted score per sender domain (Layer 1+).
+-- Precomputed quality-adjusted trust signals per sender domain (Layer 1+).
 -- `domains.event_count` remains the raw ingest counter; this table
 -- holds the derived signals that feed the public trust_index.
 --
 -- Refresh is lazy: insertEvent() flips `stale = TRUE`, and the seal
--- page recomputes on read when stale OR older than SCORE_TTL.
+-- page recomputes on read when stale OR older than the TTL.
 -- Recompute is a handful of SQL aggregates — cheap at current scale.
-CREATE TABLE IF NOT EXISTS domain_scores (
+CREATE TABLE IF NOT EXISTS domain_trust (
   domain_id               INTEGER PRIMARY KEY REFERENCES domains(id) ON DELETE CASCADE,
   verified_event_count    INTEGER NOT NULL DEFAULT 0,   -- events toward non-throttled, non-free-mail receivers
   counterparty_count      INTEGER NOT NULL DEFAULT 0,   -- distinct receivers, all-time
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS domain_scores (
   computed_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS domain_scores_trust_idx
-  ON domain_scores(trust_index DESC);
-CREATE INDEX IF NOT EXISTS domain_scores_stale_idx
-  ON domain_scores(stale, computed_at);
+CREATE INDEX IF NOT EXISTS domain_trust_index_idx
+  ON domain_trust(trust_index DESC);
+CREATE INDEX IF NOT EXISTS domain_trust_stale_idx
+  ON domain_trust(stale, computed_at);

@@ -45,10 +45,10 @@ export async function upsertDomain(domain: string): Promise<Domain> {
   return rows[0];
 }
 
-// Record one witnessed email event. The domain_scores row for this
+// Record one witnessed email event. The domain_trust row for this
 // sender is marked stale in the same round-trip so the next seal-page
 // render recomputes the quality-adjusted view. Failure to mark stale
-// is non-fatal — the score will still refresh at TTL.
+// is non-fatal — the trust index will still refresh at TTL.
 export async function insertEvent(
   domainId: number,
   receiverDomain: string,
@@ -60,7 +60,7 @@ export async function insertEvent(
   `;
   try {
     await sql`
-      INSERT INTO domain_scores (domain_id, stale, computed_at)
+      INSERT INTO domain_trust (domain_id, stale, computed_at)
       VALUES (${domainId}, TRUE, NOW())
       ON CONFLICT (domain_id) DO UPDATE SET stale = TRUE
     `;
@@ -315,7 +315,7 @@ async function verifiedCount(): Promise<{ n: number }[]> {
     return (await sql`
       SELECT COUNT(DISTINCT d.id)::int AS n
       FROM domains d
-      LEFT JOIN domain_scores s ON s.domain_id = d.id
+      LEFT JOIN domain_trust s ON s.domain_id = d.id
       WHERE d.grandfathered_verified = TRUE
          OR (s.trust_index >= 65 AND s.mutual_counterparties >= 3)
     `) as unknown as { n: number }[];
@@ -333,7 +333,7 @@ async function verifiedCount(): Promise<{ n: number }[]> {
 }
 
 // Top senders, ranked by trust_index first and event_count as a
-// tie-breaker. Falls back to a bare query when domain_scores hasn't
+// tie-breaker. Falls back to a bare query when domain_trust hasn't
 // been migrated in yet — keeps the ops page working on first deploy
 // before the schema update is run.
 type OpsSenderRow = {
@@ -357,7 +357,7 @@ async function topSendersWithScores(): Promise<OpsSenderRow[]> {
              s.counterparty_count    AS counterparty_count,
              s.verified_event_count  AS verified_event_count
       FROM domains d
-      LEFT JOIN domain_scores s ON s.domain_id = d.id
+      LEFT JOIN domain_trust s ON s.domain_id = d.id
       ORDER BY
         COALESCE(s.trust_index, 0) DESC,
         d.event_count DESC,
@@ -415,7 +415,7 @@ async function senderTierCounts(): Promise<{
           ) AND COALESCE(s.verified_event_count, 0) = 0
         )::int AS inactive
       FROM domains d
-      LEFT JOIN domain_scores s ON s.domain_id = d.id
+      LEFT JOIN domain_trust s ON s.domain_id = d.id
     `) as unknown as Array<{
       verified: number;
       building: number;

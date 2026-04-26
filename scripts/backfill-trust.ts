@@ -20,11 +20,6 @@
 // before/after diff per domain. Idempotent — safe to re-run any time
 // the trust formula changes or a backfill is needed.
 //
-// Note: the underlying table is still called `domain_scores` because
-// renaming a Postgres table on a live DB isn't worth the migration
-// headache — the public concept is "trust index", and that's what
-// this script and the rest of the codebase speak in.
-//
 // Run it:
 //   DATABASE_URL=... npx tsx scripts/backfill-trust.ts
 // or, if .env.local has DATABASE_URL set:
@@ -82,7 +77,7 @@ async function main(): Promise<void> {
 
     const beforeRows = (await sql`
       SELECT verified_event_count, mutual_counterparties, trust_index
-      FROM domain_scores
+      FROM domain_trust
       WHERE domain_id = ${d.id}
       LIMIT 1
     `) as unknown as ScoreSnapshot[];

@@ -742,7 +742,7 @@ function Panel({
 // the page; four lines of math is below the threshold where progressive
 // disclosure earns its complexity. All numbers are imported from
 // `lib/trust.ts` so the legend can never drift from the math the
-// `domain_scores` table actually uses.
+// `domain_trust` table actually uses.
 //
 // Layout: the composite formula on top, the four sub-formulas in a
 // monospace grid below, and the verified gate as a final line. Muted

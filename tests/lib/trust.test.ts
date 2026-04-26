@@ -198,7 +198,7 @@ describe("trustTierFromMetrics", () => {
 });
 
 describe("markDomainMetricsStale", () => {
-  it("emits a single upsert against domain_scores", async () => {
+  it("emits a single upsert against domain_trust", async () => {
     enqueueSql([]);
     await markDomainMetricsStale(42);
     expect(sqlCalls.length).toBe(1);

@@ -48,7 +48,7 @@ The defense is layered:
 
 **Layer 0 (shipped) — cheap structural gates at ingest.**
 
-The inbound pipeline refuses to count any event that fails a structural check. Throttled events are written to `events_throttled` for forensics and **never** affect the sender's public `event_count` or `domain_scores`.
+The inbound pipeline refuses to count any event that fails a structural check. Throttled events are written to `events_throttled` for forensics and **never** affect the sender's public `event_count` or `domain_trust`.
 
 1. **MX existence.** The primary receiver domain must have at least one MX record. Cached 7d positive / 1d negative in `domain_reputation_cache`.
 2. **Spamhaus DBL.** The receiver domain must not be on Spamhaus DBL. Cached 24h. Listed receivers go to `events_throttled` with reason `receiver_blocklist`. **Requires `SPAMHAUS_DQS_KEY`** — the public `dbl.spamhaus.org` zone refuses queries from serverless / open resolvers, so when the key is missing the DBL layer is skipped entirely and the remaining layers carry the anti-abuse load.
@@ -58,7 +58,7 @@ All three lookups fail-open on unclassified errors so transient DNS issues don't
 
 **Layer 1 (shipped) — quality-adjusted scoring.**
 
-Raw `domains.event_count` is kept as the ingest counter, but the metric the product **exposes** is now the composite `trust_index` stored in `domain_scores` (the table name predates the rename to "trust index" — the code module is `lib/trust.ts`, the type is `DomainMetrics`, and we keep the SQL table name as-is to avoid a migration that buys nothing). The table is refreshed lazily: `insertEvent()` flips `stale = TRUE`, and `getDomainMetrics()` recomputes on read when stale or TTL-expired (24h). Five signals feed the index:
+Raw `domains.event_count` is kept as the ingest counter, but the metric the product **exposes** is the composite `trust_index` stored in `domain_trust`. The table is refreshed lazily: `insertEvent()` flips `stale = TRUE`, and `getDomainMetrics()` recomputes on read when stale or TTL-expired (24h). Five signals feed the index:
 
 - `verified_event_count` — events toward non-free-mail receivers. Free-mail accounts (`gmail.com`, `outlook.com`, etc.) still produce `events` rows but never count toward this number. List lives in `lib/trust.ts#FREE_MAIL_DOMAINS`.
 - `counterparty_count` — distinct receiver domains, all-time.
@@ -82,7 +82,7 @@ Weights are encoded in `lib/trust.ts#computeTrustIndex`: 35% activity (log-scale
 
 ### Ops-only tables
 
-`events_throttled`, `domain_reputation_cache`, and `domain_scores` are operational / forensic state. They are never joined to the public seal page, badge, or landing-page stats. `domain_scores` is the sole exception: its derived fields (trust_index, mutual_counterparties, diversity, verified_event_count) ARE surfaced — but only as aggregates, never as joins that expose receiver identities.
+`events_throttled`, `domain_reputation_cache`, and `domain_trust` are operational / forensic state. They are never joined to the public seal page, badge, or landing-page stats. `domain_trust` is the sole exception: its derived fields (trust_index, mutual_counterparties, diversity, verified_event_count) ARE surfaced — but only as aggregates, never as joins that expose receiver identities.
 
 ---
 
@@ -182,7 +182,7 @@ events                    (id, domain_id, receiver_domain, dkim_hash, witnessed_
 domain_denylist           (domain, reason, created_at)                                  -- GDPR
 domain_reputation_cache   (domain, mx_*, dbl_*, first_cert_*, updated_at)               -- anti-abuse
 events_throttled          (id, sender_domain, receiver_domain, dkim_hash, reason, ...)  -- anti-abuse
-domain_scores             (domain_id, verified_event_count, mutual_counterparties, diversity, tenure_days, trust_index, stale, computed_at)
+domain_trust              (domain_id, verified_event_count, mutual_counterparties, diversity, tenure_days, trust_index, stale, computed_at)
 ```
 
 **Post-response work in `/api/inbound`.** After the event is accepted and persisted, one job runs inside Next's `after()` hook — it does not block the 200 going back to the Cloudflare Worker:

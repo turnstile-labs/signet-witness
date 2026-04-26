@@ -241,7 +241,7 @@ export function computeTrustIndex(parts: {
 export async function markDomainMetricsStale(domainId: number): Promise<void> {
   try {
     await sql`
-      INSERT INTO domain_scores (domain_id, stale, computed_at)
+      INSERT INTO domain_trust (domain_id, stale, computed_at)
       VALUES (${domainId}, TRUE, NOW())
       ON CONFLICT (domain_id) DO UPDATE SET stale = TRUE
     `;
@@ -342,7 +342,7 @@ async function aggregate(domainId: number): Promise<RawAggregates | null> {
 }
 
 /**
- * Recompute the `domain_scores` row for this domain from scratch.
+ * Recompute the `domain_trust` row for this domain from scratch.
  * Pulls fresh CT-log tenure (lazy; falls back to first_seen on miss)
  * and persists. Called by getDomainMetrics() when stale.
  */
@@ -380,7 +380,7 @@ export async function refreshDomainMetrics(
 
   try {
     await sql`
-      INSERT INTO domain_scores (
+      INSERT INTO domain_trust (
         domain_id, verified_event_count, counterparty_count,
         mutual_counterparties, diversity, tenure_days, trust_index,
         stale, computed_at
@@ -433,7 +433,7 @@ export async function getDomainMetrics(
       SELECT verified_event_count, counterparty_count, mutual_counterparties,
              diversity::float AS diversity, tenure_days, trust_index,
              stale, computed_at
-      FROM domain_scores
+      FROM domain_trust
       WHERE domain_id = ${domainId}
       LIMIT 1
     `) as unknown as Array<{

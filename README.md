@@ -27,7 +27,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 - **Seal pages** at `/b/[domain]` — `StateBlock` verdict (Verified / Building / Warming up) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when in Building state but not yet verified
 - **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
 - **Dynamic badge** at `/badge/[domain]` — SVG or PNG, **Split Pill** layout (`[ icon STATE_WORD ][ acme.com ]`): state-tinted left half (solid green "Verified" or solid amber "Building", fixed width) + theme-aware neutral right half carrying the actual domain (adaptive width, monospace). `?theme=light|dark` flips the right-half palette so the badge reads cleanly on white-bg or dark-bg email clients. Brand attribution lives in the click target, not pixels. `ETag`-cached by `(state, theme, format)` (v16); `?preview=verified|building` for marketing surfaces
-- **Trust index** (`lib/trust.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_scores` on seal-page read
+- **Trust index** (`lib/trust.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_trust` on seal-page read
 - **Anti-abuse gate** (`lib/reputation.ts`) — MX existence check, Spamhaus DBL lookup (gated on `SPAMHAUS_DQS_KEY`), per-sender rate limits. Throttled events land in `events_throttled` and never affect public metrics
 - **GDPR rights center** at `/rights` — self-serve DNS-TXT-verified access (Art 15), opt-out (Art 21), erasure (Art 17), powered by `/api/rights/*`
 - **Inbound denylist gate** — any sealed email from or to an opted-out / erased domain is silently dropped
@@ -189,9 +189,14 @@ In your Cloudflare dashboard for `witnessed.cc`:
 
 ## Database schema
 
-The canonical schema lives in `schema.sql` and is idempotent — run it once
-on a fresh database, and safely re-run it after pulling new changes to
-pick up migrations. Current tables:
+The canonical schema lives in `schema.sql` and is idempotent — run it
+once on a fresh database to create every table at the current names.
+For *existing* databases, in-place schema changes (renames, column
+adds, index changes) live as one-shot scripts in `migrations/`,
+numbered in apply order; run any unapplied ones with
+`psql "$DATABASE_URL" -f migrations/NNN-name.sql`. The two paths
+converge: a fresh install from `schema.sql` matches a long-lived DB
+that has run every migration. Current tables:
 
 | Table | Purpose |
 |---|---|
@@ -200,7 +205,7 @@ pick up migrations. Current tables:
 | `domain_denylist` | GDPR opt-outs and erasures — consulted on every inbound email |
 | `domain_reputation_cache` | Anti-abuse: MX status, DBL status, CT-log `first_cert_at`, per-signal TTLs |
 | `events_throttled` | Forensic-only log of dropped inbound events (never read by the seal page) |
-| `domain_scores` | Lazy-refreshed trust-index row per domain (the number users see) |
+| `domain_trust` | Lazy-refreshed trust-index row per domain (the number users see) |
 
 ---
 
