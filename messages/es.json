@@ -387,6 +387,16 @@
     "eyebrow": "Listo",
     "title": "La extensión ya está activa.",
     "intro": "Desde tu próximo borrador en Gmail, seal@witnessed.cc se añade en Cco de forma silenciosa. Cada email de trabajo saliente se suma a tu registro público en witnessed.cc/b/tudominio.",
+    "pinEyebrow": "Primero — fija Witnessed",
+    "pinIntro": "Chrome no fija las extensiones automáticamente. Diez segundos ahora y el icono se queda en tu barra de herramientas a partir de entonces.",
+    "pinSteps": [
+      "Pulsa el icono de pieza de puzzle arriba a la derecha de Chrome (al lado de tu foto de perfil).",
+      "Busca Witnessed en la lista de extensiones instaladas.",
+      "Pulsa el icono del pin junto a Witnessed — el icono pasa a estar fijo en tu barra de herramientas."
+    ],
+    "pinMockHint": "Lo que buscas en el menú del puzzle:",
+    "pinReassureLabel": "¿No quieres fijarlo?",
+    "pinReassureBody": "El Cco automático funciona desde cualquier borrador de Gmail tengas o no el icono fijado. Fijarlo solo cambia la rapidez con que abres el popup de prueba de negocio.",
     "stepsEyebrow": "Qué probar ahora",
     "steps": [
       "Abre Gmail y pulsa Redactar. Verás seal@witnessed.cc ya en Cco.",

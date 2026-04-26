@@ -387,6 +387,16 @@
     "eyebrow": "You're set",
     "title": "The extension is live.",
     "intro": "From your next Gmail compose onward, seal@witnessed.cc is silently added to Bcc. Every outbound business email joins your public record at witnessed.cc/b/yourdomain.",
+    "pinEyebrow": "First — pin Witnessed",
+    "pinIntro": "Chrome doesn't pin extensions automatically. Ten seconds now and the icon stays in your toolbar from then on.",
+    "pinSteps": [
+      "Click the puzzle icon at the top-right of Chrome (next to your profile picture).",
+      "Find Witnessed in the list of installed extensions.",
+      "Click the pin icon next to it — the Witnessed icon now sits permanently in your toolbar."
+    ],
+    "pinMockHint": "What you're looking for in the puzzle dropdown:",
+    "pinReassureLabel": "Don't want to pin?",
+    "pinReassureBody": "Auto-BCC runs from every Gmail compose whether the icon is pinned or not. Pinning only affects how fast you can open the proof-of-business popup.",
     "stepsEyebrow": "What to try next",
     "steps": [
       "Open Gmail and click Compose. You'll see seal@witnessed.cc already in Bcc.",
