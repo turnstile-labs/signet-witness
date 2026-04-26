@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { sizeBadge, type BadgeTheme } from "@/lib/badge-dimensions";
+import { sizeBadge } from "@/lib/badge-dimensions";
+import { useSiteTheme } from "@/app/components/useSiteTheme";
 
 // Owner-facing badge surface on the seal page. Visually mirrors the
 // landing's badge section so what you preview is what gets pasted.
@@ -17,26 +18,11 @@ import { sizeBadge, type BadgeTheme } from "@/lib/badge-dimensions";
 // copy. Rich-text copy via clipboard.write is what makes this work:
 // Gmail's signature editor is WYSIWYG and only preserves formatting
 // from the clipboard's text/html entry.
-
-// Subscribes to the `html.light` class so the preview + copied HTML
-// stay in lockstep with the navbar's theme toggle. Lives inline (not
-// a shared hook) because it has exactly one consumer.
-function useSiteTheme(): BadgeTheme {
-  const [theme, setTheme] = useState<BadgeTheme>("dark");
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const read = (): BadgeTheme =>
-      root.classList.contains("light") ? "light" : "dark";
-    setTheme(read());
-
-    const observer = new MutationObserver(() => setTheme(read()));
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
-  return theme;
-}
+//
+// Both theme variants are preloaded on mount so the swap on toggle
+// is invisible — without that, the browser holds the previous image
+// while fetching the new one, producing a "dark flash" before the
+// light variant settles in.
 
 export default function BadgeEmbed({ domain }: { domain: string }) {
   const t = useTranslations("badge");
@@ -47,6 +33,17 @@ export default function BadgeEmbed({ domain }: { domain: string }) {
   const sealUrl = `${origin}/b/${domain}`;
   const imageUrl = `${origin}/badge/${domain}.png?theme=${theme}`;
   const previewSrc = `/badge/${domain}.png?theme=${theme}`;
+
+  // Warm both variants into the browser cache on mount. After the
+  // first paint, every navbar theme toggle is a cache hit — no
+  // re-fetch, no flicker, the visible <img> just swaps src and the
+  // pixel data is already there.
+  useEffect(() => {
+    for (const t of ["light", "dark"] as const) {
+      const preload = new Image();
+      preload.src = `${origin}/badge/${domain}.png?theme=${t}`;
+    }
+  }, [domain, origin]);
   // Width adapts to the domain so the copied <img> advertises the same
   // dimensions as the PNG we render. Height is fixed.
   //

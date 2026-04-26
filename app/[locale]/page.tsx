@@ -5,7 +5,7 @@ import CopyableEmail from "@/app/components/CopyableEmail";
 import NavBar from "@/app/components/NavBar";
 import HeroBackdrop from "@/app/components/HeroBackdrop";
 import DomainSearch from "@/app/components/DomainSearch";
-import { sizeBadge } from "@/lib/badge-dimensions";
+import DemoBadge from "@/app/components/DemoBadge";
 import { VERIFIED_INDEX } from "@/lib/trust";
 
 export const revalidate = 300;
@@ -48,8 +48,10 @@ export default async function Home({
   // `?preview=verified` so the demo always shows the verified-green
   // pill without adding a fake row to the real registry. The mock
   // is *not* clickable: it's an illustration, not a real seal page.
+  // Theme awareness + variant preloading live in `<DemoBadge>` (a
+  // client component) so this server-rendered page stays a server
+  // component end-to-end.
   const DEMO_DOMAIN = "acme.studio";
-  const demoBadge = sizeBadge(DEMO_DOMAIN);
 
   return (
     <div className="marketing flex flex-col min-h-screen bg-bg text-txt">
@@ -120,20 +122,9 @@ export default async function Home({
                   {/* Marketing demo — `?preview=verified` short-circuits
                       the DB lookup so the landing always renders a
                       verified-green pill without polluting the registry.
-                      Theme is hard-coded to dark here because the
-                      marketing page is dark-themed; the seal page's
-                      BadgeEmbed mirrors the real site theme into the
-                      copied HTML so owners always see what they'll
-                      paste. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&theme=dark`}
-                    alt={`Witnessed · ${DEMO_DOMAIN}`}
-                    width={demoBadge.width}
-                    height={demoBadge.height}
-                    className="border-0 inline-block align-middle select-none"
-                    draggable={false}
-                  />
+                      `<DemoBadge>` follows the navbar theme toggle and
+                      preloads both variants so swaps are instant. */}
+                  <DemoBadge domain={DEMO_DOMAIN} state="verified" />
                 </div>
               </div>
             </div>
