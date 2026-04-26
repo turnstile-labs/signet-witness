@@ -73,10 +73,11 @@ diversity, and corroborating Certificate Transparency history.
 
 A domain earns the **Verified** badge when the trust index crosses 65 *and*
 it has at least 3 mutual counterparties. The badge renders at `/badge/[domain]`
-in SVG or PNG as a single state-colored pill — green for verified, amber for
-building, neutral slate for the immutable witnessed.cc wordmark:
+in SVG or PNG as a Split Pill — state-tinted left half (green for verified,
+amber for building) carrying the icon + state word, theme-aware neutral right
+half carrying the actual domain:
 
-> `[ ✓ acme.com ]`  ← solid green pill, white text
+> `[ ✓ Verified | acme.com ]`  ← solid green left, neutral right, white check
 
 The badge answers the categorical question ("does this domain have a sealed
 history?"). The precise 0–100 number and the supporting stats live on the

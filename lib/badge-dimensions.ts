@@ -1,9 +1,9 @@
-// Badge layout constants for the Split Pill (current ETag: v15).
+// Badge layout constants for the Split Pill (current ETag: v16).
 //
 //   ┌──────────────────┬──────────────────┐
-//   │  ✓  Verified     │   witnessed.cc   │
+//   │  ✓  Verified     │     acme.com     │
 //   └──────────────────┴──────────────────┘
-//      tinted (state)        neutral dark
+//      tinted (state)        neutral (theme-aware)
 //
 // Two structurally distinct halves communicate exactly what each
 // fragment represents:
@@ -12,31 +12,29 @@
 //           (green for Verified, amber for Building) and carries
 //           the state icon + state word. The reader's eye lands here
 //           first because the color is the most distinctive element
-//           on the canvas.
-//   RIGHT — immutable platform. Warm-neutral stone background, light
-//           text, the wordmark "witnessed.cc". This half is identical
-//           for every badge in the world; readers learn it as the brand
-//           mark the same way they learn shields.io / GitHub badges.
+//           on the canvas. Fixed width so a Verified badge and a
+//           Building badge for the same domain share the exact same
+//           canvas — no reflow on graduation.
+//   RIGHT — the domain itself ("acme.com"). Theme-aware neutral
+//           background (light or dark stone) + monospace domain text.
+//           This half answers the standalone-context question: when
+//           the badge is dropped on a Linktree, an invoice footer, or
+//           any surface without surrounding email-signature context,
+//           the reader knows immediately *which* domain is being
+//           vouched for. Variable width — adapts to the domain length.
 //
-// The embedded domain (e.g. "acme.com") was dropped from the rendered
-// pixels in the Split Pill redesign. Reasons:
+// Brand attribution lives in the *click target* (`witnessed.cc/b/<domain>`),
+// not in the rendered pixels. Earlier iterations (v13–v15) hard-coded
+// `witnessed.cc` as the right-half wordmark; that read as "witnessed.cc
+// is verified" on every page and was the wrong call.
 //
-//   1. Context already supplies it. A signature badge sits next to
-//      `name@acme.com`; a website badge sits on `acme.com`. Showing
-//      the domain inside the pill duplicated information the reader
-//      already had.
-//   2. Constant-width canvas. With domain text gone, every badge is
-//      the same pixel size. Email signatures that mix multiple
-//      witnessed.cc badges from different domains line up cleanly,
-//      and the `<img>` in a copied signature can ship one fixed
-//      `width`/`height` pair without parameter calculation.
-//   3. Stronger brand identity. The Split Pill is the badge's
-//      identity, not the embedded domain — same way `shields.io`
-//      badges are identified by their split shape, not their text.
-//
-// The URL still encodes the domain (`/badge/acme.com.png`) because
-// that's how we look up the rendered state — but it stops being
-// surfaced as text.
+// Theme variance is reintroduced because the right half's background
+// is the half most likely to clash with an email client's chrome. A
+// dark stone right half on a white-bg Gmail composes heavy; a light
+// stone right half on a dark-mode Apple Mail composes weak. Owners
+// pick the variant that matches their email context (controlled by
+// the site theme — what they see in the seal-page preview is what
+// they paste).
 //
 // This module is pure JS — safe to import from server routes and
 // client components alike, which keeps the rendered image and the
@@ -46,40 +44,32 @@ import type { BadgeState } from "@/lib/badge-state";
 
 // ── Public dimensions ─────────────────────────────────────────
 //
-// Width is constant. Height stays at 32px so the badge remains
-// signature-compatible (the standard email signature line height).
+// Height stays at 32px so the badge remains signature-compatible
+// (the standard email signature line height). Width is *domain-
+// adaptive*: short domains produce compact pills; long domains grow
+// up to a hard cap and then truncate with an ellipsis.
 //
-// v14 tightened the canvas from 224×32 (7:1) to 212×32 (~6.6:1).
-// The 7:1 ratio rendered as a banner inside Gmail compose; 6.6:1
-// reads as a stamp, which is what a signature mark should feel like.
-// The savings come entirely from dead space on the LEFT half — the
-// state word slot was over-provisioned. RIGHT half kept its breathing
-// room around the wordmark.
-//
-// Note: an interim 204×32 (~6.4:1) was tried and shipped briefly. It
-// was 8px too tight on the LEFT half: at the monospace metric Satori
-// renders, "Verified" landed within ~2px of the divider, which read
-// as overflow. 212×32 restores ~10px of slack between the longest
-// state word and the divider while keeping the stamp feel.
+// Pre-v16 the canvas was a constant 212×32. That property was nice
+// for signatures stacking multiple badges side by side, but in
+// practice signatures carry one badge for one domain — the constant-
+// width property never paid for the loss of the "what domain is
+// this vouching for?" answer.
 export const BADGE_HEIGHT = 32;
-export const BADGE_WIDTH = 212;
 
 // ── Half widths ──────────────────────────────────────────────
 //
-// The pill is structurally split at LEFT_W. Both halves share the
-// same height; LEFT carries icon + state word, RIGHT carries the
-// wordmark "witnessed.cc". The split point is hard-coded — there
-// is no responsive behaviour because nothing in the rendered output
-// depends on per-domain text length anymore.
+// LEFT half is a constant 104px — wide enough for the longest state
+// word ("Verified") + icon + pads, with ~10px of slack. Same value
+// shipped in v15. Holds because the LEFT half does NOT depend on the
+// domain; it's purely state-driven.
 export const LEFT_W = 104;
-export const RIGHT_W = BADGE_WIDTH - LEFT_W;
 
 // ── Inner layout ─────────────────────────────────────────────
 //
 // Pads + icon size, used by the SVG/PNG renderers. The state word
 // is rendered with a fixed-width slot wide enough for any tier's
 // label, so a "Verified" badge and a "Building" badge produce the
-// exact same canvas — no reflow on graduation.
+// exact same LEFT half — no reflow on graduation.
 export const PAD_L = 10;     // outer left pad on LEFT half
 export const PAD_R = 12;     // outer right pad on RIGHT half
 export const ICON_D = 14;    // icon diameter (px)
@@ -108,22 +98,85 @@ const STATE_WORD_MAX_CHARS = Math.max(
 );
 export const STATE_W_RESERVED = STATE_WORD_MAX_CHARS * CHAR_W;
 
-// ── Platform wordmark ────────────────────────────────────────
+// ── Theme palette (RIGHT half) ───────────────────────────────
 //
-// The right half always renders this. Constant. If the brand domain ever
-// changes, update here and the renderer picks it up — no other surface
-// hard-codes it.
-export const PLATFORM_LABEL = "witnessed.cc";
+// LEFT half stays state-tinted regardless of theme — green/amber are
+// saturated enough to read on either bg, and the state color IS the
+// state's identity. Only the RIGHT half flips with theme.
+//
+//   dark  — warm-neutral charcoal (stone-900) + light text. Reads
+//           cleanly on dark email clients (Apple Mail dark mode,
+//           Outlook dark theme).
+//   light — near-white (stone-50) + dark text + subtle border. Reads
+//           cleanly on white email clients (Gmail web, Apple Mail
+//           default).
+//
+// Owners pick the variant that matches their email context via the
+// site theme toggle (preview + copied HTML stay in lockstep).
+export type BadgeTheme = "light" | "dark";
 
-// ── sizeBadge: legacy API surface ────────────────────────────
+export const DEFAULT_BADGE_THEME: BadgeTheme = "dark";
+
+export interface BadgeThemePalette {
+  rightBg: string;
+  rightFg: string;
+  border: string;
+}
+
+export const BADGE_THEMES: Record<BadgeTheme, BadgeThemePalette> = {
+  dark: {
+    rightBg: "#1c1917", // stone-900
+    rightFg: "#f5f5f4", // stone-100
+    border: "#0c0a09",  // stone-950
+  },
+  light: {
+    rightBg: "#fafaf9", // stone-50
+    rightFg: "#1c1917", // stone-900
+    border: "#d6d3d1",  // stone-300 — visible separation from white email bg
+  },
+};
+
+export function isBadgeTheme(value: string | null | undefined): value is BadgeTheme {
+  return value === "light" || value === "dark";
+}
+
+// ── Right-half width (adaptive) ──────────────────────────────
 //
-// Returns constants regardless of `domain` so callers (BadgeEmbed,
-// landing-page demo, badge route) can keep their existing call shape
-// while the rendered output is now domain-independent. Width/height
-// are stable — this is the whole point of the Split Pill redesign.
-export function sizeBadge(_domain: string): {
+// The right half hosts the domain text. Width = horizontal pads +
+// rendered char count × monospace metric, with a floor (so a 4-char
+// domain doesn't produce a comically narrow half) and an implicit
+// ceiling enforced by `truncateDomain`.
+const MIN_RIGHT_W = 88; // floor — keeps the pill from looking lopsided
+export const MAX_DOMAIN_CHARS = 26; // longer domains get an ellipsis
+
+// Truncates a domain to the rendered char budget. Middle-ellipsis
+// would be more "honest" but also more ambiguous (which TLD?), and
+// in practice the pathological case is a long subdomain on a short
+// root, so a tail-ellipsis preserves the suffix identity.
+export function truncateDomain(domain: string): string {
+  if (domain.length <= MAX_DOMAIN_CHARS) return domain;
+  return domain.slice(0, MAX_DOMAIN_CHARS - 1) + "…";
+}
+
+export function rightWidthFor(domain: string): number {
+  const text = truncateDomain(domain);
+  const w = Math.ceil(text.length * CHAR_W) + PAD_R * 2;
+  return Math.max(w, MIN_RIGHT_W);
+}
+
+// ── sizeBadge: total canvas for a domain ─────────────────────
+//
+// Total width = fixed LEFT_W + adaptive right half. Callers
+// (BadgeEmbed, landing-page demo, badge route) use the result to
+// keep the rendered image and the `<img>` tag's advertised
+// dimensions in lockstep — pasted signatures never reflow because
+// the `<img width=…>` matches the PNG's intrinsic width.
+export function sizeBadge(domain: string): {
   width: number;
   height: number;
 } {
-  return { width: BADGE_WIDTH, height: BADGE_HEIGHT };
+  return {
+    width: LEFT_W + rightWidthFor(domain),
+    height: BADGE_HEIGHT,
+  };
 }

@@ -117,13 +117,17 @@ export default async function Home({
                   {t("badge.signatureContact")}
                 </p>
                 <div className="mt-4">
-                  {/* Single asset — state color IS the badge identity.
-                      Reads the same on any email-client bg (light or
-                      dark), so no theme variance needed here or in the
-                      route itself. */}
+                  {/* Marketing demo — `?preview=verified` short-circuits
+                      the DB lookup so the landing always renders a
+                      verified-green pill without polluting the registry.
+                      Theme is hard-coded to dark here because the
+                      marketing page is dark-themed; the seal page's
+                      BadgeEmbed mirrors the real site theme into the
+                      copied HTML so owners always see what they'll
+                      paste. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified`}
+                    src={`/badge/${DEMO_DOMAIN}.svg?preview=verified&theme=dark`}
                     alt={`Witnessed · ${DEMO_DOMAIN}`}
                     width={demoBadge.width}
                     height={demoBadge.height}

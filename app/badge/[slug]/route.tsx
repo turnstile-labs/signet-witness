@@ -1,15 +1,18 @@
 import { ImageResponse } from "next/og";
 import {
   BADGE_HEIGHT,
-  BADGE_WIDTH,
+  BADGE_THEMES,
+  DEFAULT_BADGE_THEME,
   GAP_ICON_TEXT,
   ICON_D,
   LEFT_W,
   PAD_L,
   PAD_R,
-  PLATFORM_LABEL,
-  RIGHT_W,
   STATE_WORDS,
+  isBadgeTheme,
+  rightWidthFor,
+  truncateDomain,
+  type BadgeTheme,
 } from "@/lib/badge-dimensions";
 import {
   resolveSnapshot,
@@ -17,27 +20,27 @@ import {
   type BadgeState,
 } from "@/lib/badge-state";
 
-// Split Pill (current ETag: v15).
+// Split Pill (current ETag: v16).
 //
 //   ┌──────────────────┬──────────────────┐
-//   │  ✓  Verified     │   witnessed.cc   │
+//   │  ✓  Verified     │     acme.com     │
 //   └──────────────────┴──────────────────┘
 //
 // LEFT half  — state-tinted bg (green for Verified, amber for Building)
-//              + white icon + white state word. The variable half.
-// RIGHT half — stone-900 bg + light text "witnessed.cc". The immutable
-//              platform mark. Identical for every badge in the world.
+//              + white icon + white state word. Constant 104px.
+// RIGHT half — theme-aware neutral bg + monospace domain text.
+//              Width adapts to the domain. The brand attribution lives
+//              in the click target (`witnessed.cc/b/<domain>`), not
+//              in pixels.
 //
 // A 1px divider sits at LEFT_W. Outer rounded-full clipping gives the
 // pill its signature shape; the divider stays straight inside the clip.
 //
-// No embedded domain text — the URL still encodes which domain to look
-// up (`/badge/acme.com.png`), but the rendered output is constant width
-// and constant content per state. See `lib/badge-dimensions.ts` for the
-// rationale.
+// `?theme=light|dark` flips the RIGHT half palette. Default is `dark`
+// (back-compat for any badge URL emitted before v16). LEFT half does
+// NOT theme — the saturated state color IS the state's identity.
 
 const H = BADGE_HEIGHT;
-const W = BADGE_WIDTH;
 const R = BADGE_HEIGHT / 2; // pill (rounded-full)
 
 // Accept slugs like "acme.com", "acme.com.svg" or "acme.com.png".
@@ -70,15 +73,14 @@ function esc(s: string): string {
 //
 // Two tones per state on the LEFT half: a solid background for the
 // state tint and a foreground colour for icon/text. The RIGHT half
-// is constant — stone-900 bg, stone-100 text — so the platform mark
-// reads as immutable across every state and every email-client theme.
-interface Palette {
-  bg: string;     // LEFT half background
-  fg: string;     // LEFT half text + icon
-  iconNotch: string; // inner notch colour for the icon (matches bg)
+// reads from `BADGE_THEMES[theme]` (see `lib/badge-dimensions.ts`).
+interface LeftPalette {
+  bg: string;
+  fg: string;
+  iconNotch: string;
 }
 
-const PALETTES: Record<BadgeState, Palette> = {
+const STATE_PALETTES: Record<BadgeState, LeftPalette> = {
   verified: {
     bg: "#16a34a",          // emerald
     fg: "#ffffff",
@@ -90,19 +92,6 @@ const PALETTES: Record<BadgeState, Palette> = {
     iconNotch: "#d97706",
   },
 };
-
-// v14 — warm-neutral dark for the right half.
-//
-// The previous slate-900 (#0f172a) was a cool blue-black that fought
-// both state colours: it pulled the eye away from the warm amber
-// (Building) and crushed against the cool emerald (Verified). Stone-900
-// is a warm-neutral charcoal — no blue, no green, no purple — so it
-// sits underneath whichever state half is paired with it without
-// clashing. Same role as the slate it replaces: the immutable platform
-// half. Just calibrated to sit in the brand's palette properly.
-const RIGHT_BG = "#1c1917";    // stone-900 (warm charcoal)
-const RIGHT_FG = "#f5f5f4";    // stone-100
-const BORDER   = "#0c0a09";    // stone-950 (subtle outer + divider)
 
 function stateAria(state: BadgeState): string {
   switch (state) {
@@ -116,9 +105,13 @@ function stateAria(state: BadgeState): string {
 // Authored as raw SVG (not Satori) for two reasons: it's a tiny string
 // payload (no wasm warmup), and the clip-path + line primitives give
 // the cleanest split rendering across browsers and email clients.
-function renderSvg(domain: string, state: BadgeState): string {
-  const p = PALETTES[state];
+function renderSvg(domain: string, state: BadgeState, theme: BadgeTheme): string {
+  const p = STATE_PALETTES[state];
+  const t = BADGE_THEMES[theme];
   const stateWord = STATE_WORDS[state];
+  const domainText = truncateDomain(domain);
+  const rightW = rightWidthFor(domain);
+  const W = LEFT_W + rightW;
 
   // Icon centred on the LEFT half's icon column.
   const iconCX = PAD_L + ICON_D / 2;
@@ -128,8 +121,8 @@ function renderSvg(domain: string, state: BadgeState): string {
   // State word baseline starts after the icon + gap.
   const stateX = PAD_L + ICON_D + GAP_ICON_TEXT;
 
-  // Right half: wordmark centred horizontally inside its half.
-  const rightCenterX = LEFT_W + RIGHT_W / 2;
+  // Right half: domain centred horizontally inside its half.
+  const rightCenterX = LEFT_W + rightW / 2;
 
   // 13px monospace digits sit ~5px below the centre line for mid-cap
   // alignment on a 32px canvas. Holds across SF Mono / Menlo / Consolas.
@@ -158,12 +151,12 @@ function renderSvg(domain: string, state: BadgeState): string {
   </defs>
   <g clip-path="url(#pill)">
     <rect x="0" y="0" width="${LEFT_W}" height="${H}" fill="${p.bg}"/>
-    <rect x="${LEFT_W}" y="0" width="${RIGHT_W}" height="${H}" fill="${RIGHT_BG}"/>
-    <line x1="${LEFT_W}" y1="0" x2="${LEFT_W}" y2="${H}" stroke="${BORDER}" stroke-width="1" stroke-opacity="0.55"/>
+    <rect x="${LEFT_W}" y="0" width="${rightW}" height="${H}" fill="${t.rightBg}"/>
+    <line x1="${LEFT_W}" y1="0" x2="${LEFT_W}" y2="${H}" stroke="${t.border}" stroke-width="1" stroke-opacity="0.55"/>
   </g>
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R - 0.5}" fill="none" stroke="${BORDER}" stroke-width="1" stroke-opacity="0.4"/>${iconEl}
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="${R - 0.5}" fill="none" stroke="${t.border}" stroke-width="1" stroke-opacity="0.55"/>${iconEl}
   <text x="${stateX}" y="${baselineY}" ${textFont} font-weight="700" fill="${p.fg}">${esc(stateWord)}</text>
-  <text x="${rightCenterX}" y="${baselineY}" ${textFont} font-weight="600" fill="${RIGHT_FG}" text-anchor="middle">${esc(PLATFORM_LABEL)}</text>
+  <text x="${rightCenterX}" y="${baselineY}" ${textFont} font-weight="600" fill="${t.rightFg}" text-anchor="middle">${esc(domainText)}</text>
 </svg>`;
 }
 
@@ -176,10 +169,15 @@ function renderSvg(domain: string, state: BadgeState): string {
 function renderPng(
   domain: string,
   state: BadgeState,
+  theme: BadgeTheme,
   cacheHeaders: Record<string, string>,
 ) {
-  const p = PALETTES[state];
+  const p = STATE_PALETTES[state];
+  const t = BADGE_THEMES[theme];
   const stateWord = STATE_WORDS[state];
+  const domainText = truncateDomain(domain);
+  const rightW = rightWidthFor(domain);
+  const W = LEFT_W + rightW;
 
   const PNG_W = W * 2;
   const PNG_H = H * 2;
@@ -216,7 +214,7 @@ function renderPng(
           width: "100%",
           height: "100%",
           borderRadius: R * 2,
-          border: `1px solid ${BORDER}`,
+          border: `1px solid ${t.border}`,
           overflow: "hidden",
           fontFamily: "monospace",
           boxSizing: "border-box",
@@ -249,13 +247,13 @@ function renderPng(
             {stateWord}
           </span>
         </div>
-        {/* RIGHT — neutral platform half */}
+        {/* RIGHT — neutral half carrying the domain */}
         <div
           style={{
             display: "flex",
-            width: RIGHT_W * 2,
+            width: rightW * 2,
             height: "100%",
-            backgroundColor: RIGHT_BG,
+            backgroundColor: t.rightBg,
             alignItems: "center",
             justifyContent: "center",
             paddingRight: PAD_R * 2,
@@ -267,12 +265,12 @@ function renderPng(
               fontFamily: "monospace",
               fontWeight: 600,
               fontSize: 26,
-              color: RIGHT_FG,
+              color: t.rightFg,
               lineHeight: 1,
               letterSpacing: -0.2,
             }}
           >
-            {PLATFORM_LABEL}
+            {domainText}
           </span>
         </div>
       </div>
@@ -297,22 +295,23 @@ type Snapshot = BadgeSnapshot;
 //                        — edge serves last version while re-fetching in the
 //                          background, so users never wait on a cold cache
 //
-// The ETag is keyed on `(state, format, layout-version)`. State is the
-// only variable now; the layout version moves only on a real visual
-// redesign.
-//   v13 = Split Pill (state half + neutral platform half, no embedded
-//         domain text).
-//   v14 = Tightened canvas (224→204) and warm-neutral dark for the
-//         right half (slate-900 → stone-900). Same shape, calibrated
-//         proportions and palette for email-client rendering.
-//   v15 = LEFT_W bump (96→104) after v14's left half clipped against
-//         "Verified" at the metric Satori actually renders. Total
-//         canvas 204→212.
+// The ETag is keyed on `(state, theme, format, layout-version)`. Different
+// URLs already key by domain, so the domain itself doesn't enter the ETag.
+//
+//   v13 = Split Pill (state half + neutral platform half, embedded
+//         domain dropped). Right half = "witnessed.cc" wordmark.
+//   v14 = Tightened canvas + warm-neutral dark for the right half
+//         (slate-900 → stone-900).
+//   v15 = LEFT_W bump (96→104) to clear "Verified" from the divider.
+//   v16 = Right half = the actual domain (was a fixed witnessed.cc
+//         wordmark). Theme variance reintroduced (`?theme=light|dark`).
+//         Width is now domain-adaptive.
 export function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
+  theme: BadgeTheme,
 ): Record<string, string> {
-  const etag = `W/"${snapshot.state}-${format}-v15"`;
+  const etag = `W/"${snapshot.state}-${theme}-${format}-v16"`;
   return {
     "Cache-Control":
       "public, max-age=60, s-maxage=120, stale-while-revalidate=3600",
@@ -350,22 +349,29 @@ export async function GET(
       ? previewParam
       : null;
 
+  // `?theme=light|dark` flips the RIGHT half palette. Default falls
+  // back to dark so any badge URL emitted before v16 keeps rendering.
+  const themeParam = url.searchParams.get("theme");
+  const theme: BadgeTheme = isBadgeTheme(themeParam)
+    ? themeParam
+    : DEFAULT_BADGE_THEME;
+
   const snapshot: Snapshot = previewState
     ? { state: previewState, count: 0 }
     : await resolveSnapshot(domain);
-  const headers = cacheHeaders(snapshot, format);
+  const headers = cacheHeaders(snapshot, format, theme);
 
   // Conditional GET — respond 304 when the caller (CDN, Gmail proxy,
-  // browser) already has the same (state, format) fingerprint.
+  // browser) already has the same (state, theme, format) fingerprint.
   const ifNoneMatch = request.headers.get("if-none-match");
   if (ifNoneMatch && ifNoneMatch === headers.ETag) {
     return new Response(null, { status: 304, headers });
   }
 
   if (format === "png") {
-    return renderPng(domain, snapshot.state, headers);
+    return renderPng(domain, snapshot.state, theme, headers);
   }
 
-  const svg = renderSvg(domain, snapshot.state);
+  const svg = renderSvg(domain, snapshot.state, theme);
   return new Response(svg, { headers });
 }

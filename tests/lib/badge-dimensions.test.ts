@@ -1,26 +1,27 @@
 import { describe, it, expect } from "vitest";
 import {
   BADGE_HEIGHT,
-  BADGE_WIDTH,
+  BADGE_THEMES,
+  DEFAULT_BADGE_THEME,
   GAP_ICON_TEXT,
   ICON_D,
   LEFT_W,
+  MAX_DOMAIN_CHARS,
   PAD_L,
   PAD_R,
-  PLATFORM_LABEL,
-  RIGHT_W,
   STATE_W_RESERVED,
   STATE_WORDS,
+  isBadgeTheme,
+  rightWidthFor,
   sizeBadge,
+  truncateDomain,
 } from "@/lib/badge-dimensions";
 
-describe("badge-dimensions (Split Pill)", () => {
+describe("badge-dimensions (Split Pill v16)", () => {
   describe("constants", () => {
-    it("exposes a stable, constant canvas", () => {
+    it("exposes a stable height + fixed left half", () => {
       expect(BADGE_HEIGHT).toBe(32);
-      expect(BADGE_WIDTH).toBeGreaterThan(0);
-      // The two halves account for the entire canvas — no slack space.
-      expect(LEFT_W + RIGHT_W).toBe(BADGE_WIDTH);
+      expect(LEFT_W).toBeGreaterThan(0);
     });
 
     it("ships sane inner-layout primitives", () => {
@@ -44,40 +45,90 @@ describe("badge-dimensions (Split Pill)", () => {
       expect(STATE_WORDS.building).toBe("Building");
       expect(Object.keys(STATE_WORDS)).toHaveLength(2);
     });
+  });
 
-    it("uses witnessed.cc as the immutable platform wordmark", () => {
-      // The right half is the brand mark; renaming this token here is
-      // the single source of truth for every badge in the wild.
-      expect(PLATFORM_LABEL).toBe("witnessed.cc");
+  describe("themes", () => {
+    it("ships a light + dark palette for the right half", () => {
+      expect(BADGE_THEMES.dark.rightBg).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(BADGE_THEMES.dark.rightFg).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(BADGE_THEMES.light.rightBg).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(BADGE_THEMES.light.rightFg).toMatch(/^#[0-9a-f]{6}$/i);
+      // Light + dark should not share the same right-half background —
+      // that's the whole point of theme variance.
+      expect(BADGE_THEMES.light.rightBg).not.toBe(BADGE_THEMES.dark.rightBg);
     });
 
-    it("reserves room for the wordmark on the right half", () => {
-      // The right half must fit "witnessed.cc" + outer pads at the
-      // monospace metric used by the renderer (≤ 7.8 px/char).
-      const wordmarkW = PLATFORM_LABEL.length * 7.8;
-      expect(RIGHT_W).toBeGreaterThanOrEqual(wordmarkW + PAD_R);
+    it("defaults to dark for back-compat with pre-v16 URLs", () => {
+      // Any badge URL emitted before theme variance was reintroduced
+      // (v15-) lives in pasted signatures with no `?theme=` param. Those
+      // must keep rendering, and the reasonable fallback is the v15
+      // pixel set: dark right half.
+      expect(DEFAULT_BADGE_THEME).toBe("dark");
+    });
+
+    it("isBadgeTheme guards external input", () => {
+      expect(isBadgeTheme("light")).toBe(true);
+      expect(isBadgeTheme("dark")).toBe(true);
+      expect(isBadgeTheme("amoled")).toBe(false);
+      expect(isBadgeTheme(null)).toBe(false);
+      expect(isBadgeTheme(undefined)).toBe(false);
+      expect(isBadgeTheme("")).toBe(false);
     });
   });
 
-  describe("sizeBadge", () => {
-    it("returns the constant canvas regardless of domain length", () => {
-      // The whole point of the Split Pill: the rendered output no longer depends
-      // on the embedded domain, so width/height are stable. Pasted
-      // <img width=…> tags stay accurate forever.
-      const a = sizeBadge("acme.com");
-      const b = sizeBadge("very-long-company-name.studio");
-      const c = sizeBadge("");
-      expect(a).toEqual({ width: BADGE_WIDTH, height: BADGE_HEIGHT });
-      expect(a).toEqual(b);
-      expect(b).toEqual(c);
+  describe("truncateDomain", () => {
+    it("passes short domains through untouched", () => {
+      expect(truncateDomain("acme.com")).toBe("acme.com");
+      expect(truncateDomain("witnessed.cc")).toBe("witnessed.cc");
     });
 
-    it("state-agnostic: same canvas across Building → Verified", () => {
+    it("tail-truncates long domains with an ellipsis", () => {
+      const long = "very-long-subdomain.example-corp.studio"; // > MAX
+      const out = truncateDomain(long);
+      expect(out.length).toBe(MAX_DOMAIN_CHARS);
+      expect(out.endsWith("…")).toBe(true);
+    });
+
+    it("respects the max-char budget exactly at the boundary", () => {
+      const exact = "a".repeat(MAX_DOMAIN_CHARS);
+      expect(truncateDomain(exact)).toBe(exact);
+    });
+  });
+
+  describe("rightWidthFor + sizeBadge", () => {
+    it("right half grows with domain length", () => {
+      const short = rightWidthFor("a.io");
+      const long = rightWidthFor("very-long-company.studio");
+      expect(long).toBeGreaterThan(short);
+    });
+
+    it("right half has a sane floor for very short domains", () => {
+      // Lopsided pills (tiny right half hugging "Verified" on the left)
+      // read poorly. The floor keeps the badge looking balanced.
+      expect(rightWidthFor("a.io")).toBeGreaterThanOrEqual(80);
+    });
+
+    it("sizeBadge composes total width as LEFT_W + right half", () => {
+      const domain = "acme.studio";
+      const total = sizeBadge(domain);
+      expect(total.height).toBe(BADGE_HEIGHT);
+      expect(total.width).toBe(LEFT_W + rightWidthFor(domain));
+    });
+
+    it("sizeBadge is state-agnostic — same canvas across Building → Verified", () => {
       // Crucial invariant for email signatures — a pasted <img width=…>
       // must stay in lockstep with the rendered PNG even after the
       // domain graduates from Building to Verified. sizeBadge takes
       // only the domain; this test pins the contract.
       expect(sizeBadge("witnessed.cc")).toEqual(sizeBadge("witnessed.cc"));
+    });
+
+    it("sizeBadge caps at MAX_DOMAIN_CHARS for pathological domains", () => {
+      // A 60-char domain shouldn't produce a 600px pill. The truncation
+      // ceiling means width tops out at "max-domain-chars × char-w".
+      const pathological = "a".repeat(60) + ".com";
+      const cap = "a".repeat(MAX_DOMAIN_CHARS);
+      expect(sizeBadge(pathological).width).toBe(sizeBadge(cap).width);
     });
   });
 });

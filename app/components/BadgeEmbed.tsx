@@ -1,28 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { sizeBadge } from "@/lib/badge-dimensions";
+import { sizeBadge, type BadgeTheme } from "@/lib/badge-dimensions";
 
 // Owner-facing badge surface on the seal page. Visually mirrors the
 // landing's badge section so what you preview is what gets pasted.
 // One job: get a *clickable* badge onto the clipboard so the owner
 // can paste it into their email signature (Gmail, Apple Mail, Outlook).
 //
-// The badge itself is one asset per state (no theme variance) — the
-// state color IS the badge's identity, and it reads on any email
-// client bg, light or dark. Rich-text copy via clipboard.write is
-// what makes this work: Gmail's signature editor is WYSIWYG and only
-// preserves formatting from the clipboard's text/html entry.
+// Theme variance is driven by the site theme — owners flip the
+// navbar's light/dark toggle, the preview reflects it instantly, and
+// the copied HTML carries the matching `?theme=` so the pasted badge
+// keeps reading the way they saw it. The copy button is a single
+// affordance: pick the theme that matches your email client, then
+// copy. Rich-text copy via clipboard.write is what makes this work:
+// Gmail's signature editor is WYSIWYG and only preserves formatting
+// from the clipboard's text/html entry.
+
+// Subscribes to the `html.light` class so the preview + copied HTML
+// stay in lockstep with the navbar's theme toggle. Lives inline (not
+// a shared hook) because it has exactly one consumer.
+function useSiteTheme(): BadgeTheme {
+  const [theme, setTheme] = useState<BadgeTheme>("dark");
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = (): BadgeTheme =>
+      root.classList.contains("light") ? "light" : "dark";
+    setTheme(read());
+
+    const observer = new MutationObserver(() => setTheme(read()));
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return theme;
+}
 
 export default function BadgeEmbed({ domain }: { domain: string }) {
   const t = useTranslations("badge");
+  const theme = useSiteTheme();
   const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
 
   const origin = "https://witnessed.cc";
   const sealUrl = `${origin}/b/${domain}`;
-  const imageUrl = `${origin}/badge/${domain}.png`;
-  const previewSrc = `/badge/${domain}.png`;
+  const imageUrl = `${origin}/badge/${domain}.png?theme=${theme}`;
+  const previewSrc = `/badge/${domain}.png?theme=${theme}`;
   // Width adapts to the domain so the copied <img> advertises the same
   // dimensions as the PNG we render. Height is fixed.
   //
