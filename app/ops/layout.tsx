@@ -6,6 +6,11 @@
 // across surfaces (landing → ops → extension popup all stay in
 // sync), without dragging next-intl into a route that doesn't need
 // it.
+//
+// Owning the <head> means we also lose Next.js's auto-injected
+// viewport meta, so we add it explicitly below — without it mobile
+// browsers render the page at desktop width and force pinch-zoom on
+// every interaction.
 
 export default function OpsLayout({
   children,
@@ -15,6 +20,10 @@ export default function OpsLayout({
   return (
     <html lang="en">
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1"
+        />
         {/* Prevent flash of wrong theme — runs before render. */}
         <script
           dangerouslySetInnerHTML={{

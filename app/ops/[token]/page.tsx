@@ -193,10 +193,10 @@ export default async function OpsPage({
       : null;
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-8 font-mono text-sm text-txt bg-bg min-h-screen">
+    <main className="max-w-6xl mx-auto px-3 sm:px-6 py-5 sm:py-8 font-mono text-sm text-txt bg-bg min-h-screen">
       {/* Header ·································· */}
-      <header className="flex flex-wrap items-baseline justify-between gap-4 pb-4 mb-6 border-b border-border">
-        <div>
+      <header className="flex items-start justify-between gap-3 pb-4 mb-6 border-b border-border">
+        <div className="min-w-0">
           <h1 className="text-lg font-bold tracking-tight">
             Witnessed ops
           </h1>
@@ -204,8 +204,8 @@ export default async function OpsPage({
             Live view. Fresh DB query on every load.
           </p>
         </div>
-        <div className="flex items-start gap-3">
-          <p className="text-[0.65rem] text-muted-2 tabular-nums text-right leading-relaxed">
+        <div className="flex items-start gap-2 sm:gap-3 shrink-0">
+          <p className="hidden sm:block text-[0.65rem] text-muted-2 tabular-nums text-right leading-relaxed">
             {now}
             <br />
             {env} · {commit}
@@ -214,6 +214,16 @@ export default async function OpsPage({
           <OpsThemeToggle />
         </div>
       </header>
+      {/* Compact build-info line for narrow viewports — the header
+          tries to fit it inline first, but on phones the timestamp +
+          env + commit + db-size is too much for a single row without
+          either wrapping ugly or shrinking the title. Below the
+          divider it's still glanceable but doesn't compete with the
+          h1. Hidden on sm+ where the inline version takes over. */}
+      <p className="sm:hidden text-[0.6rem] text-muted-2 tabular-nums leading-relaxed -mt-3 mb-5">
+        {now} · {env} · {commit}
+        {stats.dbSize ? ` · ${stats.dbSize}` : ""}
+      </p>
 
       {/* KPI strip — 4 tiles, one glance = full health read ·······
           Tiles answer the three operator questions:
@@ -310,7 +320,7 @@ export default async function OpsPage({
           top-of-page glance. */}
       <section
         aria-label="scale"
-        className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 mb-3 rounded-md border border-border bg-surface/30 text-xs tabular-nums"
+        className="flex flex-wrap items-center gap-x-5 sm:gap-x-6 gap-y-2 px-3 sm:px-4 py-3 mb-3 rounded-md border border-border bg-surface/30 text-xs tabular-nums"
       >
         <Stat label="Registered domains" value={stats.domains} />
         <Stat
@@ -338,14 +348,14 @@ export default async function OpsPage({
           `events` table, not `events_throttled`, so the y-axis is the
           ledger-bound subset of inbound. Anti-abuse rejections are
           surfaced separately in the Anti-abuse panel below. */}
-      <section className="grid md:grid-cols-[1fr_13rem] gap-6 mb-8 p-5 rounded-md border border-border bg-surface/30">
+      <section className="grid md:grid-cols-[1fr_13rem] gap-5 sm:gap-6 mb-6 sm:mb-8 p-4 sm:p-5 rounded-md border border-border bg-surface/30">
         <div className="min-w-0">
           <h2 className="text-xs uppercase tracking-widest text-muted-2 mb-4">
             Accepted activity · last 30 days
           </h2>
           <Chart data={stats.eventsByDay} days={30} />
         </div>
-        <div className="flex flex-col gap-3 md:border-l md:border-border md:pl-6 justify-center">
+        <div className="grid grid-cols-2 md:flex md:flex-col gap-x-4 gap-y-3 md:border-l md:border-border md:pl-6 md:pt-0 pt-4 border-t md:border-t-0 border-border md:justify-center">
           <InlineStat
             label="Accepted"
             value={stats.events30d.toLocaleString()}
@@ -376,10 +386,22 @@ export default async function OpsPage({
           The "Top recipients" panel that used to live alongside this
           one was a network map, not health data; it answered none of
           the three operator questions framing this dashboard, so it
-          was removed in favor of the single full-width domains table. */}
-      <div className="mb-8">
+          was removed in favor of the single full-width domains table.
+
+          Mobile: the Index column is hidden because the StatusBadge
+          already encodes the gate ("Verified" requires index ≥
+          VERIFIED_INDEX), so the raw number is reference info — its
+          formula lives in the caption above. Hiding it gives the
+          three columns operators glance at (domain, status, emails)
+          enough room not to wrap. */}
+      <div className="mb-6 sm:mb-8">
         <Panel
           title="Registered domains"
+          subtitle={
+            stats.topSenders.length > 0
+              ? `Top ${Math.min(8, stats.topSenders.length)} by emails`
+              : undefined
+          }
           legend={
             <Legend
               items={[
@@ -397,13 +419,15 @@ export default async function OpsPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
-                  <th className="py-2 pr-3 font-normal">Domain</th>
-                  <th className="py-2 pr-3 font-normal">Status</th>
-                  <th className="py-2 pr-3 font-normal text-right">
+                  <th scope="col" className="py-2 pr-3 font-normal">Domain</th>
+                  <th scope="col" className="py-2 pr-3 font-normal">Status</th>
+                  <th scope="col" className="py-2 pr-3 font-normal text-right">
                     Emails
                   </th>
-                  <th className="py-2 pr-3 font-normal text-right">Index</th>
-                  <th className="py-2 font-normal text-right">Seen</th>
+                  <th scope="col" className="hidden sm:table-cell py-2 pr-3 font-normal text-right">
+                    Index
+                  </th>
+                  <th scope="col" className="py-2 font-normal text-right">Seen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -411,7 +435,10 @@ export default async function OpsPage({
                   const status = statusFor(r);
                   return (
                     <tr key={r.domain}>
-                      <td className="py-2.5 pr-3 truncate max-w-[11rem]">
+                      <td
+                        className="py-2.5 pr-3 truncate max-w-[8.5rem] sm:max-w-[14rem]"
+                        title={r.domain}
+                      >
                         {r.domain}
                       </td>
                       <td className="py-2.5 pr-3">
@@ -420,7 +447,7 @@ export default async function OpsPage({
                       <td className="py-2.5 pr-3 text-right tabular-nums">
                         {r.event_count.toLocaleString()}
                       </td>
-                      <td className="py-2.5 pr-3 text-right tabular-nums text-muted">
+                      <td className="hidden sm:table-cell py-2.5 pr-3 text-right tabular-nums text-muted">
                         {r.trust_index !== null ? r.trust_index : "—"}
                       </td>
                       <td className="py-2.5 text-right text-muted-2 tabular-nums whitespace-nowrap">
@@ -443,7 +470,7 @@ export default async function OpsPage({
           DKIM body hashes for third parties), this is THE metric that
           distinguishes the product from any DKIM verifier. The first
           mutual edge is the first product-market-fit signal. */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Panel
           title="Mutual edges"
           legend={
@@ -464,21 +491,25 @@ export default async function OpsPage({
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
-                  <th className="py-2 pr-3 font-normal">Pair</th>
-                  <th className="py-2 font-normal text-right">
-                    Combined emails
+                  <th scope="col" className="py-2 pr-3 font-normal">Pair</th>
+                  <th scope="col" className="py-2 font-normal text-right whitespace-nowrap">
+                    <span className="hidden sm:inline">Combined emails</span>
+                    <span className="sm:hidden">Emails</span>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {stats.mutualPairs.map((p) => (
                   <tr key={`${p.a}↔${p.b}`}>
-                    <td className="py-2.5 pr-3 truncate max-w-[28rem]">
+                    <td
+                      className="py-2.5 pr-3 break-all sm:break-normal sm:truncate sm:max-w-[28rem] leading-snug"
+                      title={`${p.a} ↔ ${p.b}`}
+                    >
                       <span className="text-txt">{p.a}</span>
-                      <span className="text-muted-2 mx-2">↔</span>
+                      <span className="text-muted-2 mx-1.5 sm:mx-2">↔</span>
                       <span className="text-txt">{p.b}</span>
                     </td>
-                    <td className="py-2.5 text-right tabular-nums">
+                    <td className="py-2.5 text-right tabular-nums whitespace-nowrap align-top">
                       {p.events.toLocaleString()}
                     </td>
                   </tr>
@@ -490,7 +521,7 @@ export default async function OpsPage({
       </div>
 
       {/* Ops grid — anti-abuse + denylist side-by-side ············ */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
+      <div className="grid md:grid-cols-2 gap-5 sm:gap-6 mb-6 sm:mb-8">
         <Panel
           title="Anti-abuse"
           legend={
@@ -533,7 +564,10 @@ export default async function OpsPage({
                     <tbody className="divide-y divide-border">
                       {stats.throttledTopSenders.map((s) => (
                         <tr key={s.sender_domain}>
-                          <td className="py-2 pr-3 truncate max-w-[13rem]">
+                          <td
+                            className="py-2 pr-3 truncate max-w-[10rem] sm:max-w-[13rem]"
+                            title={s.sender_domain}
+                          >
                             {s.sender_domain}
                           </td>
                           <td className="py-2 text-right tabular-nums">
@@ -620,12 +654,12 @@ function Kpi({
         ? "text-amber"
         : "text-muted-2";
   return (
-    <div className="rounded-md border border-border bg-surface/30 px-4 py-3.5">
+    <div className="rounded-md border border-border bg-surface/30 px-3 sm:px-4 py-3 sm:py-3.5">
       <p className="text-[0.6rem] uppercase tracking-widest text-muted-2">
         {label}
       </p>
       <p
-        className={`text-2xl font-bold tabular-nums mt-1.5 leading-none ${valueClass}`}
+        className={`text-xl sm:text-2xl font-bold tabular-nums mt-1.5 leading-none ${valueClass}`}
       >
         {value}
       </p>
@@ -714,22 +748,33 @@ function StatusBadge({ status }: { status: StatusLabel }) {
 }
 
 // Section panel — consistent framing for the two-column grids below
-// the KPI strip. Title bar has space for a legend on the right.
+// the KPI strip. Title bar has space for a legend on the right and
+// an optional subtitle below the title (used by the Registered
+// domains panel to disclose the "Top 8 by emails" cap explicitly).
 function Panel({
   title,
+  subtitle,
   legend,
   children,
 }: {
   title: string;
+  subtitle?: string;
   legend?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-md border border-border bg-surface/30 p-5 min-w-0">
+    <section className="rounded-md border border-border bg-surface/30 p-4 sm:p-5 min-w-0">
       <header className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-border">
-        <h2 className="text-xs uppercase tracking-widest text-muted-2">
-          {title}
-        </h2>
+        <div className="min-w-0">
+          <h2 className="text-xs uppercase tracking-widest text-muted-2">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-[0.6rem] text-muted-2 tabular-nums mt-0.5">
+              {subtitle}
+            </p>
+          )}
+        </div>
         {legend}
       </header>
       {children}
@@ -859,9 +904,9 @@ function TrustFunnel({
           ),
         )}
       </div>
-      <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs tabular-nums">
+      <div className="flex flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 text-xs tabular-nums">
         {segments.map((s) => (
-          <span key={s.key} className="inline-flex items-baseline gap-2">
+          <span key={s.key} className="inline-flex items-baseline gap-1.5 sm:gap-2">
             <span className="text-[0.6rem] uppercase tracking-widest text-muted-2">
               {s.label}
             </span>
