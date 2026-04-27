@@ -350,7 +350,7 @@ type Snapshot = BadgeSnapshot;
 //         Sans regardless of `fontFamily` (because no font bytes had
 //         been loaded), which is why the seal page badge stayed thin
 //         even after v17. SVG path is unchanged in v18.
-export function cacheHeaders(
+function cacheHeaders(
   snapshot: Snapshot,
   format: "svg" | "png",
   theme: BadgeTheme,

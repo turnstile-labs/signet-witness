@@ -11,7 +11,6 @@ import {
   computeTrustIndex,
   computeVerified,
   trustTierFromMetrics,
-  markDomainMetricsStale,
   refreshDomainMetrics,
   getDomainMetrics,
 } from "@/lib/trust";
@@ -215,20 +214,6 @@ describe("trustTierFromMetrics", () => {
   });
 });
 
-describe("markDomainMetricsStale", () => {
-  it("emits a single upsert against domain_trust", async () => {
-    enqueueSql([]);
-    await markDomainMetricsStale(42);
-    expect(sqlCalls.length).toBe(1);
-    expect(sqlCalls[0]?.values).toContain(42);
-  });
-
-  it("swallows DB errors so inbound never fails on a cache-flag write", async () => {
-    enqueueSql(new Error("boom"));
-    await expect(markDomainMetricsStale(1)).resolves.toBeUndefined();
-  });
-});
-
 describe("refreshDomainMetrics", () => {
   it("returns null when the aggregate query errors", async () => {
     enqueueSql(new Error("agg failed"));
@@ -328,13 +313,16 @@ describe("refreshDomainMetrics", () => {
 });
 
 describe("cold-start — DATABASE_URL unset", () => {
-  it("markDomainMetricsStale swallows the throw-from-sql-wrapper", async () => {
+  it("refreshDomainMetrics returns null when no DATABASE_URL is set", async () => {
     vi.resetModules();
     const prev = process.env.DATABASE_URL;
     delete process.env.DATABASE_URL;
     delete process.env.STORAGE_URL;
     const mod = await import("@/lib/trust");
-    await expect(mod.markDomainMetricsStale(1)).resolves.toBeUndefined();
+    // refreshDomainMetrics catches the SQL error and returns null so a
+    // cold-start (missing env var) fails closed rather than crashing the
+    // seal page or badge route.
+    await expect(mod.refreshDomainMetrics(1, "acme.com")).resolves.toBeNull();
     process.env.DATABASE_URL = prev;
   });
 });

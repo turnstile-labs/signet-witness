@@ -43,7 +43,7 @@ export function generateChallenge(
     .digest("hex")
     .slice(0, 32);
 
-  const challenge = `witnessed-${action.replace("_", "-")}-${mac}`;
+  const challenge = `witnessed-${action.replaceAll("_", "-")}-${mac}`;
   const host = `_witnessed.${normalized}`;
 
   const expires = new Date();

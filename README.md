@@ -24,7 +24,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 
 ## What's live
 
-- **Seal pages** at `/b/[domain]` — `StateBlock` verdict (Verified / Building / Warming up) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when in Building state but not yet verified
+- **Seal pages** at `/b/[domain]` — `StateBlock` verdict (**Verified** or **Building**) with the 0–100 trust index as supporting detail, quality-adjusted event count, tenure, mutual counterparties, 30-day sparkline, embeddable badge, and a `PathToVerified` checklist when in Building state but not yet verified
 - **Unclaimed seal pages** for domains that appear only as receivers — inbound witnessed count + an on-ramp to start their own record
 - **Dynamic badge** at `/badge/[domain]` — SVG or PNG, **Split Pill** layout (`[ icon STATE_WORD ][ acme.com ]`): state-tinted left half (solid green "Verified" or solid amber "Building", fixed width) + theme-aware neutral right half carrying the actual domain (adaptive width, monospace). `?theme=light|dark` flips the right-half palette so the badge reads cleanly on white-bg or dark-bg email clients. Brand attribution lives in the click target, not pixels. `ETag`-cached by `(state, theme, format)` (v16); `?preview=verified|building` for marketing surfaces
 - **Trust index** (`lib/trust.ts`) — composite 0–100 score from quality-adjusted activity, mutuality, CT-log tenure, and counterparty diversity; lazy-refreshed into `domain_trust` on seal-page read
@@ -40,8 +40,8 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 - **Privacy + Terms + Your-rights** pages, fully translated
 - **Cloudflare Worker email router** — ~30-line catch-all forwarder
 - **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/trust.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
-- **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open, 5-min edge cache) returning `{state, trustIndex, mutualCounterparties, verifiedEventCount, firstSeen}` for any domain. Powers the extension's sender-verification card, third-party integrations, and CLI checks; denylisted domains are rendered as `unclaimed` so opt-out never leaks
-- **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.3 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and a read-side toolbar popup that surfaces the Witnessed "proof of business" card (state, trust index, sealed events, mutual domains, deep link to `/b/<domain>`) for whichever sender is currently in focus in Gmail. See [`extension/README.md`](extension/README.md)
+- **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open) returning `{state, trustIndex, verifiedEventCount, mutualCounterparties, uniqueReceivers, inboundCount, firstSeen, updatedAt}` for any domain. Powers the extension's sender-verification card and third-party integrations; denylisted domains are rendered as `unclaimed` so opt-out never leaks
+- **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.4.1 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and a read-side toolbar popup that surfaces the Witnessed "proof of business" card (state, trust index, sealed events, mutual domains, deep link to `/b/<domain>`) for every sender visible in Gmail. Free-mail senders (gmail.com etc.) show as Unclaimed — they're rejected at the inbound boundary so no domain seal is possible. See [`extension/README.md`](extension/README.md)
 
 ---
 

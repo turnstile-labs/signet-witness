@@ -100,8 +100,13 @@ CREATE TABLE IF NOT EXISTS domain_reputation_cache (
 
 -- Events we refused to count toward a sender's public record. Retained
 -- for forensics and ops review; never joined to public render paths.
--- Reasons (Layer 0): 'receiver_no_mx', 'rate_limit'.
--- Reasons (Layer 1+): 'receiver_blocklist', 'concentration'.
+-- Current reasons (see lib/reputation.ts ThrottleReason):
+--   freemail_sender     From: domain is a multi-tenant free-mail provider
+--   solo_recipient      No real counterparty in To/Cc (seal@ was only addressee)
+--   receiver_no_mx      Receiver domain has no MX record
+--   receiver_blocklist  Receiver domain on Spamhaus DBL
+--   rate_limit          Per-sender volume cap exceeded (500/h or 5000/d)
+--   concentration       Reserved — single-receiver concentration (not yet emitted)
 CREATE TABLE IF NOT EXISTS events_throttled (
   id               SERIAL PRIMARY KEY,
   sender_domain    TEXT NOT NULL,

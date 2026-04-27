@@ -29,8 +29,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await eraseDomain(domain);
+    // Denylist first so that even if the data deletion partially fails,
+    // future inbound mail for this domain is still dropped. Safer than
+    // the inverse order, which could leave the domain data gone but the
+    // domain not blocked (re-insertion window until next seal email).
     await addToDenylist(domain, "erasure");
+    const result = await eraseDomain(domain);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     console.error("[rights/erasure]", err);

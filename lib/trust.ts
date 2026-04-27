@@ -11,20 +11,14 @@
 //
 //   • verified_event_count    events toward any non-throttled receiver.
 //                             The denominator for everything else.
-//                             Earlier versions excluded free-mail
-//                             receivers (gmail.com, outlook.com, …) on
-//                             the theory that an attacker could pump
-//                             100 gmail aliases they control. The
-//                             diversity-Gini sub-score and the
-//                             MIN_MUTUALS verified-gate floor handle
-//                             that attack independently, and excluding
-//                             free-mail receivers also erased every
-//                             real customer-support / consumer-facing
-//                             interaction from the score. The exclusion
-//                             is gone; the FREE_MAIL_DOMAINS list
-//                             below is kept as a reference set for
-//                             future surfaces (popup labels, etc.) but
-//                             no longer participates in this math.
+//                             Free-mail receivers (gmail.com, …) count:
+//                             they're real customer-facing interactions.
+//                             Free-mail senders are rejected at intake
+//                             (see FREE_MAIL_DOMAINS below) — that's
+//                             the sender side only. The diversity-Gini
+//                             sub-score and the MIN_MUTUALS gate handle
+//                             the "pump 100 gmail aliases" attack
+//                             independently of intake filtering.
 //   • counterparty_count      distinct receiver domains, all-time.
 //   • mutual_counterparties   the anti-fake signal. These are receivers
 //                             who are *themselves* senders and who have
@@ -46,10 +40,11 @@
 // weights encode the operator's judgement of how hard each signal is
 // to fake at low cost. See `computeTrustIndex` below for the math.
 //
-// The table is refreshed lazily: `markDomainMetricsStale()` is called on
-// every accepted event, and `getDomainMetrics()` triggers a compute when
-// the row is stale or older than SCORE_TTL_MS. Compute is a handful of
-// SQL aggregates — runs in under 50ms on current data shapes.
+// The table is refreshed lazily: `insertEvent()` in lib/db.ts flips
+// `domain_trust.stale = TRUE` on every accepted event, and
+// `getDomainMetrics()` triggers a recompute when the row is stale or
+// older than SCORE_TTL_MS. Compute is a handful of SQL aggregates —
+// runs in under 50ms on current data shapes.
 // ─────────────────────────────────────────────────────────────
 
 import { neon } from "@neondatabase/serverless";
@@ -65,14 +60,16 @@ function sql(...args: Parameters<ReturnType<typeof neon>>) {
   return (_sql as ReturnType<typeof neon>)(...args);
 }
 
-// Consumer-grade free mail providers. Reference list only — no longer
-// wired into the trust pipeline (see the file header for the rationale
-// for retiring the exclusion). Kept as an export so future surfaces
-// can label these differently without re-deriving the set: e.g. the
-// extension popup can say "personal address" instead of "domain" when
-// the user is composing from a free-mail account, or the seal page
-// can render an alternative explainer for a free-mail domain that has
-// no useful aggregate signal.
+// Consumer-grade free-mail providers. The inbound webhook rejects any
+// DKIM-passing email whose From: domain is in this set — multi-tenant
+// mailbox providers can't be a seal subject because there's no single
+// owner who could claim or speak for the domain.
+//
+// Free-mail RECEIVERS are unaffected: acme.com → alice@gmail.com is
+// real signal for acme.com and flows through normally.
+//
+// Exported so other surfaces (popup labels, seal-page copy) can share
+// the same boundary definition without re-deriving it.
 export const FREE_MAIL_DOMAINS = new Set([
   "gmail.com",
   "googlemail.com",
@@ -248,24 +245,6 @@ export function computeTrustIndex(parts: {
 }
 
 // ── Refresh ───────────────────────────────────────────────────
-
-/**
- * Mark a domain's precomputed trust row as stale. Called from the inbound
- * pipeline after every accepted event. The next seal-page render for
- * this domain will trigger a recompute.
- */
-export async function markDomainMetricsStale(domainId: number): Promise<void> {
-  try {
-    await sql`
-      INSERT INTO domain_trust (domain_id, stale, computed_at)
-      VALUES (${domainId}, TRUE, NOW())
-      ON CONFLICT (domain_id) DO UPDATE SET stale = TRUE
-    `;
-  } catch (err) {
-    // Not fatal — the row will still be recomputed lazily at TTL.
-    console.error("[trust] markDomainMetricsStale failed", { domainId, err });
-  }
-}
 
 interface RawAggregates {
   verified_event_count: number;

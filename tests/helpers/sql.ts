@@ -10,7 +10,7 @@
 
 export type SqlResult = unknown[] | Error;
 
-export const sqlQueue: SqlResult[] = [];
+const sqlQueue: SqlResult[] = [];
 export const sqlCalls: Array<{ strings: TemplateStringsArray; values: unknown[] }> = [];
 
 export function enqueueSql(...results: SqlResult[]): void {
