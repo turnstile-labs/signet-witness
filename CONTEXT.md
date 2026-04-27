@@ -138,7 +138,7 @@ Public surfaces are binary: `Verified | Building`. They're resolved from `(domai
 
 Unclaimed is rendered on its own page (the Unclaimed flow that turns receiver-only activity into a sign-up). The other two live on `/b/[domain]`.
 
-`/ops` adds a third operator-only sub-bucket — **Inactive** — that splits Building into "has produced ≥1 DKIM-verified event" (Building) vs "has produced 0" (Inactive). It's a diagnostic for spotting DKIM problems and dev junk; public surfaces never see it.
+`/ops` adds a third operator-only sub-bucket — **Inactive** — that splits Building into "has ≥1 row in `events`" (Building) vs "has 0" (Inactive). Domains land in Inactive when a receiver-side GDPR erasure cascades through their only counterparty, leaving a registered `domains` row whose every event has been deleted. Surfacing the bucket gives operators a one-glance read on that condition; public surfaces never see it because the distinction isn't actionable for a normal reader.
 
 On why only two public states and no "red": a newly-registered domain with zero history is not *dangerous*, it's *unknown*. Red would scare users away from every legitimate domain on its first day. Green / amber / gray honestly maps to "trust / building / too early." That's the correct shape of our data.
 

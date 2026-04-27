@@ -156,14 +156,13 @@ export function computeVerified(
 //
 //   verified  → passed the composite trust-index gate AND the mutual-
 //               counterparty floor (or grandfathered).
-//   building  → everything else with a registered domain row. We used
-//               to expose a third "pending" tier (no DKIM-verified
-//               events yet), but in practice it was indistinguishable
-//               from "building" to a normal reader, and the cases
-//               where it stayed sticky (broken DKIM, never-emitting
-//               senders) are operator concerns. The /ops dashboard
-//               derives its own three-state status from raw counts;
-//               everything public stays binary.
+//   building  → everything else with a registered domain row,
+//               including the rare case of a domain whose only
+//               counterparty has been GDPR-erased (which leaves the
+//               sender with zero rows in `events`). The /ops dashboard
+//               splits that case out as "Inactive" for operator
+//               forensics; everything public stays binary because the
+//               distinction isn't actionable for a normal reader.
 //
 // The string keys mirror the user-visible labels exactly ("Verified",
 // "Building") so a reader of the code never has to translate the

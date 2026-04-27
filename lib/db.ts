@@ -387,9 +387,22 @@ async function topSendersWithMetrics(): Promise<OpsSenderRow[]> {
 // (trustTierFromMetrics) — duplicated in SQL for a one-shot count.
 //
 // "building" matches the public TrustTier exactly. "inactive" is an
-// operator-only sub-bucket of "building" (zero verified events vs ≥1)
-// surfaced on /ops to spot DKIM problems early. Public surfaces never
-// see "inactive"; they show "building" for both rows.
+// operator-only sub-bucket of "building" (zero rows in `events` vs
+// ≥1). Public surfaces never see "inactive"; they show "building"
+// for both. The state is reachable two ways:
+//
+//   1. Receiver-side GDPR erasure cascade. When a receiver invokes
+//      Art 17, every event with that domain is deleted from `events`.
+//      Any sender whose only counterparty was that receiver keeps
+//      their `domains` row but loses every event — verified_event_count
+//      drops to 0 → "inactive".
+//   2. Vanishingly rare write race between upsertDomain and
+//      insertEvent (separate statements; the worker retries, but the
+//      domain row exists during the retry window).
+//
+// Surfacing it lets an operator see "this domain has a row but no
+// events" at a glance — the typical cause is the erasure cascade, and
+// having a labeled bucket makes that obvious without forensic SQL.
 async function senderTierCounts(): Promise<{
   verified: number;
   building: number;
