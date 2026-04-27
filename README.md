@@ -38,7 +38,7 @@ No auth. No payments. No setup required from users. The silent Bcc is the produc
 - **English + Spanish** — full i18n via `next-intl`. EN at the root, ES prefixed at `/es/*`
 - **Light + dark theme** — CSS-variable driven, persisted to `localStorage`
 - **Privacy + Terms + Your-rights** pages, fully translated
-- **Cloudflare Worker email router** — ~30-line catch-all forwarder
+- **Cloudflare Worker email router** — catch-all forwarder with bounded retry (3 attempts, ~7s budget) on transient `/api/inbound` failures; deterministic 4xx responses fail fast
 - **Test suite** — Vitest, 100% / 100% / 100% / 95%+ floor on the anti-abuse surface (`lib/trust.ts`, `lib/reputation.ts`, `lib/badge-state.ts`, `lib/badge-dimensions.ts`, `app/api/inbound/route.ts`)
 - **Public domain lookup API** at `/api/public/domain/[domain]` — JSON state endpoint (CORS-open) returning `{state, trustIndex, verifiedEventCount, mutualCounterparties, uniqueReceivers, inboundCount, firstSeen, updatedAt}` for any domain. Powers the extension's sender-verification card and third-party integrations; denylisted domains are rendered as `unclaimed` so opt-out never leaks
 - **Browser extension** (`extension/`) — MV3 extension for Gmail. v0.4.1 ships both the write-side (auto-BCCs `seal@witnessed.cc` into every compose) and a read-side toolbar popup that surfaces the Witnessed "proof of business" card (state, trust index, sealed events, mutual domains, deep link to `/b/<domain>`) for every sender visible in Gmail. Free-mail senders (gmail.com etc.) show as Unclaimed — they're rejected at the inbound boundary so no domain seal is possible. See [`extension/README.md`](extension/README.md)
@@ -104,7 +104,7 @@ signet-witness/
 │   └── verify-domain.ts          # DNS-TXT owner-proof challenge/verify for /rights
 ├── tests/                        # Vitest suite + helpers + programmable neon stub
 ├── workers/
-│   └── email-router/             # Cloudflare Worker (~30 lines) — forwards raw email to /api/inbound
+│   └── email-router/             # Cloudflare Worker — forwards raw email to /api/inbound with bounded retry on 5xx
 ├── extension/                    # Browser extension — auto-BCC seal@witnessed.cc into Gmail (see extension/README.md)
 ├── schema.sql                    # Run once to create tables (idempotent — safe to re-run)
 ├── vitest.config.ts
@@ -177,6 +177,18 @@ wrangler secret put INBOUND_SECRET  # must match Vercel env var
 # Deploy
 wrangler deploy
 ```
+
+The Worker retries `/api/inbound` up to 3 times on 5xx / network errors
+(2s and 5s backoff between attempts; ~7s total budget) and gives up
+silently on 4xx — those are deterministic and retrying just spams. Each
+attempt carries `X-Witnessed-Correlation-Id` and `X-Witnessed-Attempt`
+headers so a single Worker run can be joined to its Vercel logs by
+short ID. After all attempts fail, the Worker logs to `wrangler tail`
+and returns normally — we deliberately don't bounce mail back to the
+sender during a Vercel outage. Operationally that means: a sustained
+inbound outage longer than the retry budget will silently drop mail.
+For most transient blips (cold start, DB pool flap) the retries
+absorb the failure invisibly.
 
 ### Cloudflare Email Routing
 
