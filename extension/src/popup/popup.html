@@ -81,6 +81,18 @@
           </label>
         </div>
       </section>
+
+      <!-- Build footer. The version string is stamped by popup.ts from
+           chrome.runtime.getManifest().version so it can never drift from
+           the manifest the user actually installed. Useful when a user
+           reports a bug and we need to know which build they're on. -->
+      <footer class="foot">
+        <a class="foot-link" href="https://witnessed.cc" target="_blank" rel="noopener">
+          witnessed.cc
+        </a>
+        <span class="foot-sep" aria-hidden="true">·</span>
+        <span class="foot-version" id="version-tag">v—</span>
+      </footer>
     </main>
 
     <script type="module" src="./popup.ts"></script>

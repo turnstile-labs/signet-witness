@@ -340,6 +340,21 @@ async function renderSenders(): Promise<void> {
 async function main(): Promise<void> {
   sealAddr.textContent = SEAL_ADDRESS;
 
+  // Stamp the build version into the footer from the live manifest.
+  // Single source of truth: the manifest the user actually installed,
+  // not a constant in source. If a user reports a bug we know exactly
+  // which build they're on without having to ask.
+  try {
+    const versionTag = document.getElementById("version-tag");
+    if (versionTag) {
+      versionTag.textContent = `v${chrome.runtime.getManifest().version}`;
+    }
+  } catch {
+    /* runtime.getManifest is sync and present in MV3 popups, but we
+       still belt-and-brace so a future Chrome change can't blank the
+       popup. The footer just stays at its placeholder if this throws. */
+  }
+
   const initial = await getSettings();
   toggleInject.checked = initial.enabled;
 

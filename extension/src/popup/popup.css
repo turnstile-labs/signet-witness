@@ -475,3 +475,40 @@ main {
   outline: 2px solid var(--accent-2);
   outline-offset: 2px;
 }
+
+/* Footer — quietest line in the popup. Brand link on the left, build
+   version on the right of the same flex row, hairline separator above
+   so the footer reads as a closing band rather than another card. The
+   version string is mono so it lines up across digits and reads as a
+   build identifier, not body copy. */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+
+.foot-link {
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.foot-link:hover {
+  color: var(--txt);
+}
+
+.foot-sep {
+  color: var(--muted-2);
+}
+
+.foot-version {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 10px;
+  letter-spacing: 0;
+  color: var(--muted);
+}
