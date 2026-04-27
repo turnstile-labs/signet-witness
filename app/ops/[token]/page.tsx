@@ -527,7 +527,7 @@ export default async function OpsPage({
               {stats.throttledTopSenders.length > 0 && (
                 <div>
                   <p className="text-[0.6rem] uppercase tracking-widest text-muted-2 mb-1">
-                    Top offenders
+                    Most-throttled senders
                   </p>
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-border">
