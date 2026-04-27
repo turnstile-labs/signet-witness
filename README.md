@@ -189,14 +189,18 @@ In your Cloudflare dashboard for `witnessed.cc`:
 
 ## Database schema
 
-The canonical schema lives in `schema.sql` and is idempotent — run it
-once on a fresh database to create every table at the current names.
-For *existing* databases, in-place schema changes (renames, column
-adds, index changes) live as one-shot scripts in `migrations/`,
-numbered in apply order; run any unapplied ones with
-`psql "$DATABASE_URL" -f migrations/NNN-name.sql`. The two paths
-converge: a fresh install from `schema.sql` matches a long-lived DB
-that has run every migration. Current tables:
+`schema.sql` is the single source of truth. It's idempotent — every
+`CREATE TABLE`, `ALTER TABLE`, and `CREATE INDEX` is `IF NOT EXISTS`
+(or `IF EXISTS` for drops), so the same file is safe to run on a
+fresh database (creates everything) and on a long-lived one
+(no-ops on what already exists, applies whatever's new).
+
+For in-place changes against prod — renames, column adds, drops —
+write the `ALTER` directly against the live DB via the Neon / Vercel
+Postgres SQL editor and update `schema.sql` to match. No separate
+`migrations/` folder, no numbered tracking — at one operator and one
+prod instance the bookkeeping costs more than it saves. Current
+tables:
 
 | Table | Purpose |
 |---|---|
