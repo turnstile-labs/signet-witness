@@ -27,7 +27,7 @@ import { emailToDomain } from "../lib/parse";
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.4.0";
+const BUILD_TAG = "v0.4.1";
 const MAX_VISIBLE_DOMAINS = 25;
 
 let injectEnabled = true;
