@@ -104,6 +104,8 @@ function humanReason(reason: string): string {
       return "Sender only emails one recipient";
     case "solo_recipient":
       return "No counterparty in To/Cc";
+    case "freemail_sender":
+      return "Free-mail sender (gmail / outlook / …)";
     case "erasure":
       return "GDPR erasure (Art 17)";
     case "opt_out":

@@ -471,7 +471,8 @@ export type ThrottleReason =
   | "rate_limit"
   | "receiver_blocklist"
   | "concentration"
-  | "solo_recipient";
+  | "solo_recipient"
+  | "freemail_sender";
 
 /**
  * Record a throttled event. Never affects public counts. Retained

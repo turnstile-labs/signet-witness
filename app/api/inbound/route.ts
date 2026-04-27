@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { authenticate } from "mailauth";
 import { createHash } from "crypto";
 import { upsertDomain, insertEvent, isDenylisted } from "@/lib/db";
+import { FREE_MAIL_DOMAINS } from "@/lib/trust";
 import {
   receiverHasMx,
   isOnDbl,
@@ -52,7 +53,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 5. Extract sender domain from the raw From header line.
+  // 5. Hash the DKIM signature for storage (proof without raw sig data).
+  // Computed up front so every throttle path below can record the same
+  // forensic hash as accepted events.
+  const dkimHash = createHash("sha256")
+    .update(passing.signature ?? rawEmail.slice(0, 512))
+    .digest("hex");
+
+  // 6. Extract sender domain from the raw From header line.
   const rawHeaders: string = rawEmail.split("\r\n\r\n")[0] ?? rawEmail.split("\n\n")[0] ?? "";
   const fromMatch = rawHeaders.match(/^From:.*?<([^>]+)>|^From:\s*(\S+)/im);
   const fromAddress = fromMatch?.[1] ?? fromMatch?.[2] ?? "";
@@ -61,7 +69,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 6. Extract the primary receiver domain from the visible headers.
+  // 7. Anti-abuse · reject free-mail senders.
+  //
+  // gmail.com / outlook.com / icloud.com / etc. are multi-tenant inboxes:
+  // every account on the same domain shares a public name, so a "domain
+  // seal" for those would conflate millions of unrelated humans. We
+  // refuse to be the entity that publishes that conflation. Real
+  // businesses run their own domain — if you can DKIM-sign mail you can
+  // register one — so this is a hard floor, not a soft hint.
+  //
+  // Free-mail RECEIVERS are unaffected: an event from acme.com to
+  // alice@gmail.com is legitimate signal for acme.com. Only the sender
+  // side is gated, because the sender is the entity the seal is about.
+  //
+  // Logged to events_throttled with reason `freemail_sender` so /ops
+  // can see the volume (useful for measuring how much real traffic
+  // we're turning away vs. how much spam attempts to ride consumer
+  // mail) and we 200 so the upstream Worker doesn't retry or bounce.
+  if (FREE_MAIL_DOMAINS.has(senderDomain)) {
+    await recordThrottled(senderDomain, "unknown", dkimHash, "freemail_sender");
+    return NextResponse.json({ ok: true, dropped: "freemail_sender" });
+  }
+
+  // 8. Extract the primary receiver domain from the visible headers.
   //
   // The default and recommended flow is silent Bcc: the sender Bccs
   // seal@witnessed.cc, and the real recipient sits in `To:`. Bcc
@@ -103,15 +133,7 @@ export async function POST(req: NextRequest) {
   }
   const primaryReceiver = receiverDomains[0] ?? "unknown";
 
-  // 7. Hash the DKIM signature for storage (proof without raw sig data).
-  // Computed up front so every throttle path below can record the same
-  // forensic hash as accepted events, and so the solo-recipient gate
-  // doesn't need a throwaway local variable.
-  const dkimHash = createHash("sha256")
-    .update(passing.signature ?? rawEmail.slice(0, 512))
-    .digest("hex");
-
-  // 8. Anti-abuse · solo-recipient drop.
+  // 9. Anti-abuse · solo-recipient drop.
   //
   // If the email had no counterparty in To or Cc — i.e. seal@ was the
   // only addressee — there's no proof-of-business event to record.
@@ -129,7 +151,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dropped: "solo_recipient" });
   }
 
-  // 9. GDPR — honor the denylist. If either the sender or the primary
+  // 10. GDPR — honor the denylist. If either the sender or the primary
   // receiver has opted out / exercised erasure, silently drop the event.
   // We 200 so the upstream SMTP path doesn't retry or bounce. The
   // solo-recipient gate above already filtered out "unknown", so both
@@ -146,7 +168,7 @@ export async function POST(req: NextRequest) {
     console.error("[inbound] denylist check failed", err);
   }
 
-  // 10. Anti-abuse · receiver must have an MX record and must not be
+  // 11. Anti-abuse · receiver must have an MX record and must not be
   // on Spamhaus DBL. DKIM-valid mail addressed to a domain with no
   // mail exchange is a typo, a sinkhole, or a deliberately chosen
   // spoof target; mail addressed to a DBL-listed domain is almost
@@ -180,7 +202,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dropped: "receiver_blocklist" });
   }
 
-  // 11. Anti-abuse · Layer 0 — per-sender rate limit. A domain pushing
+  // 12. Anti-abuse · Layer 0 — per-sender rate limit. A domain pushing
   // extraordinary volume (500/hour or 5000/day) trips the throttle;
   // subsequent events within the window are recorded for forensics
   // but not counted publicly. Enterprise-scale legitimate senders
@@ -196,7 +218,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dropped: "rate_limit" });
   }
 
-  // 12. Write to DB.
+  // 13. Write to DB.
   try {
     const domain = await upsertDomain(senderDomain);
     await insertEvent(domain.id, primaryReceiver, dkimHash);
@@ -205,7 +227,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "DB error" }, { status: 500 });
   }
 
-  // 13. Post-response work — CT-log warm-up for the sender domain
+  // 14. Post-response work — CT-log warm-up for the sender domain
   // so the next score recompute picks up real tenure instead of the
   // system's `first_seen` fallback. Idempotent via its own 30-day
   // cache. Does not block the 200 going back upstream; the Vercel

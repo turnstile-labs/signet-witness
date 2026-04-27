@@ -325,6 +325,60 @@ describe("/api/inbound — anti-abuse decision tree", () => {
   });
 });
 
+describe("/api/inbound — free-mail sender rejection", () => {
+  // Multi-tenant mailbox providers can't be a seal subject because
+  // there's no single owner who can speak for the domain. The intake
+  // refuses them at the sender boundary so we never spin up a /b/gmail.com
+  // page that would conflate millions of unrelated humans.
+  it.each([
+    "ceo@gmail.com",
+    "alice@outlook.com",
+    "bob@icloud.com",
+    "x@yahoo.com",
+    "y@proton.me",
+  ])("drops a sender at %s with reason freemail_sender", async (from) => {
+    const res = await POST(makeReq(raw({ from })));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      ok: true,
+      dropped: "freemail_sender",
+    });
+    const senderDomain = from.split("@")[1];
+    expect(throttledMock).toHaveBeenCalledWith(
+      senderDomain,
+      "unknown",
+      expect.any(String),
+      "freemail_sender",
+    );
+    // No DB writes, no domain row created, no receiver-side checks
+    // — the gate is structurally above all of those.
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(upsertMock).not.toHaveBeenCalled();
+    expect(mxMock).not.toHaveBeenCalled();
+    expect(dblMock).not.toHaveBeenCalled();
+  });
+
+  it("normalizes case before matching — From: 'Ceo@Gmail.COM' is still rejected", async () => {
+    const res = await POST(makeReq(raw({ from: "Ceo@Gmail.COM" })));
+    expect((await res.json()).dropped).toBe("freemail_sender");
+  });
+
+  it("free-mail RECEIVERS still flow through to the public ledger", async () => {
+    // Asymmetry test: only the SENDER side is gated. acme.com → alice@gmail.com
+    // is real signal for acme.com and must record normally.
+    const res = await POST(
+      makeReq(raw({ from: "ceo@acme.com", to: "alice@gmail.com" })),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(insertMock).toHaveBeenCalledWith(
+      1,
+      "gmail.com",
+      expect.any(String),
+    );
+  });
+});
+
 describe("/api/inbound — post-response work", () => {
   it("schedules CT warm-up via after()", async () => {
     await POST(makeReq(raw()));
