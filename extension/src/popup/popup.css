@@ -476,17 +476,25 @@ main {
   outline-offset: 2px;
 }
 
-/* Footer — quietest line in the popup. Just the build version,
-   centered, mono so digits line up and the string reads as a build
-   identifier rather than body copy. Hairline separator above so the
-   footer closes the popup visually instead of dangling under the
-   last card. */
+/* Footer — quietest line in the popup. Copyright on the left, build
+   version on the right of the same flex row; hairline separator above
+   so the footer closes the popup visually instead of dangling under
+   the last card. The version is mono so digits line up and read as a
+   build identifier rather than body copy; the copyright stays in the
+   default UI font so it reads as a legal nameplate, not a hash. */
 .foot {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 4px;
   padding-top: 10px;
   border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+
+.foot-copy {
+  letter-spacing: 0.01em;
 }
 
 .foot-version {

@@ -340,19 +340,26 @@ async function renderSenders(): Promise<void> {
 async function main(): Promise<void> {
   sealAddr.textContent = SEAL_ADDRESS;
 
-  // Stamp the build version into the footer from the live manifest.
-  // Single source of truth: the manifest the user actually installed,
-  // not a constant in source. If a user reports a bug we know exactly
-  // which build they're on without having to ask.
+  // Stamp the build footer from live runtime values:
+  //   * version  ← chrome.runtime.getManifest().version  (the build
+  //                the user actually has installed; can't drift)
+  //   * year     ← new Date().getFullYear()              (so the
+  //                copyright doesn't go stale on Jan 1; mirrors
+  //                app/components/Footer.tsx exactly)
+  // Wrapped defensively — runtime.getManifest is sync and present in
+  // MV3 popups today, but if a future Chrome change ever throws we'd
+  // rather show the placeholder than blank the popup.
   try {
     const versionTag = document.getElementById("version-tag");
     if (versionTag) {
       versionTag.textContent = `v${chrome.runtime.getManifest().version}`;
     }
+    const copyTag = document.getElementById("copy-tag");
+    if (copyTag) {
+      copyTag.textContent = `© ${new Date().getFullYear()} Witnessed`;
+    }
   } catch {
-    /* runtime.getManifest is sync and present in MV3 popups, but we
-       still belt-and-brace so a future Chrome change can't blank the
-       popup. The footer just stays at its placeholder if this throws. */
+    /* placeholder copy stays in the DOM; non-fatal. */
   }
 
   const initial = await getSettings();

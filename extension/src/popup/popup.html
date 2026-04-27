@@ -82,12 +82,13 @@
         </div>
       </section>
 
-      <!-- Build footer. Version is stamped by popup.ts from
-           chrome.runtime.getManifest().version so it can never drift
-           from the build the user actually installed. The wordmark up
-           top already links to witnessed.cc, so the footer is just the
-           version — anything else here is decoration. -->
+      <!-- Build footer. Copyright on the left, build version on the
+           right — both stamped by popup.ts (year from new Date(),
+           version from chrome.runtime.getManifest()) so neither can
+           drift past Jan 1 or past a Web Store re-upload. Mirrors the
+           site footer's "© <year> Witnessed" wording verbatim. -->
       <footer class="foot">
+        <span class="foot-copy" id="copy-tag">© Witnessed</span>
         <span class="foot-version" id="version-tag">v—</span>
       </footer>
     </main>
