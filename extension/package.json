@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:typecheck": "tsc --noEmit -p tsconfig.test.json",
-    "zip": "cd dist && zip -r ../witnessed-extension.zip ."
+    "zip": "cd dist && zip -r ../witnessed-extension.zip . -x '.vite/*' '.vite'"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "2.0.0-beta.28",
