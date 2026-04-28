@@ -119,7 +119,10 @@
     "copyDone": "Copied — paste into your signature",
     "copyError": "Copy failed — try again",
     "howTo": "Works in Gmail, Outlook, and Apple Mail. The badge stays clickable when pasted.",
-    "alt": "Witnessed badge for {domain}"
+    "alt": "Witnessed badge for {domain}",
+    "themeAria": "Badge theme",
+    "themeDark": "Dark",
+    "themeLight": "Light"
   },
   "languageSwitcher": {
     "label": "Language",

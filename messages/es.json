@@ -119,7 +119,10 @@
     "copyDone": "Copiado — pégalo en tu firma",
     "copyError": "Error al copiar — inténtalo de nuevo",
     "howTo": "Funciona en Gmail, Outlook y Apple Mail. La insignia mantiene el enlace al pegarla.",
-    "alt": "Badge de Witnessed para {domain}"
+    "alt": "Badge de Witnessed para {domain}",
+    "themeAria": "Tema del badge",
+    "themeDark": "Oscuro",
+    "themeLight": "Claro"
   },
   "languageSwitcher": {
     "label": "Idioma",
