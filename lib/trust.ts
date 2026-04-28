@@ -94,7 +94,12 @@ export const FREE_MAIL_DOMAINS = new Set([
   "pm.me",
 ]);
 
-const SCORE_TTL_MS = 24 * 60 * 60 * 1000;
+// Read-through TTL for domain_trust rows. Exported so any reader that
+// keeps its own staleness check (e.g. /ops, which fetches a leaderboard
+// in one shot rather than going through getDomainMetrics per-row) uses
+// the same window the per-domain accessor does — drift here would
+// silently let two surfaces disagree on whether a row is fresh.
+export const SCORE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface DomainMetrics {
   verified_event_count: number;

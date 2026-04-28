@@ -462,6 +462,91 @@ export default async function OpsPage({
         </Panel>
       </div>
 
+      {/* Top recipients — receiver-side leaderboard ··············
+          Mirror of the senders panel above, but on the other half of
+          every edge: who are registered senders sealing TO. Without
+          this, the only receiver-side signals on /ops were a single
+          "Distinct recipients" stat and the Mutual edges table (which
+          only shows reciprocal pairs) — a busy unclaimed receiver
+          (the entire opposite half of the invite loop) was invisible.
+
+          Status:
+            Registered → receiver is itself in `domains` (a mutual edge
+                         from this side becomes possible the moment they
+                         seal back).
+            Unclaimed  → receiver has no `domains` row — these are the
+                         inviteable counterparties; the population we
+                         want to convert into senders.
+
+          Mobile: hide the "Senders" column; on a phone the priority
+          is the domain + status + email count, and the senders count
+          is reference-info that lives one tap away on the desktop. */}
+      <div className="mb-6 sm:mb-8">
+        <Panel
+          title="Top recipients"
+          subtitle={
+            stats.topReceivers.length > 0
+              ? `Top ${stats.topReceivers.length} by emails`
+              : undefined
+          }
+          legend={
+            <Legend
+              items={[
+                { color: "bg-verified", label: "Registered" },
+                { color: "bg-inactive", label: "Unclaimed" },
+              ]}
+            />
+          }
+        >
+          {stats.topReceivers.length === 0 ? (
+            <Empty>
+              No recipients yet — registered senders haven&rsquo;t
+              sealed any mail.
+            </Empty>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[0.6rem] uppercase tracking-widest text-muted-2 border-b border-border">
+                  <th scope="col" className="py-2 pr-3 font-normal">Domain</th>
+                  <th scope="col" className="py-2 pr-3 font-normal">Status</th>
+                  <th scope="col" className="py-2 pr-3 font-normal text-right">
+                    Emails
+                  </th>
+                  <th scope="col" className="hidden sm:table-cell py-2 pr-3 font-normal text-right">
+                    Senders
+                  </th>
+                  <th scope="col" className="py-2 font-normal text-right">Last</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {stats.topReceivers.map((r) => (
+                  <tr key={r.domain}>
+                    <td
+                      className="py-2.5 pr-3 truncate max-w-[8.5rem] sm:max-w-[14rem]"
+                      title={r.domain}
+                    >
+                      {r.domain}
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <RecipientBadge registered={r.registered} />
+                    </td>
+                    <td className="py-2.5 pr-3 text-right tabular-nums">
+                      {r.events.toLocaleString()}
+                    </td>
+                    <td className="hidden sm:table-cell py-2.5 pr-3 text-right tabular-nums text-muted">
+                      {r.distinct_senders.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 text-right text-muted-2 tabular-nums whitespace-nowrap">
+                      {formatAge(r.last_seen)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      </div>
+
       {/* Mutual edges — full width, prominent placement.
           A mutual edge means domain A sealed to domain B AND B sealed
           back to A. Both sides are DKIM-signing senders that bothered
@@ -743,6 +828,27 @@ function StatusBadge({ status }: { status: StatusLabel }) {
         aria-hidden="true"
       />
       <span className="text-muted">{status}</span>
+    </span>
+  );
+}
+
+// Receiver-side analogue of StatusBadge — distinguishes a recipient
+// that's also a registered sender (mutual is one seal-back away) from
+// one that has no domains row yet (invite-loop opportunity). Two
+// states only — receivers don't carry trust scores, so there's no
+// equivalent of "Verified vs Building".
+function RecipientBadge({ registered }: { registered: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span
+        className={`inline-block w-1.5 h-1.5 rounded-full ${
+          registered ? "bg-verified" : "bg-inactive"
+        }`}
+        aria-hidden="true"
+      />
+      <span className="text-muted">
+        {registered ? "Registered" : "Unclaimed"}
+      </span>
     </span>
   );
 }

@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { refreshDomainMetrics, SCORE_TTL_MS } from "./trust";
 
 // Lazily initialised so `next build` doesn't require DATABASE_URL at compile time.
 let _sql: ReturnType<typeof neon> | null = null;
@@ -288,6 +289,20 @@ export interface OpsStats {
   throttled7d: number;
   throttledByReason: Array<{ reason: string; count: number }>;
   throttledTopSenders: Array<{ sender_domain: string; count: number }>;
+  // Top receiver domains by inbound seal volume. Complements the
+  // sender-side leaderboard so the dashboard surfaces both halves of
+  // every edge — without it, a busy receiver who isn't a registered
+  // sender (the unclaimed side of the invite loop) is invisible
+  // beyond a single aggregate count. `registered` is TRUE iff the
+  // receiver is itself in the `domains` table — i.e. a mutual is
+  // possible from this side.
+  topReceivers: Array<{
+    domain: string;
+    events: number;
+    distinct_senders: number;
+    last_seen: string;
+    registered: boolean;
+  }>;
 }
 
 // Swallow "relation does not exist" (42P01) so the ops page keeps
@@ -347,15 +362,28 @@ type OpsSenderRow = {
   grandfathered_verified: boolean;
 };
 
+// Query carries `domain_id`, `stale`, and `computed_at` so the caller
+// can refresh anything past the TTL or explicitly flagged stale before
+// the page reads it. Stripped from the public OpsSenderRow on return.
+type OpsSenderRowInternal = OpsSenderRow & {
+  domain_id: number;
+  stale: boolean;
+  computed_at: string | null;
+};
+
 async function topSendersWithMetrics(): Promise<OpsSenderRow[]> {
+  let rows: OpsSenderRowInternal[];
   try {
-    return (await sql`
-      SELECT d.domain, d.event_count, d.first_seen,
+    rows = (await sql`
+      SELECT d.id                     AS domain_id,
+             d.domain, d.event_count, d.first_seen,
              d.grandfathered_verified,
              s.trust_index           AS trust_index,
              s.mutual_counterparties AS mutual_counterparties,
              s.counterparty_count    AS counterparty_count,
-             s.verified_event_count  AS verified_event_count
+             s.verified_event_count  AS verified_event_count,
+             COALESCE(s.stale, TRUE) AS stale,
+             s.computed_at           AS computed_at
       FROM domains d
       LEFT JOIN domain_trust s ON s.domain_id = d.id
       ORDER BY
@@ -363,23 +391,117 @@ async function topSendersWithMetrics(): Promise<OpsSenderRow[]> {
         d.event_count DESC,
         d.first_seen ASC
       LIMIT 15
-    `) as unknown as OpsSenderRow[];
+    `) as unknown as OpsSenderRowInternal[];
   } catch (err) {
     const code = (err as { code?: string }).code;
     const msg = (err as Error).message ?? "";
     if (!(code === "42P01" || /does not exist/i.test(msg))) throw err;
-    return (await sql`
-      SELECT domain, event_count, first_seen,
+    rows = (await sql`
+      SELECT id                     AS domain_id,
+             domain, event_count, first_seen,
              COALESCE(grandfathered_verified, FALSE) AS grandfathered_verified,
-             NULL::int AS trust_index,
-             NULL::int AS mutual_counterparties,
-             NULL::int AS counterparty_count,
-             NULL::int AS verified_event_count
+             NULL::int       AS trust_index,
+             NULL::int       AS mutual_counterparties,
+             NULL::int       AS counterparty_count,
+             NULL::int       AS verified_event_count,
+             TRUE            AS stale,
+             NULL::timestamptz AS computed_at
       FROM domains
       ORDER BY event_count DESC, first_seen ASC
       LIMIT 15
-    `) as unknown as OpsSenderRow[];
+    `) as unknown as OpsSenderRowInternal[];
   }
+
+  // Opportunistic refresh: any row whose domain_trust is missing,
+  // explicitly stale, or older than SCORE_TTL_MS gets recomputed before
+  // the page reads it. Without this the leaderboard can show counts
+  // captured *before* the most recent insertEvent (which only flips
+  // the stale bit; refresh runs on next read). /ops doesn't go through
+  // getDomainMetrics per row, so it has to do the refresh itself.
+  //
+  // Bounded by LIMIT 15 above — at most 15 refreshes, each ~2 round-trips.
+  // Failures fall back to the cached numbers; we don't block the dashboard
+  // on a recompute hiccup.
+  const now = Date.now();
+  const needsRefresh = rows.filter((r) => {
+    if (r.stale) return true;
+    if (!r.computed_at) return true;
+    const age = now - Date.parse(r.computed_at);
+    return Number.isFinite(age) && age >= SCORE_TTL_MS;
+  });
+  if (needsRefresh.length > 0) {
+    const refreshed = await Promise.all(
+      needsRefresh.map((r) =>
+        refreshDomainMetrics(r.domain_id, r.domain).catch((err) => {
+          console.error("[db] opportunistic refresh failed", {
+            domain: r.domain,
+            err,
+          });
+          return null;
+        }),
+      ),
+    );
+    refreshed.forEach((m, i) => {
+      if (!m) return;
+      const row = needsRefresh[i];
+      row.trust_index = m.trust_index;
+      row.mutual_counterparties = m.mutual_counterparties;
+      row.counterparty_count = m.counterparty_count;
+      row.verified_event_count = m.verified_event_count;
+    });
+  }
+
+  return rows.map((r) => ({
+    domain: r.domain,
+    event_count: r.event_count,
+    first_seen: r.first_seen,
+    grandfathered_verified: r.grandfathered_verified,
+    trust_index: r.trust_index,
+    mutual_counterparties: r.mutual_counterparties,
+    counterparty_count: r.counterparty_count,
+    verified_event_count: r.verified_event_count,
+  }));
+}
+
+// Top receiver domains by inbound seal volume. Mirrors topSendersWithMetrics
+// but on the other side of the edge: who's *receiving* seals from registered
+// senders. Surfacing this on /ops fills the gap that prompted the
+// "we don't see receivers" feedback — until now, the only receiver-side
+// signals were the two aggregate stats (Distinct recipients, Unclaimed)
+// and the Mutual edges table (which only shows reciprocal pairs).
+//
+// `registered` flags whether the receiver is itself in the `domains` table.
+// A registered receiver is one mutual edge away (if they ever seal back);
+// an unregistered receiver is an invite-loop opportunity.
+async function topReceiversList(): Promise<
+  Array<{
+    domain: string;
+    events: number;
+    distinct_senders: number;
+    last_seen: string;
+    registered: boolean;
+  }>
+> {
+  return (await sql`
+    SELECT
+      e.receiver_domain                     AS domain,
+      COUNT(*)::int                         AS events,
+      COUNT(DISTINCT e.domain_id)::int      AS distinct_senders,
+      MAX(e.witnessed_at)                   AS last_seen,
+      EXISTS (
+        SELECT 1 FROM domains d2 WHERE d2.domain = e.receiver_domain
+      )                                     AS registered
+    FROM events e
+    GROUP BY e.receiver_domain
+    ORDER BY events DESC, last_seen DESC
+    LIMIT 8
+  `) as unknown as Array<{
+    domain: string;
+    events: number;
+    distinct_senders: number;
+    last_seen: string;
+    registered: boolean;
+  }>;
 }
 
 // Population shape across every registered sender: how many are
@@ -506,6 +628,7 @@ export async function getOpsStats(): Promise<OpsStats> {
     dbSize,
     senderTiers,
     mutualPairs,
+    topReceivers,
   ] = await Promise.all([
     sql`
       SELECT
@@ -575,6 +698,16 @@ export async function getOpsStats(): Promise<OpsStats> {
     ),
     senderTierCounts(),
     mutualPairsSnapshot(),
+    safe(
+      topReceiversList(),
+      [] as Array<{
+        domain: string;
+        events: number;
+        distinct_senders: number;
+        last_seen: string;
+        registered: boolean;
+      }>,
+    ),
   ]);
 
   // Anti-abuse visibility — fetched separately so the legacy totals
@@ -649,6 +782,7 @@ export async function getOpsStats(): Promise<OpsStats> {
     throttled7d: throttledWindowed[0]?.d7 ?? 0,
     throttledByReason,
     throttledTopSenders,
+    topReceivers,
   };
 }
 
