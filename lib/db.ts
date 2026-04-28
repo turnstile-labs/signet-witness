@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { refreshDomainMetrics, SCORE_TTL_MS } from "./trust";
+import { refreshDomainMetrics, SCORE_TTL_MS, FREE_MAIL_DOMAINS } from "./trust";
 
 // Lazily initialised so `next build` doesn't require DATABASE_URL at compile time.
 let _sql: ReturnType<typeof neon> | null = null;
@@ -473,6 +473,22 @@ async function topSendersWithMetrics(): Promise<OpsSenderRow[]> {
 // `registered` flags whether the receiver is itself in the `domains` table.
 // A registered receiver is one mutual edge away (if they ever seal back);
 // an unregistered receiver is an invite-loop opportunity.
+//
+// Free-mail receivers (gmail.com, outlook.com, …) are filtered out
+// post-query: they can NEVER become Registered (the inbound webhook
+// rejects them as senders at intake), so their permanent "Unclaimed"
+// status is structurally meaningless on this leaderboard. They also
+// dominate raw volume in any non-trivial inbox (employees, customers,
+// support replies), pushing the actually-actionable business
+// counterparties off the visible top-N. Keeping the boundary identical
+// to FREE_MAIL_DOMAINS in lib/trust.ts mirrors what intake and the
+// extension popup already do — the panel's signal/noise improves
+// without adding a new convention.
+//
+// We over-fetch (32 rows) and slice to 8 after filtering, so even an
+// inbox where all of the top ~20 receivers are consumer-mail still
+// surfaces 8 real business rows. 32 was chosen as a small constant
+// well above the size of the free-mail set (~21).
 async function topReceiversList(): Promise<
   Array<{
     domain: string;
@@ -482,7 +498,7 @@ async function topReceiversList(): Promise<
     registered: boolean;
   }>
 > {
-  return (await sql`
+  const rows = (await sql`
     SELECT
       e.receiver_domain                     AS domain,
       COUNT(*)::int                         AS events,
@@ -494,7 +510,7 @@ async function topReceiversList(): Promise<
     FROM events e
     GROUP BY e.receiver_domain
     ORDER BY events DESC, last_seen DESC
-    LIMIT 8
+    LIMIT 32
   `) as unknown as Array<{
     domain: string;
     events: number;
@@ -502,6 +518,7 @@ async function topReceiversList(): Promise<
     last_seen: string;
     registered: boolean;
   }>;
+  return rows.filter((r) => !FREE_MAIL_DOMAINS.has(r.domain)).slice(0, 8);
 }
 
 // Population shape across every registered sender: how many are
