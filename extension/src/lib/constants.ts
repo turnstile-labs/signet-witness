@@ -8,8 +8,24 @@ export const WITNESSED_HOME = "https://witnessed.cc";
 export const API_BASE = "https://witnessed.cc";
 export const PRODUCT_NAME = "Witnessed";
 
-/** Minimum milliseconds between repeated BCC injections on the same compose. */
-export const COMPOSE_DEBOUNCE_MS = 400;
+/**
+ * Cadence of the compose scanner.
+ *
+ * Earlier builds reacted to Gmail DOM changes via a `MutationObserver`
+ * on `document.body` with `subtree: true`. That instruments the entire
+ * descendant tree, and Gmail fires thousands of mutations per second on
+ * a busy inbox (virtualised list recycling, hovercards, animations).
+ * Even with debouncing, the per-mutation dispatch overhead alone was
+ * enough to wedge Gmail's renderer on large inboxes — visible to the
+ * user as Gmail freezing and the popup never reaching the content
+ * script.
+ *
+ * A 1 s polling cadence gives the user "BCC the seal as soon as they
+ * open compose" within a tick they don't notice (humans don't perceive
+ * sub-second auto-fills as latency), while putting a hard ceiling on
+ * how much main-thread time we can ever burn on a Gmail tab.
+ */
+export const COMPOSE_POLL_MS = 1000;
 
 /** Per-domain cache TTLs for the popup's sender lookup.
  *  Verified / Building states are sticky — a verified domain won't flip

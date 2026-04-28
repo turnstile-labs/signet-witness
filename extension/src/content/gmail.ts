@@ -15,7 +15,7 @@
 
 import {
   SEAL_ADDRESS,
-  COMPOSE_DEBOUNCE_MS,
+  COMPOSE_POLL_MS,
   PRODUCT_NAME,
 } from "../lib/constants";
 import {
@@ -23,11 +23,11 @@ import {
   getSettings,
   onSettingsChange,
 } from "../lib/storage";
-import { emailToDomain } from "../lib/parse";
+import { emailToDomain, isFreeMailDomain } from "../lib/parse";
 
 const COMPOSE_PROCESSED = "data-witnessed-processed";
 const LOG_PREFIX = `[${PRODUCT_NAME.toLowerCase()}]`;
-const BUILD_TAG = "v0.4.1";
+const BUILD_TAG = "v0.4.3";
 const MAX_VISIBLE_DOMAINS = 25;
 
 let injectEnabled = true;
@@ -87,31 +87,73 @@ function sealAlreadyAdded(dialog: HTMLElement): boolean {
   return scope.textContent?.includes(SEAL_ADDRESS) ?? false;
 }
 
+// Localised "Bcc" labels Gmail uses across its supported UI languages.
+// Sorted by language family. Patterns are intentionally tight to avoid
+// accidental matches on body copy ("BCC" in the surrounding sentence,
+// for example) — they're tested against the *trimmed* text content of
+// candidate elements only, which Gmail keeps to the 2–4 character chip.
+//
+// Expanded after a Spanish-locale user reported auto-BCC silently
+// failing on every compose: our previous matcher was English-only
+// (`bcc`) and missed `Cco` entirely, so we never clicked the toggle,
+// the row stayed collapsed, and the seal was inserted into the
+// hidden textarea where Gmail's React state ignored it.
+//
+// Add to this list when a new locale ships in Gmail. Keep diacritics
+// lowercased because we lowercase before testing.
+const BCC_LABEL_PATTERNS: ReadonlyArray<RegExp> = [
+  /^bcc\b/, // en, de, nl, ja-JP (alt), ko (alt), zh-Hant (alt)
+  /^cco\b/, // es, pt-BR, pt-PT
+  /^cci\b/, // fr
+  /^ccn\b/, // it
+  /密送/, // zh-CN (also "密件抄送")
+  /密件/, // zh-Hant
+  /숨은참조/, // ko
+  /скрытая/, // ru
+  /скр\.?/, // ru (short)
+  /副本密送/, // zh (alt)
+];
+
+function matchesBccLabel(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return BCC_LABEL_PATTERNS.some((p) => p.test(t));
+}
+
 function expandBccRow(dialog: HTMLElement): void {
-  if (findBccInput(dialog)) return;
+  // If the Bcc textarea is already in the live tree (visible *or* hidden)
+  // and is in an expanded row we can write to, leave it alone — clicking
+  // the toggle a second time would collapse it.
+  const existing = findBccInput(dialog);
+  if (existing && existing.offsetParent !== null) return;
 
   const candidates = dialog.querySelectorAll<HTMLElement>(
     '[role="link"], [role="button"], span, button',
   );
   for (const candidate of candidates) {
-    const aria = (candidate.getAttribute("aria-label") ?? "")
-      .trim()
-      .toLowerCase();
-    const text = (candidate.textContent ?? "").trim().toLowerCase();
-    const matchesAria =
-      /^(add\s+)?bcc\b/.test(aria) ||
-      aria === "bcc" ||
-      aria.includes("bcc recipients");
-    const matchesText = text === "bcc";
-    if (!(matchesAria || matchesText)) continue;
+    const aria = candidate.getAttribute("aria-label") ?? "";
+    const text = candidate.textContent ?? "";
+    if (!matchesBccLabel(aria) && !matchesBccLabel(text)) continue;
     // Skip the label on an already-expanded row.
     const inExpandedRow = candidate
       .closest('tr[role="presentation"]')
-      ?.querySelector(
-        'input[aria-label^="Bcc" i], textarea[aria-label^="Bcc" i]',
-      );
+      ?.querySelector('input[name="bcc"], textarea[name="bcc"]');
     if (inExpandedRow) continue;
-    candidate.click();
+    // Some Gmail variants attach React-style listeners that only respond
+    // to the full `mousedown → mouseup → click` triple. A bare `.click()`
+    // works in most builds, but firing the triple is cheap insurance and
+    // matches what a real user click looks like.
+    try {
+      candidate.dispatchEvent(
+        new MouseEvent("mousedown", { bubbles: true, cancelable: true }),
+      );
+      candidate.dispatchEvent(
+        new MouseEvent("mouseup", { bubbles: true, cancelable: true }),
+      );
+      candidate.click();
+    } catch {
+      /* node may have been recycled mid-frame; next mutation will retry */
+    }
     return;
   }
 
@@ -167,6 +209,14 @@ function processCompose(dialog: HTMLElement): boolean {
   expandBccRow(dialog);
   const input = findBccInput(dialog);
   if (!input) return false;
+  // The Bcc textarea exists in the DOM even when the row is collapsed
+  // (Gmail toggles the parent `<tr>`'s display, not the textarea). If we
+  // try to insert into a hidden field, `document.execCommand("insertText")`
+  // returns true on some Chromium builds but Gmail's React state never
+  // syncs, so the seal silently disappears when the user expands Bcc
+  // manually. Defer to the next mutation tick — once the row expands,
+  // `offsetParent` becomes non-null and we can write safely.
+  if (input.offsetParent === null) return false;
 
   if (sealAlreadyAdded(dialog)) {
     dialog.setAttribute(COMPOSE_PROCESSED, "1");
@@ -224,6 +274,16 @@ function getVisibleDomains(): VisibleDomainsReply {
   const seen = new Map<string, VisibleDomainEntry>();
   const main = document.querySelector<HTMLElement>('[role="main"]');
 
+  // Free-mail senders are filtered out before they ever reach the popup.
+  // gmail.com / outlook.com / yahoo.com et al. are multi-tenant consumer
+  // providers — they can't earn a domain reputation in our model and
+  // the server rejects them at intake. Surfacing them in the popup as
+  // perpetual "Unclaimed" rows is misleading noise that crowds out the
+  // business senders that actually have signal.
+  function admit(d: string | null): d is string {
+    return d !== null && !isFreeMailDomain(d);
+  }
+
   // 1) Thread view — senders of the messages in the open conversation.
   //    We identify them by `span[email]` inside the main pane that is
   //    NOT inside an inbox row (`tr.zA`), so we don't accidentally
@@ -233,7 +293,7 @@ function getVisibleDomains(): VisibleDomainsReply {
     for (const el of emailSpans) {
       if (el.closest("tr.zA")) continue;
       const d = emailToDomain(el.getAttribute("email"));
-      if (d && !seen.has(d)) {
+      if (admit(d) && !seen.has(d)) {
         seen.set(d, { domain: d, source: "thread" });
         if (seen.size >= MAX_VISIBLE_DOMAINS) break;
       }
@@ -245,7 +305,7 @@ function getVisibleDomains(): VisibleDomainsReply {
       );
       for (const el of cards) {
         const d = emailToDomain(el.getAttribute("data-hovercard-id"));
-        if (d && !seen.has(d)) {
+        if (admit(d) && !seen.has(d)) {
           seen.set(d, { domain: d, source: "thread" });
           if (seen.size >= MAX_VISIBLE_DOMAINS) break;
         }
@@ -263,7 +323,7 @@ function getVisibleDomains(): VisibleDomainsReply {
   for (const row of rows) {
     const span = row.querySelector<HTMLElement>("span[email]");
     const d = emailToDomain(span?.getAttribute("email"));
-    if (d && !seen.has(d)) {
+    if (admit(d) && !seen.has(d)) {
       seen.set(d, { domain: d, source: "row" });
       if (seen.size >= MAX_VISIBLE_DOMAINS) break;
     }
@@ -275,17 +335,42 @@ function getVisibleDomains(): VisibleDomainsReply {
   return { domains: [], context: "none" };
 }
 
-// ── Observer / message bridge ─────────────────────────────────
+// ── Compose scanner / message bridge ──────────────────────────
+//
+// The scanner runs on a fixed interval (`COMPOSE_POLL_MS`) instead of
+// reacting to DOM mutations. See the long-form note in
+// `lib/constants.ts` for *why* — short version: a global subtree
+// observer on Gmail is the difference between "auto-BCC works" and
+// "Gmail freezes on busy inboxes".
 
-let composePending = false;
+let pollHandle: number | undefined;
 
-function scheduleComposeScan(): void {
-  if (composePending) return;
-  composePending = true;
-  setTimeout(() => {
-    composePending = false;
+function safeScan(): void {
+  try {
     scanComposes();
-  }, COMPOSE_DEBOUNCE_MS);
+  } catch (err) {
+    // A single bad scan must not kill the loop — Gmail occasionally
+    // recycles a dialog mid-walk, throwing on stale node refs. Logged
+    // once per failure so the dev console still flags repeated breakage.
+    warn("compose scan failed", err);
+  }
+}
+
+function startScanner(): void {
+  if (pollHandle !== undefined) return;
+  pollHandle = window.setInterval(() => {
+    if (document.hidden) return;
+    safeScan();
+  }, COMPOSE_POLL_MS);
+  // Run once immediately so a freshly-opened compose doesn't have to
+  // wait the full interval before being sealed.
+  safeScan();
+}
+
+function stopScanner(): void {
+  if (pollHandle === undefined) return;
+  window.clearInterval(pollHandle);
+  pollHandle = undefined;
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -320,9 +405,21 @@ async function boot(): Promise<void> {
     if (typeof next.enabled === "boolean") injectEnabled = next.enabled;
   });
 
-  const observer = new MutationObserver(() => scheduleComposeScan());
-  observer.observe(document.body, { childList: true, subtree: true });
-  scheduleComposeScan();
+  startScanner();
+
+  // Catch the user coming back to the tab after composing in another
+  // window — we paused on hide, so resume on show with an immediate
+  // scan instead of waiting up to a full interval.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    safeScan();
+  });
+
+  // Free the timer when the page goes away (SPA navigation inside
+  // Gmail keeps the same content script, but a hard reload would
+  // otherwise leak the interval into the about-to-be-destroyed
+  // document for a frame).
+  window.addEventListener("pagehide", stopScanner, { once: true });
 }
 
 boot().catch((err) => warn("boot failed", err));

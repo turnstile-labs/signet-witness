@@ -7,6 +7,7 @@ import {
   type ThemePref,
 } from "../lib/storage";
 import { lookupDomain } from "../lib/api";
+import { isFreeMailDomain } from "../lib/parse";
 import type { DomainState, PublicPayload } from "../lib/types";
 
 const $ = <T extends HTMLElement>(id: string): T => {
@@ -271,7 +272,13 @@ async function queryVisibleDomains(): Promise<LocalReply> {
       kind: "GET_VISIBLE_DOMAINS",
     })) as VisibleDomainsReply | undefined;
     if (!reply) return { domains: [], context: "no-content" };
-    return reply;
+    // Belt-and-braces filter: a long-lived Gmail tab loaded under a
+    // pre-0.4.2 content script will still emit free-mail rows, so we
+    // also screen here. Cheap O(n) over a 25-cap list.
+    return {
+      ...reply,
+      domains: reply.domains.filter((d) => !isFreeMailDomain(d.domain)),
+    };
   } catch (err) {
     // Content script not injected yet (cold Gmail tab, or Gmail under a
     // different URL variant).
@@ -281,7 +288,19 @@ async function queryVisibleDomains(): Promise<LocalReply> {
 }
 
 async function renderSenders(): Promise<void> {
-  const { domains, context } = await queryVisibleDomains();
+  let domains: VisibleDomainEntry[];
+  let context: VisibleContext;
+  try {
+    ({ domains, context } = await queryVisibleDomains());
+  } catch (err) {
+    // Last-resort guard: queryVisibleDomains already swallows its own
+    // failures, but if a future change leaves an unhandled rejection we
+    // still want the popup to render *something* — the empty state — so
+    // the user never sees a white square.
+    console.error("[witnessed] sender query failed hard", err);
+    setEmpty("none");
+    return;
+  }
 
   if (domains.length === 0) {
     setEmpty(context);
@@ -400,4 +419,19 @@ async function main(): Promise<void> {
   await renderSenders();
 }
 
-void main();
+// Top-level guard. The popup body has static fallback markup (header,
+// empty state, toggle, footer) so a thrown error here still leaves a
+// usable surface, but we surface the failure to the senders panel so a
+// user reporting "the popup looks broken" has a visible explanation
+// instead of a stale "checking…" or a blank section. Logged at error so
+// the user can grab it from `chrome://extensions → Errors`.
+void main().catch((err) => {
+  console.error("[witnessed] popup boot failed", err);
+  try {
+    setEmpty("none");
+    sendersTitle.textContent = "Popup error";
+    sendersSub.textContent = "Reload the extension to retry.";
+  } catch {
+    /* DOM may not be ready; fall back to the static HTML state. */
+  }
+});
